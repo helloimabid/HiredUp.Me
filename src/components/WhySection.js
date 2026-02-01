@@ -50,7 +50,10 @@ export default function WhySection() {
           {/* Card 3 */}
           <div className="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all duration-300 group">
             <div className="w-12 h-12 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-indigo-600 mb-6 shadow-sm group-hover:scale-110 transition-transform">
-              <iconify-icon icon="solar:globe-linear" width="24"></iconify-icon>
+              <iconify-icon
+                icon="twemoji:flag-bangladesh"
+                width="24"
+              ></iconify-icon>
             </div>
             <h3 className="text-lg font-semibold text-slate-900 mb-2">
               Bangladesh-first, Global-ready

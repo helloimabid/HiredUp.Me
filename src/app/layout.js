@@ -12,6 +12,17 @@ export const metadata = {
   title: "hiredup.me - Get hired up, not just hired.",
   description:
     "The premier platform connecting top-tier freelancers and corporates. Find your next opportunity in Bangladesh and beyond.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({ children }) {
