@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import {
   getCurrentUser,
   signIn,
@@ -17,10 +17,14 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const checkedRef = useRef(false);
 
-  // Check for existing session on mount
+  // Check for existing session on mount (only once)
   useEffect(() => {
-    checkUser();
+    if (!checkedRef.current) {
+      checkedRef.current = true;
+      checkUser();
+    }
   }, []);
 
   async function checkUser() {
@@ -28,6 +32,7 @@ export function AuthProvider({ children }) {
       const currentUser = await getCurrentUser();
       setUser(currentUser);
     } catch (error) {
+      // Silently handle - user not logged in
       setUser(null);
     } finally {
       setLoading(false);

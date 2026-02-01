@@ -69,7 +69,11 @@ export async function getCurrentUser() {
     const user = await account.get();
     return user;
   } catch (error) {
-    // User not logged in
+    // 401 is expected when no user is logged in - don't log it
+    // Only log unexpected errors
+    if (error?.code !== 401) {
+      console.error("Get current user error:", error);
+    }
     return null;
   }
 }
