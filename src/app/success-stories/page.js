@@ -2,9 +2,25 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Success Stories - hiredup.me",
+  title: "Success Stories - Real Career Transformations | HiredUp.me",
   description:
-    "Read inspiring stories from professionals who found their dream jobs through hiredup.me",
+    "Read inspiring stories from Bangladeshi professionals who landed dream jobs through HiredUp.me. Remote jobs at Vercel, Stripe, Google & more. See how they 3x their salary!",
+  keywords: [
+    "job success stories",
+    "career transformation",
+    "Bangladesh remote jobs",
+    "hired at Google",
+    "remote job success",
+    "career change stories",
+  ],
+  openGraph: {
+    title: "Real Success Stories from HiredUp.me Users",
+    description: "Inspiring career transformations from Bangladesh professionals",
+    url: "https://hiredup.me/success-stories",
+  },
+  alternates: {
+    canonical: "https://hiredup.me/success-stories",
+  },
 };
 
 const stories = [

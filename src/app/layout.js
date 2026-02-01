@@ -7,12 +7,40 @@ import { Analytics } from "@vercel/analytics/next";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap", // Prevent FOIT for better CLS
 });
 
+// ============ COMPREHENSIVE SEO METADATA ============
 export const metadata = {
-  title: "hiredup.me - Get hired up, not just hired.",
+  // Basic Meta
+  title: {
+    default: "HiredUp.me - Find Jobs in Bangladesh & Remote Worldwide",
+    template: "%s | HiredUp.me",
+  },
   description:
-    "The premier platform connecting top-tier freelancers and corporates. Find your next opportunity in Bangladesh and beyond.",
+    "Bangladesh's #1 job portal. Find 10,000+ jobs in Dhaka, Chittagong, Sylhet & remote positions worldwide. Connect with top employers. Free job search, career advice & salary insights.",
+  keywords: [
+    "jobs in Bangladesh",
+    "Dhaka jobs",
+    "remote jobs",
+    "Bangladesh careers",
+    "job portal Bangladesh",
+    "IT jobs Dhaka",
+    "software developer jobs",
+    "freelance jobs",
+    "work from home Bangladesh",
+    "hiring Bangladesh",
+    "job search",
+    "career opportunities",
+    "employment Bangladesh",
+    "tech jobs Bangladesh",
+    "marketing jobs Dhaka",
+  ],
+  authors: [{ name: "HiredUp.me", url: "https://hiredup.me" }],
+  creator: "HiredUp.me",
+  publisher: "HiredUp.me",
+  
+  // Favicon & Icons
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -24,6 +52,79 @@ export const metadata = {
     ],
   },
   manifest: "/site.webmanifest",
+
+  // Open Graph for Social Sharing
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://hiredup.me",
+    siteName: "HiredUp.me",
+    title: "HiredUp.me - Find Jobs in Bangladesh & Remote Worldwide",
+    description:
+      "Bangladesh's leading job portal. Discover thousands of jobs in Dhaka, Chittagong & remote positions. Connect with top employers today!",
+    images: [
+      {
+        url: "https://hiredup.me/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "HiredUp.me - Get hired up, not just hired",
+      },
+    ],
+  },
+
+  // Twitter Card
+  twitter: {
+    card: "summary_large_image",
+    site: "@haborymesadman",
+    creator: "@haborymesadman",
+    title: "HiredUp.me - Jobs in Bangladesh & Remote",
+    description:
+      "Find your dream job in Bangladesh or work remotely worldwide. 10,000+ opportunities waiting for you!",
+    images: ["https://hiredup.me/og-image.png"],
+  },
+
+  // Robots & Indexing
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+
+  // Verification (add your actual verification codes)
+  verification: {
+    google: "your-google-verification-code", // Add from Google Search Console
+    // yandex: "your-yandex-code",
+    // bing: "your-bing-code",
+  },
+
+  // Alternate Languages (if you add Bangla later)
+  alternates: {
+    canonical: "https://hiredup.me",
+    languages: {
+      "en-US": "https://hiredup.me",
+      // "bn-BD": "https://hiredup.me/bn",
+    },
+  },
+
+  // Category
+  category: "Jobs & Employment",
+
+  // Additional Meta
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
+    "apple-mobile-web-app-title": "HiredUp",
+    "format-detection": "telephone=no",
+    "theme-color": "#4f46e5",
+  },
 };
 
 export default function RootLayout({ children }) {

@@ -1,1 +1,28 @@
-{"name":"HiredUp.Me","short_name":"HiredUp","icons":[{"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"},{"src":"/android-chrome-512x512.png","sizes":"512x512","type":"image/png"}],"theme_color":"#ffffff","background_color":"#ffffff","display":"standalone"}
+{
+  "name": "HiredUp.me - Jobs in Bangladesh & Remote",
+  "short_name": "HiredUp",
+  "description": "Find jobs in Bangladesh and remote positions worldwide. 10,000+ opportunities waiting for you!",
+  "start_url": "/",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#4f46e5",
+  "background_color": "#f9fafb",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity"],
+  "lang": "en",
+  "dir": "ltr"
+}

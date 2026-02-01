@@ -2,9 +2,25 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Post a Job - hiredup.me",
+  title: "Post a Job - Hire Top Talent in Bangladesh | HiredUp.me",
   description:
-    "Post your job listing and reach thousands of qualified candidates in Bangladesh and worldwide.",
+    "Post your job listing and reach 50,000+ qualified candidates in Bangladesh. Free job posting, premium features available. Hire developers, designers, marketers & more!",
+  keywords: [
+    "post job Bangladesh",
+    "hire developers Bangladesh",
+    "job posting",
+    "free job posting",
+    "recruit Bangladesh",
+    "hire remote workers",
+  ],
+  openGraph: {
+    title: "Post a Job & Hire Top Talent | HiredUp.me",
+    description: "Reach qualified candidates in Bangladesh with your job listing",
+    url: "https://hiredup.me/post-job",
+  },
+  alternates: {
+    canonical: "https://hiredup.me/post-job",
+  },
 };
 
 export default function PostJobPage() {

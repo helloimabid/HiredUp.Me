@@ -338,22 +338,62 @@ export default async function JobDetailPage({ params }) {
   const companyColor = getCompanyColor(company);
   const timeAgo = getTimeAgo(job.$createdAt);
 
-  // JSON-LD structured data
+  // JSON-LD structured data for Google Jobs
+  const isRemote = (job.location || "").toLowerCase().includes("remote");
+  const validThroughDate = new Date();
+  validThroughDate.setDate(validThroughDate.getDate() + 30);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
     title: title,
-    description: content.aboutRole,
+    description: `${content.aboutRole}\n\nResponsibilities:\n${content.responsibilities.join("\n")}\n\nQualifications:\n${content.qualifications.join("\n")}`,
     datePosted: job.$createdAt,
+    validThrough: validThroughDate.toISOString(),
     employmentType: content.jobType.toUpperCase().replace("-", "_"),
     hiringOrganization: {
       "@type": "Organization",
       name: company,
+      sameAs: `https://hiredup.me/companies?search=${encodeURIComponent(company)}`,
     },
-    jobLocation: {
-      "@type": "Place",
-      address: job.location || "Remote",
+    jobLocation: isRemote
+      ? undefined
+      : {
+          "@type": "Place",
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: job.location?.split(",")[0]?.trim() || job.location,
+            addressCountry: job.location?.includes("Bangladesh") ? "BD" : undefined,
+          },
+        },
+    jobLocationType: isRemote ? "TELECOMMUTE" : undefined,
+    applicantLocationRequirements: isRemote
+      ? { "@type": "Country", name: "Bangladesh" }
+      : undefined,
+    directApply: true,
+    identifier: {
+      "@type": "PropertyValue",
+      name: "HiredUp.me",
+      value: job.$id,
     },
+    skills: content.skills.join(", "),
+    experienceRequirements: content.experienceLevel,
+  };
+
+  // Remove undefined fields
+  Object.keys(jsonLd).forEach(
+    (key) => jsonLd[key] === undefined && delete jsonLd[key]
+  );
+
+  // Breadcrumb schema
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://hiredup.me" },
+      { "@type": "ListItem", position: 2, name: "Jobs", item: "https://hiredup.me/jobs" },
+      { "@type": "ListItem", position: 3, name: title },
+    ],
   };
 
   return (
@@ -361,6 +401,10 @@ export default async function JobDetailPage({ params }) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       <Header />
       <main className="bg-gray-50 min-h-screen">

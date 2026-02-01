@@ -6,9 +6,25 @@ import { getJobs } from "@/lib/appwrite";
 export const revalidate = 60;
 
 export const metadata = {
-  title: "Browse Companies - hiredup.me",
+  title: "Top Companies Hiring in Bangladesh | Employers Directory | HiredUp.me",
   description:
-    "Discover top companies hiring in Bangladesh and worldwide. Find your dream employer.",
+    "Discover 500+ top companies hiring in Bangladesh - tech startups, banks, NGOs, multinationals. View company profiles, open positions & employee reviews. Find your dream employer!",
+  keywords: [
+    "companies in Bangladesh",
+    "employers Dhaka",
+    "tech companies Bangladesh",
+    "top employers",
+    "hiring companies",
+    "job openings by company",
+  ],
+  openGraph: {
+    title: "Browse Top Companies Hiring in Bangladesh",
+    description: "Discover employers with open positions and find your dream company",
+    url: "https://hiredup.me/companies",
+  },
+  alternates: {
+    canonical: "https://hiredup.me/companies",
+  },
 };
 
 async function getCompanies() {

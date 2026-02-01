@@ -2,9 +2,26 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "For Job Seekers - hiredup.me",
+  title: "For Job Seekers - Find Your Dream Job in Bangladesh | HiredUp.me",
   description:
-    "Find your dream job with hiredup.me. Access thousands of opportunities in Bangladesh and remote positions worldwide.",
+    "Your career journey starts here! Browse 1000+ jobs in Bangladesh - remote, tech, finance, marketing. Free resume builder, salary insights & job alerts. Land your dream job today!",
+  keywords: [
+    "job search Bangladesh",
+    "find jobs Dhaka",
+    "career opportunities",
+    "remote jobs Bangladesh",
+    "job seekers",
+    "employment Bangladesh",
+    "tech jobs",
+  ],
+  openGraph: {
+    title: "Find Your Dream Job in Bangladesh | HiredUp.me",
+    description: "Access thousands of job opportunities from top companies",
+    url: "https://hiredup.me/job-seekers",
+  },
+  alternates: {
+    canonical: "https://hiredup.me/job-seekers",
+  },
 };
 
 export default function JobSeekersPage() {

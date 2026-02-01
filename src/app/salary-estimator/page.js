@@ -2,9 +2,26 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Salary Estimator - hiredup.me",
+  title: "Salary Calculator Bangladesh 2025 - Know Your Worth | HiredUp.me",
   description:
-    "Get accurate salary estimates for jobs in Bangladesh and worldwide. Know your worth before negotiating.",
+    "Free salary calculator for Bangladesh. Get accurate salary estimates for Software Engineers, Developers, Designers, Marketers & more. Negotiate better with data-backed insights!",
+  keywords: [
+    "salary Bangladesh",
+    "software engineer salary Dhaka",
+    "developer salary Bangladesh",
+    "salary calculator",
+    "salary estimator",
+    "average salary Bangladesh",
+    "tech salary Bangladesh",
+  ],
+  openGraph: {
+    title: "Salary Calculator Bangladesh 2025 | HiredUp.me",
+    description: "Know your market value. Get accurate salary data for any role in Bangladesh.",
+    url: "https://hiredup.me/salary-estimator",
+  },
+  alternates: {
+    canonical: "https://hiredup.me/salary-estimator",
+  },
 };
 
 const salaryData = [

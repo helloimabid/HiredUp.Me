@@ -2,9 +2,16 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Cookie Policy - hiredup.me",
+  title: "Cookie Policy | HiredUp.me",
   description:
-    "Cookie policy for hiredup.me - how we use cookies and similar technologies.",
+    "HiredUp.me cookie policy - Learn about how we use cookies and similar technologies to improve your experience.",
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: "https://hiredup.me/cookies",
+  },
 };
 
 export default function CookiePolicyPage() {

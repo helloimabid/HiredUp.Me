@@ -2,9 +2,25 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Talent Search - hiredup.me",
+  title: "Talent Search - Find Top Candidates in Bangladesh | HiredUp.me",
   description:
-    "Search and discover top talent in Bangladesh and worldwide. Find the perfect candidate for your team.",
+    "Search 50,000+ verified candidates in Bangladesh. Find developers, designers, marketers & more. Use filters for skills, experience, and availability. Hire faster!",
+  keywords: [
+    "talent search Bangladesh",
+    "find candidates",
+    "hire developers",
+    "candidate database",
+    "recruitment search",
+    "talent pool Bangladesh",
+  ],
+  openGraph: {
+    title: "Search Top Talent in Bangladesh | HiredUp.me",
+    description: "Find and connect with verified professionals",
+    url: "https://hiredup.me/talent-search",
+  },
+  alternates: {
+    canonical: "https://hiredup.me/talent-search",
+  },
 };
 
 export default function TalentSearchPage() {

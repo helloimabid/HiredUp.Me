@@ -3,9 +3,25 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Resources - hiredup.me",
+  title: "Hiring Resources - Free Templates & Guides | HiredUp.me",
   description:
-    "Hiring guides, templates, and resources for employers to build great teams.",
+    "Free hiring resources for employers. Download job description templates, interview guides, salary benchmarks, and onboarding checklists. Build better teams!",
+  keywords: [
+    "hiring resources",
+    "job description templates",
+    "interview guide",
+    "hiring tips",
+    "recruitment resources",
+    "HR templates",
+  ],
+  openGraph: {
+    title: "Free Hiring Resources for Employers | HiredUp.me",
+    description: "Templates, guides, and tools to help you hire better",
+    url: "https://hiredup.me/resources",
+  },
+  alternates: {
+    canonical: "https://hiredup.me/resources",
+  },
 };
 
 const resources = [

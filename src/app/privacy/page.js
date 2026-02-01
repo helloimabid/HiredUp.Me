@@ -2,9 +2,16 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Privacy Policy - hiredup.me",
+  title: "Privacy Policy | HiredUp.me",
   description:
-    "Privacy policy for hiredup.me - how we collect, use, and protect your data.",
+    "HiredUp.me privacy policy - Learn how we collect, use, and protect your personal data. Your privacy is our priority.",
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: "https://hiredup.me/privacy",
+  },
 };
 
 export default function PrivacyPolicyPage() {

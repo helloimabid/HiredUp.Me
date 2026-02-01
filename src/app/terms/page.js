@@ -2,8 +2,16 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Terms of Service - hiredup.me",
-  description: "Terms of service for using hiredup.me platform.",
+  title: "Terms of Service | HiredUp.me",
+  description:
+    "HiredUp.me terms of service - Read our terms and conditions for using our job platform. Fair and transparent policies for job seekers and employers.",
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: "https://hiredup.me/terms",
+  },
 };
 
 export default function TermsPage() {

@@ -2,9 +2,25 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Pricing - hiredup.me",
+  title: "Pricing - Affordable Job Posting Plans | HiredUp.me",
   description:
-    "Simple, transparent pricing for employers. Start free and scale as you grow.",
+    "Simple, transparent pricing for employers. Start free, upgrade when you need more. Post jobs from ৳0/month. No hidden fees. Compare our Starter, Pro & Enterprise plans.",
+  keywords: [
+    "job posting price",
+    "hiring cost Bangladesh",
+    "recruitment pricing",
+    "free job posting",
+    "employer plans",
+    "hiring platform pricing",
+  ],
+  openGraph: {
+    title: "Affordable Hiring Plans - Start Free | HiredUp.me",
+    description: "Transparent job posting pricing. No hidden fees.",
+    url: "https://hiredup.me/pricing",
+  },
+  alternates: {
+    canonical: "https://hiredup.me/pricing",
+  },
 };
 
 export default function PricingPage() {

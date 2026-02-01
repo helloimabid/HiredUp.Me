@@ -6,10 +6,37 @@ import Link from "next/link";
 
 export const revalidate = 60;
 
+// ============ JOBS PAGE SEO METADATA ============
 export const metadata = {
-  title: "Browse Jobs - hiredup.me",
+  title: "Browse 10,000+ Jobs in Bangladesh & Remote | HiredUp.me",
   description:
-    "Find your next opportunity. Browse thousands of jobs in Bangladesh and remote positions worldwide.",
+    "Find your perfect job from 10,000+ opportunities in Dhaka, Chittagong, Sylhet & remote worldwide. Filter by industry, experience level, salary. Apply now on HiredUp.me!",
+  keywords: [
+    "job listings Bangladesh",
+    "jobs in Dhaka",
+    "remote jobs",
+    "IT jobs Bangladesh",
+    "fresher jobs",
+    "experienced jobs",
+    "part time jobs",
+    "full time jobs",
+    "contract jobs",
+    "freelance work",
+    "work from home",
+  ],
+  openGraph: {
+    title: "Browse Jobs - Find Your Dream Career | HiredUp.me",
+    description:
+      "10,000+ job opportunities waiting for you. Software developers, designers, marketers, accountants & more.",
+    url: "https://hiredup.me/jobs",
+  },
+  twitter: {
+    title: "Browse Jobs on HiredUp.me",
+    description: "Find your dream job from thousands of opportunities",
+  },
+  alternates: {
+    canonical: "https://hiredup.me/jobs",
+  },
 };
 
 async function fetchAllJobs() {
