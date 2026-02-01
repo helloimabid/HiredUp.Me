@@ -1,0 +1,207 @@
+"use client";
+
+import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { useState, useRef, useEffect } from "react";
+
+export default function Header() {
+  const { user, loading, logout, isAuthenticated } = useAuth();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    setDropdownOpen(false);
+  };
+
+  return (
+    <header className="sticky top-0 z-50 glass-nav w-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <Link
+            href="/"
+            className="flex-shrink-0 flex items-center gap-2 cursor-pointer"
+          >
+            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white">
+              <iconify-icon
+                icon="solar:arrow-right-up-linear"
+                width="20"
+                stroke-width="2"
+              ></iconify-icon>
+            </div>
+            <span className="font-semibold text-lg tracking-tight text-slate-900">
+              hiredup.me
+            </span>
+          </Link>
+
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex space-x-8 text-sm font-medium text-slate-500">
+            <Link
+              href="/jobs"
+              className="hover:text-slate-900 transition-colors"
+            >
+              Browse Jobs
+            </Link>
+            <Link
+              href="/search"
+              className="hover:text-slate-900 transition-colors flex items-center gap-1"
+            >
+              <iconify-icon
+                icon="solar:magnifer-linear"
+                width="16"
+              ></iconify-icon>
+              Search Jobs
+            </Link>
+            <Link
+              href="/employers"
+              className="hover:text-slate-900 transition-colors"
+            >
+              For Employers
+            </Link>
+            <Link
+              href="/blog"
+              className="hover:text-slate-900 transition-colors"
+            >
+              Blog
+            </Link>
+          </nav>
+
+          {/* Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            {loading ? (
+              <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse"></div>
+            ) : isAuthenticated ? (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
+                >
+                  <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                    {user?.name?.charAt(0)?.toUpperCase() ||
+                      user?.email?.charAt(0)?.toUpperCase() ||
+                      "U"}
+                  </div>
+                  <span className="hidden lg:inline">
+                    {user?.name?.split(" ")[0] || "Account"}
+                  </span>
+                  <iconify-icon
+                    icon="solar:alt-arrow-down-linear"
+                    width="16"
+                    className={`transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
+                  ></iconify-icon>
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl border border-slate-200 shadow-lg py-2 z-50">
+                    <div className="px-4 py-2 border-b border-slate-100">
+                      <p className="text-sm font-medium text-slate-900 truncate">
+                        {user?.name || "User"}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate">
+                        {user?.email}
+                      </p>
+                    </div>
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      <iconify-icon
+                        icon="solar:home-2-linear"
+                        width="18"
+                      ></iconify-icon>
+                      Dashboard
+                    </Link>
+                    <Link
+                      href="/dashboard/profile"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      <iconify-icon
+                        icon="solar:user-linear"
+                        width="18"
+                      ></iconify-icon>
+                      My Profile
+                    </Link>
+                    <Link
+                      href="/dashboard/applications"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      <iconify-icon
+                        icon="solar:document-text-linear"
+                        width="18"
+                      ></iconify-icon>
+                      My Applications
+                    </Link>
+                    <Link
+                      href="/dashboard/saved-jobs"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      <iconify-icon
+                        icon="solar:bookmark-linear"
+                        width="18"
+                      ></iconify-icon>
+                      Saved Jobs
+                    </Link>
+                    <div className="border-t border-slate-100 mt-2 pt-2">
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full"
+                      >
+                        <iconify-icon
+                          icon="solar:logout-2-linear"
+                          width="18"
+                        ></iconify-icon>
+                        Sign out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/signup"
+                  className="text-sm font-medium bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition-all shadow-sm"
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Mobile Menu Icon */}
+          <div className="md:hidden flex items-center">
+            <button className="text-slate-500 hover:text-slate-900">
+              <iconify-icon
+                icon="solar:hamburger-menu-linear"
+                width="24"
+                stroke-width="1.5"
+              ></iconify-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}

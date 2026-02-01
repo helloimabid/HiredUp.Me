@@ -1,6 +1,6 @@
 {
-  "name": "my-app",
-  "version": "0.1.0",
+  "name": "HiredUpMe",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,7 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "appwrite": "^21.5.0",
+    "dotenv": "^17.2.3",
     "next": "16.1.6",
+    "node-appwrite": "^21.1.0",
+    "puppeteer": "^24.36.1",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
