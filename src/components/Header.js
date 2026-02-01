@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useRef, useEffect } from "react";
 
@@ -32,18 +33,16 @@ export default function Header() {
           {/* Logo */}
           <Link
             href="/"
-            className="flex-shrink-0 flex items-center gap-2 cursor-pointer"
+            className="flex-shrink-0 flex items-center cursor-pointer"
           >
-            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white">
-              <iconify-icon
-                icon="solar:arrow-right-up-linear"
-                width="20"
-                stroke-width="2"
-              ></iconify-icon>
-            </div>
-            <span className="font-semibold text-lg tracking-tight text-slate-900">
-              hiredup.me
-            </span>
+            <Image
+              src="/logo.webp"
+              alt="hiredup.me"
+              width={150}
+              height={40}
+              className="h-8 w-auto"
+              priority
+            />
           </Link>
 
           {/* Desktop Nav */}

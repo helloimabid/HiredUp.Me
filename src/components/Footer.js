@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -6,14 +7,14 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
           <div className="col-span-2 lg:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-6 h-6 bg-slate-900 rounded flex items-center justify-center text-white">
-                <iconify-icon
-                  icon="solar:arrow-right-up-linear"
-                  width="14"
-                ></iconify-icon>
-              </div>
-              <span className="font-semibold text-slate-900">hiredup.me</span>
+            <div className="flex items-center mb-4">
+              <Image
+                src="/logo.webp"
+                alt="hiredup.me"
+                width={120}
+                height={32}
+                className="h-6 w-auto"
+              />
             </div>
             <p className="text-sm text-slate-500 max-w-xs leading-relaxed">
               Connecting Bangladesh&apos;s talent with the world. The modern
