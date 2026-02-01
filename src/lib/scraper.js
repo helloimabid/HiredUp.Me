@@ -1,7 +1,12 @@
 import { createJob, jobExists } from "@/lib/appwrite";
 import crypto from "crypto";
 
-// Note: puppeteer is dynamically imported to avoid SSR issues in Next.js
+// External scraper service URL (deployed on Railway/Render/Fly.io)
+const SCRAPER_SERVICE_URL = process.env.SCRAPER_SERVICE_URL || null;
+const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || "hiredup-scraper-key-2024";
+
+// Check if we're in production (Vercel)
+const isProduction = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
 
 /**
  * Check if location is "Remote"
@@ -78,6 +83,7 @@ function cleanText(text) {
 
 /**
  * Launch browser with optimized settings
+ * NOTE: Only works locally, not on Vercel serverless
  */
 async function launchBrowser() {
   // Dynamic import to avoid issues in Next.js server environment
@@ -755,19 +761,46 @@ export async function scrapeJobsByQuery(
     location.toLowerCase().includes("dhaka");
 
   try {
-    // Step 1: Try free APIs first (faster, no browser needed)
-    console.log("[Step 1] Fetching from free Job APIs...");
-    const apiJobs = await fetchFromFreeAPIs(query, location);
+    // In production (Vercel), use external scraper service if configured
+    if (isProduction && SCRAPER_SERVICE_URL) {
+      console.log("[Production] Using external scraper service...");
+      try {
+        const response = await fetch(`${SCRAPER_SERVICE_URL}/scrape`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": SCRAPER_API_KEY,
+          },
+          body: JSON.stringify({ query, location }),
+        });
 
-    // Filter by location
-    const filteredApiJobs = isRemote
-      ? apiJobs
-      : apiJobs.filter((j) => locationMatches(j.location, location));
-    jobs.push(...filteredApiJobs);
-    console.log(`APIs returned ${filteredApiJobs.length} matching jobs\n`);
+        if (response.ok) {
+          const data = await response.json();
+          jobs = data.jobs || [];
+          console.log(`External scraper returned ${jobs.length} jobs`);
+        } else {
+          console.error("External scraper failed:", response.status);
+        }
+      } catch (err) {
+        console.error("External scraper error:", err.message);
+      }
+    }
 
-    // Step 2: If not enough jobs, use Puppeteer to scrape
-    if (jobs.length < 10) {
+    // If no jobs from external service, try APIs (works everywhere)
+    if (jobs.length === 0) {
+      console.log("[Step 1] Fetching from free Job APIs...");
+      const apiJobs = await fetchFromFreeAPIs(query, location);
+
+      // Filter by location
+      const filteredApiJobs = isRemote
+        ? apiJobs
+        : apiJobs.filter((j) => locationMatches(j.location, location));
+      jobs.push(...filteredApiJobs);
+      console.log(`APIs returned ${filteredApiJobs.length} matching jobs\n`);
+    }
+
+    // Step 2: If not enough jobs AND not in production, use Puppeteer locally
+    if (jobs.length < 10 && !isProduction) {
       console.log("[Step 2] Launching Puppeteer for web scraping...\n");
       browser = await launchBrowser();
 
@@ -802,6 +835,9 @@ export async function scrapeJobsByQuery(
           jobs.push(...result.value);
         }
       }
+    } else if (jobs.length < 10 && isProduction && !SCRAPER_SERVICE_URL) {
+      // Production without external service - use fallback
+      console.log("[Production] No external scraper configured, using fallbacks...");
     }
   } catch (error) {
     console.error("Scraping error:", error.message);
