@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "setup-db": "node scripts/setup-collections.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

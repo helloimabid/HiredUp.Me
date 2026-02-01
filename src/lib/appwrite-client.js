@@ -116,6 +116,18 @@ export async function updateUserPrefs(prefs) {
 }
 
 /**
+ * Update user name
+ */
+export async function updateUserName(name) {
+  try {
+    await account.updateName(name);
+  } catch (error) {
+    console.error("Update name error:", error);
+    throw error;
+  }
+}
+
+/**
  * Get user preferences
  */
 export async function getUserPrefs() {
