@@ -763,11 +763,12 @@ export async function scrapeJobsByQuery(
     location.toLowerCase().includes("dhaka");
 
   try {
-    // In production (Vercel), use external scraper service if configured
-    if (isProduction && SCRAPER_SERVICE_URL) {
-      console.log("[Production] Using external scraper service...");
+    // Use external scraper service if configured (works in any environment)
+    if (SCRAPER_SERVICE_URL) {
+      const baseUrl = SCRAPER_SERVICE_URL.replace(/\/+$/, ''); // Remove trailing slashes
+      console.log(`[External Service] Calling ${baseUrl}/scrape...`);
       try {
-        const response = await fetch(`${SCRAPER_SERVICE_URL}/scrape`, {
+        const response = await fetch(`${baseUrl}/scrape`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -781,7 +782,7 @@ export async function scrapeJobsByQuery(
           jobs = data.jobs || [];
           console.log(`External scraper returned ${jobs.length} jobs`);
         } else {
-          console.error("External scraper failed:", response.status);
+          console.error("External scraper failed:", response.status, await response.text());
         }
       } catch (err) {
         console.error("External scraper error:", err.message);
@@ -801,8 +802,8 @@ export async function scrapeJobsByQuery(
       console.log(`APIs returned ${filteredApiJobs.length} matching jobs\n`);
     }
 
-    // Step 2: If not enough jobs AND not in production, use Puppeteer locally
-    if (jobs.length < 10 && !isProduction) {
+    // Step 2: If not enough jobs AND no external service AND not in production, use Puppeteer locally
+    if (jobs.length < 10 && !SCRAPER_SERVICE_URL && !isProduction) {
       console.log("[Step 2] Launching Puppeteer for web scraping...\n");
       browser = await launchBrowser();
 
@@ -837,11 +838,6 @@ export async function scrapeJobsByQuery(
           jobs.push(...result.value);
         }
       }
-    } else if (jobs.length < 10 && isProduction && !SCRAPER_SERVICE_URL) {
-      // Production without external service - use fallback
-      console.log(
-        "[Production] No external scraper configured, using fallbacks...",
-      );
     }
   } catch (error) {
     console.error("Scraping error:", error.message);
