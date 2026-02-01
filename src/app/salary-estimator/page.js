@@ -16,7 +16,8 @@ export const metadata = {
   ],
   openGraph: {
     title: "Salary Calculator Bangladesh 2025 | HiredUp.me",
-    description: "Know your market value. Get accurate salary data for any role in Bangladesh.",
+    description:
+      "Know your market value. Get accurate salary data for any role in Bangladesh.",
     url: "https://hiredup.me/salary-estimator",
   },
   alternates: {

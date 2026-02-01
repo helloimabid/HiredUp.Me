@@ -362,8 +362,11 @@ export default async function JobDetailPage({ params }) {
           "@type": "Place",
           address: {
             "@type": "PostalAddress",
-            addressLocality: job.location?.split(",")[0]?.trim() || job.location,
-            addressCountry: job.location?.includes("Bangladesh") ? "BD" : undefined,
+            addressLocality:
+              job.location?.split(",")[0]?.trim() || job.location,
+            addressCountry: job.location?.includes("Bangladesh")
+              ? "BD"
+              : undefined,
           },
         },
     jobLocationType: isRemote ? "TELECOMMUTE" : undefined,
@@ -382,7 +385,7 @@ export default async function JobDetailPage({ params }) {
 
   // Remove undefined fields
   Object.keys(jsonLd).forEach(
-    (key) => jsonLd[key] === undefined && delete jsonLd[key]
+    (key) => jsonLd[key] === undefined && delete jsonLd[key],
   );
 
   // Breadcrumb schema
@@ -390,8 +393,18 @@ export default async function JobDetailPage({ params }) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://hiredup.me" },
-      { "@type": "ListItem", position: 2, name: "Jobs", item: "https://hiredup.me/jobs" },
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://hiredup.me",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Jobs",
+        item: "https://hiredup.me/jobs",
+      },
       { "@type": "ListItem", position: 3, name: title },
     ],
   };

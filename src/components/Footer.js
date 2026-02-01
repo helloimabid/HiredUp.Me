@@ -28,21 +28,31 @@ export default function Footer() {
               </Link>
             </div>
             <p className="text-sm text-slate-500 max-w-xs leading-relaxed">
-              Bangladesh&apos;s leading job portal connecting talented professionals with top employers worldwide.
+              Bangladesh&apos;s leading job portal connecting talented
+              professionals with top employers worldwide.
             </p>
             {/* SEO: Popular Job Searches */}
             <div className="mt-4">
               <p className="text-xs text-slate-400 mb-2">Popular Searches:</p>
               <div className="flex flex-wrap gap-2 text-xs">
-                <Link href="/search?q=software+developer" className="text-slate-500 hover:text-indigo-600">
+                <Link
+                  href="/search?q=software+developer"
+                  className="text-slate-500 hover:text-indigo-600"
+                >
                   Software Developer
                 </Link>
                 <span className="text-slate-300">•</span>
-                <Link href="/search?q=remote" className="text-slate-500 hover:text-indigo-600">
+                <Link
+                  href="/search?q=remote"
+                  className="text-slate-500 hover:text-indigo-600"
+                >
                   Remote Jobs
                 </Link>
                 <span className="text-slate-300">•</span>
-                <Link href="/search?q=dhaka" className="text-slate-500 hover:text-indigo-600">
+                <Link
+                  href="/search?q=dhaka"
+                  className="text-slate-500 hover:text-indigo-600"
+                >
                   Dhaka Jobs
                 </Link>
               </div>
@@ -56,27 +66,42 @@ export default function Footer() {
             </h4>
             <ul className="space-y-3 text-sm text-slate-500">
               <li>
-                <Link href="/jobs" className="hover:text-indigo-600 transition-colors">
+                <Link
+                  href="/jobs"
+                  className="hover:text-indigo-600 transition-colors"
+                >
                   Browse Jobs
                 </Link>
               </li>
               <li>
-                <Link href="/companies" className="hover:text-indigo-600 transition-colors">
+                <Link
+                  href="/companies"
+                  className="hover:text-indigo-600 transition-colors"
+                >
                   Browse Companies
                 </Link>
               </li>
               <li>
-                <Link href="/salary-estimator" className="hover:text-indigo-600 transition-colors">
+                <Link
+                  href="/salary-estimator"
+                  className="hover:text-indigo-600 transition-colors"
+                >
                   Salary Estimator
                 </Link>
               </li>
               <li>
-                <Link href="/success-stories" className="hover:text-indigo-600 transition-colors">
+                <Link
+                  href="/success-stories"
+                  className="hover:text-indigo-600 transition-colors"
+                >
                   Success Stories
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="hover:text-indigo-600 transition-colors">
+                <Link
+                  href="/blog"
+                  className="hover:text-indigo-600 transition-colors"
+                >
                   Career Blog
                 </Link>
               </li>
@@ -90,22 +115,34 @@ export default function Footer() {
             </h4>
             <ul className="space-y-3 text-sm text-slate-500">
               <li>
-                <Link href="/post-job" className="hover:text-indigo-600 transition-colors">
+                <Link
+                  href="/post-job"
+                  className="hover:text-indigo-600 transition-colors"
+                >
                   Post a Job
                 </Link>
               </li>
               <li>
-                <Link href="/talent-search" className="hover:text-indigo-600 transition-colors">
+                <Link
+                  href="/talent-search"
+                  className="hover:text-indigo-600 transition-colors"
+                >
                   Talent Search
                 </Link>
               </li>
               <li>
-                <Link href="/pricing" className="hover:text-indigo-600 transition-colors">
+                <Link
+                  href="/pricing"
+                  className="hover:text-indigo-600 transition-colors"
+                >
                   Pricing
                 </Link>
               </li>
               <li>
-                <Link href="/resources" className="hover:text-indigo-600 transition-colors">
+                <Link
+                  href="/resources"
+                  className="hover:text-indigo-600 transition-colors"
+                >
                   Resources
                 </Link>
               </li>
@@ -117,22 +154,34 @@ export default function Footer() {
             <h4 className="font-semibold text-slate-900 mb-4 text-sm">Legal</h4>
             <ul className="space-y-3 text-sm text-slate-500">
               <li>
-                <Link href="/privacy" className="hover:text-indigo-600 transition-colors">
+                <Link
+                  href="/privacy"
+                  className="hover:text-indigo-600 transition-colors"
+                >
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="hover:text-indigo-600 transition-colors">
+                <Link
+                  href="/terms"
+                  className="hover:text-indigo-600 transition-colors"
+                >
                   Terms of Service
                 </Link>
               </li>
               <li>
-                <Link href="/cookies" className="hover:text-indigo-600 transition-colors">
+                <Link
+                  href="/cookies"
+                  className="hover:text-indigo-600 transition-colors"
+                >
                   Cookie Policy
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-indigo-600 transition-colors">
+                <Link
+                  href="/contact"
+                  className="hover:text-indigo-600 transition-colors"
+                >
                   Contact Us
                 </Link>
               </li>
@@ -143,9 +192,13 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-slate-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-xs text-slate-400">
-            © {currentYear} HiredUp.me. All rights reserved. Made with ❤️ in Bangladesh.
+            © {currentYear} HiredUp.me. All rights reserved. Made with ❤️ in
+            Bangladesh.
           </div>
-          <div className="flex gap-4 text-slate-400" aria-label="Social media links">
+          <div
+            className="flex gap-4 text-slate-400"
+            aria-label="Social media links"
+          >
             <a
               href="https://instagram.com/hiredup"
               target="_blank"
@@ -153,7 +206,10 @@ export default function Footer() {
               className="hover:text-slate-900 transition-colors"
               aria-label="Follow us on Instagram"
             >
-              <iconify-icon icon="solar:camera-linear" width="20"></iconify-icon>
+              <iconify-icon
+                icon="solar:camera-linear"
+                width="20"
+              ></iconify-icon>
             </a>
             <a
               href="https://twitter.com/haborymesadman"

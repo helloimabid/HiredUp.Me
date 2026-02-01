@@ -39,7 +39,7 @@ export const metadata = {
   authors: [{ name: "HiredUp.me", url: "https://hiredup.me" }],
   creator: "HiredUp.me",
   publisher: "HiredUp.me",
-  
+
   // Favicon & Icons
   icons: {
     icon: [

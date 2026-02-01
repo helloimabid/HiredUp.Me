@@ -3,7 +3,8 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Career Blog - Job Tips, Interview Guides & Industry Insights | HiredUp.me",
+  title:
+    "Career Blog - Job Tips, Interview Guides & Industry Insights | HiredUp.me",
   description:
     "Expert career advice for Bangladesh job seekers. Resume tips, interview guides, salary negotiation strategies, remote work tips & industry trends. Level up your career!",
   keywords: [
@@ -18,7 +19,8 @@ export const metadata = {
   ],
   openGraph: {
     title: "HiredUp.me Career Blog - Expert Job Search Advice",
-    description: "Tips, guides and insights to accelerate your career in Bangladesh",
+    description:
+      "Tips, guides and insights to accelerate your career in Bangladesh",
     url: "https://hiredup.me/blog",
   },
   alternates: {

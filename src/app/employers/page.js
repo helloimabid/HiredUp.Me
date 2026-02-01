@@ -16,7 +16,8 @@ export const metadata = {
   ],
   openGraph: {
     title: "Hire Top Talent in Bangladesh | HiredUp.me",
-    description: "Build your dream team with verified candidates from Bangladesh",
+    description:
+      "Build your dream team with verified candidates from Bangladesh",
     url: "https://hiredup.me/employers",
   },
   alternates: {

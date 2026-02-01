@@ -15,7 +15,8 @@ export const metadata = {
   ],
   openGraph: {
     title: "Real Success Stories from HiredUp.me Users",
-    description: "Inspiring career transformations from Bangladesh professionals",
+    description:
+      "Inspiring career transformations from Bangladesh professionals",
     url: "https://hiredup.me/success-stories",
   },
   alternates: {

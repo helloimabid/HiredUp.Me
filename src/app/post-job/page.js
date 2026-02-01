@@ -15,7 +15,8 @@ export const metadata = {
   ],
   openGraph: {
     title: "Post a Job & Hire Top Talent | HiredUp.me",
-    description: "Reach qualified candidates in Bangladesh with your job listing",
+    description:
+      "Reach qualified candidates in Bangladesh with your job listing",
     url: "https://hiredup.me/post-job",
   },
   alternates: {

@@ -14,7 +14,8 @@ export const revalidate = 60;
 
 // ============ HOMEPAGE SEO METADATA ============
 export const metadata = {
-  title: "HiredUp.me - Find Jobs in Bangladesh & Remote Worldwide | #1 Job Portal",
+  title:
+    "HiredUp.me - Find Jobs in Bangladesh & Remote Worldwide | #1 Job Portal",
   description:
     "Bangladesh's leading job portal with 10,000+ opportunities in Dhaka, Chittagong, Sylhet & remote positions worldwide. Free job search for developers, designers, marketers & more. Get hired up today!",
   keywords: [
@@ -120,7 +121,8 @@ export default async function Home() {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: "Latest Job Listings on HiredUp.me",
-    description: "Browse the latest job opportunities in Bangladesh and remote worldwide",
+    description:
+      "Browse the latest job opportunities in Bangladesh and remote worldwide",
     numberOfItems: jobs.length,
     itemListElement: jobs.slice(0, 10).map((job, index) => ({
       "@type": "ListItem",
@@ -128,7 +130,8 @@ export default async function Home() {
       item: {
         "@type": "JobPosting",
         title: job.title,
-        description: job.description || `${job.title} position at ${job.company}`,
+        description:
+          job.description || `${job.title} position at ${job.company}`,
         datePosted: job.$createdAt,
         hiringOrganization: {
           "@type": "Organization",
@@ -178,18 +181,21 @@ export default async function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
-      
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-38NRXYJ3JQ"/>
-  <script
-    dangerouslySetInnerHTML={{
-      __html: `
+
+      <script
+        async
+        src="https://www.googletagmanager.com/gtag/js?id=G-38NRXYJ3JQ"
+      />
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
         gtag('config', 'G-38NRXYJ3JQ');
       `,
-    }}
-  />
+        }}
+      />
       <Header />
       <main>
         <HeroSection />

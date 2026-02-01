@@ -6,7 +6,8 @@ import { getJobs } from "@/lib/appwrite";
 export const revalidate = 60;
 
 export const metadata = {
-  title: "Top Companies Hiring in Bangladesh | Employers Directory | HiredUp.me",
+  title:
+    "Top Companies Hiring in Bangladesh | Employers Directory | HiredUp.me",
   description:
     "Discover 500+ top companies hiring in Bangladesh - tech startups, banks, NGOs, multinationals. View company profiles, open positions & employee reviews. Find your dream employer!",
   keywords: [
@@ -19,7 +20,8 @@ export const metadata = {
   ],
   openGraph: {
     title: "Browse Top Companies Hiring in Bangladesh",
-    description: "Discover employers with open positions and find your dream company",
+    description:
+      "Discover employers with open positions and find your dream company",
     url: "https://hiredup.me/companies",
   },
   alternates: {
