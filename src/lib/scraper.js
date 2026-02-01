@@ -3,10 +3,12 @@ import crypto from "crypto";
 
 // External scraper service URL (deployed on Railway/Render/Fly.io)
 const SCRAPER_SERVICE_URL = process.env.SCRAPER_SERVICE_URL || null;
-const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || "hiredup-scraper-key-2024";
+const SCRAPER_API_KEY =
+  process.env.SCRAPER_API_KEY || "hiredup-scraper-key-2024";
 
 // Check if we're in production (Vercel)
-const isProduction = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
+const isProduction =
+  process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
 
 /**
  * Check if location is "Remote"
@@ -837,7 +839,9 @@ export async function scrapeJobsByQuery(
       }
     } else if (jobs.length < 10 && isProduction && !SCRAPER_SERVICE_URL) {
       // Production without external service - use fallback
-      console.log("[Production] No external scraper configured, using fallbacks...");
+      console.log(
+        "[Production] No external scraper configured, using fallbacks...",
+      );
     }
   } catch (error) {
     console.error("Scraping error:", error.message);
