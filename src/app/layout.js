@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import { AuthProvider } from "@/context/AuthContext";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,6 +39,7 @@ export default function RootLayout({ children }) {
         className={`${inter.variable} font-sans bg-gray-50 text-slate-600 antialiased`}
       >
         <AuthProvider>{children}</AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
