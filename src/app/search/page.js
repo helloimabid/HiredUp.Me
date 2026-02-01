@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -36,7 +36,32 @@ const locations = [
   "Worldwide",
 ];
 
-export default function SearchJobsPage() {
+// Loading fallback for Suspense
+function SearchLoading() {
+  return (
+    <>
+      <Header />
+      <main className="min-h-screen bg-gray-50">
+        <section className="bg-gradient-to-b from-indigo-50 to-white py-16">
+          <div className="max-w-4xl mx-auto px-4 text-center">
+            <div className="animate-pulse">
+              <div className="h-10 bg-slate-200 rounded w-64 mx-auto mb-4"></div>
+              <div className="h-6 bg-slate-200 rounded w-96 mx-auto mb-8"></div>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-6">
+                <div className="h-12 bg-slate-200 rounded mb-4"></div>
+                <div className="h-12 bg-slate-200 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </>
+  );
+}
+
+// Main search component that uses useSearchParams
+function SearchContent() {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState("Remote");
@@ -357,5 +382,14 @@ export default function SearchJobsPage() {
       </main>
       <Footer />
     </>
+  );
+}
+
+// Export default with Suspense wrapper
+export default function SearchJobsPage() {
+  return (
+    <Suspense fallback={<SearchLoading />}>
+      <SearchContent />
+    </Suspense>
   );
 }
