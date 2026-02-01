@@ -181,14 +181,14 @@ async function scrapeIndeed(browser, query, location) {
     // Determine Indeed domain based on location
     let domain = "www.indeed.com";
     if (location.toLowerCase().includes("bangladesh")) {
-      domain = "bd.indeed.com";
+      domain = "indeed.com";
     } else if (location.toLowerCase().includes("india")) {
-      domain = "in.indeed.com";
+      domain = "indeed.com";
     } else if (
       location.toLowerCase().includes("uk") ||
       location.toLowerCase().includes("united kingdom")
     ) {
-      domain = "uk.indeed.com";
+      domain = "indeed.com";
     }
 
     const url = `https://${domain}/jobs?q=${encodedQuery}&l=${encodedLocation}`;
@@ -681,7 +681,7 @@ function generateFallbackJobs(query, location) {
       },
       {
         name: "Indeed BD",
-        url: `https://bd.indeed.com/jobs?q=${encodedQuery}`,
+        url: `https://indeed.com/jobs?q=${encodedQuery}`,
       },
       {
         name: "Chakri.com",
