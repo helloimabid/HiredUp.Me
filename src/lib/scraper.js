@@ -765,7 +765,7 @@ export async function scrapeJobsByQuery(
   try {
     // Use external scraper service if configured (works in any environment)
     if (SCRAPER_SERVICE_URL) {
-      const baseUrl = SCRAPER_SERVICE_URL.replace(/\/+$/, ''); // Remove trailing slashes
+      const baseUrl = SCRAPER_SERVICE_URL.replace(/\/+$/, ""); // Remove trailing slashes
       console.log(`[External Service] Calling ${baseUrl}/scrape...`);
       try {
         const response = await fetch(`${baseUrl}/scrape`, {
@@ -782,7 +782,11 @@ export async function scrapeJobsByQuery(
           jobs = data.jobs || [];
           console.log(`External scraper returned ${jobs.length} jobs`);
         } else {
-          console.error("External scraper failed:", response.status, await response.text());
+          console.error(
+            "External scraper failed:",
+            response.status,
+            await response.text(),
+          );
         }
       } catch (err) {
         console.error("External scraper error:", err.message);
