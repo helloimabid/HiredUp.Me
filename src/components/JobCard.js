@@ -54,11 +54,19 @@ export default function JobCard({ job, index = 0 }) {
   const badge = jobTypeBadge[jobType] || jobTypeBadge["full-time"];
   const initial = job.company?.charAt(0)?.toUpperCase() || "?";
 
+  // Use slug URL if available, fallback to ID, then external URL
+  const href = job.slug
+    ? `/jobs/${job.slug}`
+    : job.$id
+      ? `/jobs/${job.$id}`
+      : job.apply_url || "#";
+  const isExternal = !job.slug && !job.$id;
+
   return (
     <Link
-      href={job.apply_url || "#"}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={href}
+      target={isExternal ? "_blank" : undefined}
+      rel={isExternal ? "noopener noreferrer" : undefined}
       className="group block p-5 rounded-xl border border-slate-200 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5 transition-all bg-white"
     >
       <div className="flex justify-between items-start mb-4">

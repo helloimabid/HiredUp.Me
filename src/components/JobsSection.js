@@ -5,6 +5,7 @@ import JobCard from "./JobCard";
 const sampleLocalJobs = [
   {
     $id: "sample-1",
+    slug: "product-designer-at-pathao-sample1",
     title: "Product Designer",
     company: "Pathao",
     location: "Gulshan, Dhaka",
@@ -13,6 +14,7 @@ const sampleLocalJobs = [
   },
   {
     $id: "sample-2",
+    slug: "frontend-developer-at-shopup-sample2",
     title: "Frontend Developer",
     company: "ShopUp",
     location: "Banani, Dhaka (Hybrid)",
@@ -21,6 +23,7 @@ const sampleLocalJobs = [
   },
   {
     $id: "sample-3",
+    slug: "content-writer-at-brain-station-sample3",
     title: "Content Writer",
     company: "Brain Station",
     location: "Remote (BD)",
@@ -29,6 +32,7 @@ const sampleLocalJobs = [
   },
   {
     $id: "sample-4",
+    slug: "marketing-manager-at-ten-minute-sample4",
     title: "Marketing Manager",
     company: "Ten Minute",
     location: "Mirpur, Dhaka",
@@ -40,6 +44,7 @@ const sampleLocalJobs = [
 const sampleRemoteJobs = [
   {
     $id: "sample-5",
+    slug: "senior-react-engineer-at-vercel-sample5",
     title: "Senior React Engineer",
     company: "Vercel",
     location: "San Francisco, USA (Remote)",
@@ -48,6 +53,7 @@ const sampleRemoteJobs = [
   },
   {
     $id: "sample-6",
+    slug: "payment-integrator-at-stripe-sample6",
     title: "Payment Integrator",
     company: "Stripe",
     location: "Dublin, Ireland (Remote)",
@@ -56,6 +62,7 @@ const sampleRemoteJobs = [
   },
   {
     $id: "sample-7",
+    slug: "visual-designer-at-dribbble-sample7",
     title: "Visual Designer",
     company: "Dribbble",
     location: "Vancouver, CA (Remote)",
@@ -64,6 +71,7 @@ const sampleRemoteJobs = [
   },
   {
     $id: "sample-8",
+    slug: "seo-specialist-at-lemonade-sample8",
     title: "SEO Specialist",
     company: "Lemonade",
     location: "Berlin, DE (Remote)",

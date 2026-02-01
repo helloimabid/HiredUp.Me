@@ -20,6 +20,11 @@ export const SAVED_JOBS_COLLECTION_ID = "saved_jobs";
 export const APPLICATIONS_COLLECTION_ID = "applications";
 export const COMPANIES_COLLECTION_ID = "companies";
 export const NOTIFICATIONS_COLLECTION_ID = "notifications";
+export const SEARCH_USAGE_COLLECTION_ID = "search_usage";
+
+// Search limits
+export const FREE_SEARCH_LIMIT = 2; // Free users get 2 searches per day
+export const PREMIUM_SEARCH_LIMIT = 100; // Premium users get 100 searches per day
 
 /**
  * Fetch all jobs from Appwrite
@@ -56,14 +61,67 @@ export async function jobExists(sourceId) {
 }
 
 /**
- * Create a new job document
+ * Fetch a single job by ID
+ */
+export async function getJobById(jobId) {
+  try {
+    const document = await databases.getDocument(
+      DATABASE_ID,
+      JOBS_COLLECTION_ID,
+      jobId,
+    );
+    return document;
+  } catch (error) {
+    console.error("Error fetching job by ID:", error);
+    return null;
+  }
+}
+
+/**
+ * Fetch a single job by slug
+ */
+export async function getJobBySlug(slug) {
+  try {
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      JOBS_COLLECTION_ID,
+      [Query.equal("slug", slug), Query.limit(1)],
+    );
+    return response.documents[0] || null;
+  } catch (error) {
+    console.error("Error fetching job by slug:", error);
+    return null;
+  }
+}
+
+/**
+ * Generate a URL-friendly slug from job title and company
+ */
+export function generateJobSlug(title, company, id) {
+  const text = `${title}-at-${company}`;
+  const slug = text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .substring(0, 80);
+  const shortId = id.substring(0, 6);
+  return `${slug}-${shortId}`;
+}
+
+/**
+ * Create a new job document with auto-generated slug
  */
 export async function createJob(jobData) {
   try {
+    // Generate a temporary ID for slug generation
+    const tempId = ID.unique();
+    const slug = generateJobSlug(jobData.title, jobData.company, tempId);
+
     const document = await databases.createDocument(
       DATABASE_ID,
       JOBS_COLLECTION_ID,
-      ID.unique(),
+      tempId,
       {
         title: jobData.title,
         company: jobData.company,
@@ -71,6 +129,7 @@ export async function createJob(jobData) {
         apply_url: jobData.apply_url,
         description: jobData.description || "",
         source_id: jobData.source_id,
+        slug: slug,
       },
     );
     return document;
@@ -325,5 +384,134 @@ export async function markNotificationRead(notificationId) {
   } catch (error) {
     console.error("Error marking notification read:", error);
     throw error;
+  }
+}
+
+// ==================== SEARCH USAGE TRACKING ====================
+
+/**
+ * Get today's date string (YYYY-MM-DD)
+ */
+function getTodayDateString() {
+  return new Date().toISOString().split("T")[0];
+}
+
+/**
+ * Get user's search usage for today
+ */
+export async function getUserSearchUsage(userId) {
+  try {
+    const today = getTodayDateString();
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      SEARCH_USAGE_COLLECTION_ID,
+      [Query.equal("userId", userId), Query.equal("date", today)],
+    );
+
+    if (response.total > 0) {
+      return response.documents[0];
+    }
+    return null;
+  } catch (error) {
+    // Collection might not exist yet
+    console.error("Error fetching search usage:", error);
+    return null;
+  }
+}
+
+/**
+ * Check if user can search (based on their subscription)
+ */
+export async function canUserSearch(userId, isPremium = false) {
+  try {
+    const usage = await getUserSearchUsage(userId);
+    const limit = isPremium ? PREMIUM_SEARCH_LIMIT : FREE_SEARCH_LIMIT;
+
+    if (!usage) {
+      return { canSearch: true, searchesUsed: 0, searchesRemaining: limit };
+    }
+
+    const searchesUsed = usage.count || 0;
+    const canSearch = searchesUsed < limit;
+
+    return {
+      canSearch,
+      searchesUsed,
+      searchesRemaining: Math.max(0, limit - searchesUsed),
+      limit,
+    };
+  } catch (error) {
+    console.error("Error checking search eligibility:", error);
+    // Allow search on error to not block users
+    return {
+      canSearch: true,
+      searchesUsed: 0,
+      searchesRemaining: FREE_SEARCH_LIMIT,
+    };
+  }
+}
+
+/**
+ * Increment user's search count for today
+ */
+export async function incrementSearchUsage(userId) {
+  try {
+    const today = getTodayDateString();
+    const usage = await getUserSearchUsage(userId);
+
+    if (usage) {
+      // Update existing record
+      return await databases.updateDocument(
+        DATABASE_ID,
+        SEARCH_USAGE_COLLECTION_ID,
+        usage.$id,
+        { count: (usage.count || 0) + 1 },
+      );
+    } else {
+      // Create new record for today
+      // Use a deterministic ID based on userId + date to avoid race conditions
+      const docId = `${userId}_${today}`.replace(/-/g, "");
+      try {
+        return await databases.createDocument(
+          DATABASE_ID,
+          SEARCH_USAGE_COLLECTION_ID,
+          docId,
+          {
+            userId,
+            date: today,
+            count: 1,
+          },
+        );
+      } catch (createError) {
+        // If document already exists (race condition), update it instead
+        if (createError.code === 409) {
+          const existingUsage = await getUserSearchUsage(userId);
+          if (existingUsage) {
+            return await databases.updateDocument(
+              DATABASE_ID,
+              SEARCH_USAGE_COLLECTION_ID,
+              existingUsage.$id,
+              { count: (existingUsage.count || 0) + 1 },
+            );
+          }
+        }
+        throw createError;
+      }
+    }
+  } catch (error) {
+    console.error("Error incrementing search usage:", error);
+    // Don't throw - allow the search to proceed
+  }
+}
+
+/**
+ * Check if user has premium subscription
+ */
+export async function isUserPremium(userId) {
+  try {
+    const profile = await getProfile(userId);
+    return profile?.isPremium === true;
+  } catch (error) {
+    return false;
   }
 }

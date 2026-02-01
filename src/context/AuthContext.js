@@ -31,11 +31,41 @@ export function AuthProvider({ children }) {
     try {
       const currentUser = await getCurrentUser();
       setUser(currentUser);
+
+      // Ensure profile exists for the user
+      if (currentUser) {
+        ensureProfileExists(currentUser);
+      }
     } catch (error) {
       // Silently handle - user not logged in
       setUser(null);
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Helper to ensure profile document exists
+  async function ensureProfileExists(currentUser) {
+    try {
+      const response = await fetch(`/api/profile?userId=${currentUser.$id}`);
+      if (response.status === 404) {
+        // Profile doesn't exist, create it
+        await fetch("/api/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: currentUser.$id,
+            name: currentUser.name || "User",
+            email: currentUser.email,
+            userType: currentUser.prefs?.userType || "jobseeker",
+            isPublic: true,
+            isPremium: false,
+          }),
+        });
+        console.log("Profile created for existing user");
+      }
+    } catch (error) {
+      console.error("Error ensuring profile exists:", error);
     }
   }
 
@@ -59,6 +89,28 @@ export function AuthProvider({ children }) {
       // Set user type in preferences
       await updateUserPrefs({ userType });
       const currentUser = await getCurrentUser();
+
+      // Create profile document in the database
+      if (currentUser) {
+        try {
+          await fetch("/api/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: currentUser.$id,
+              name: name,
+              email: email,
+              userType: userType,
+              isPublic: true,
+              isPremium: false,
+            }),
+          });
+        } catch (profileError) {
+          console.error("Failed to create profile:", profileError);
+          // Don't fail registration if profile creation fails
+        }
+      }
+
       setUser(currentUser);
       return { success: true };
     } catch (error) {
