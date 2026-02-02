@@ -16,7 +16,8 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 // Gemini API configuration (backup)
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyBSEI8zDAuPvzbmeSERnjzxsdKMTOKvfb0";
+const GEMINI_API_KEY =
+  process.env.GEMINI_API_KEY || "AIzaSyBSEI8zDAuPvzbmeSERnjzxsdKMTOKvfb0";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "hiredup";
@@ -227,9 +228,9 @@ IMPORTANT: Use the SCRAPED SOURCE CONTENT as the primary source. Extract exact t
 
   // Helper function to call Gemini API
   async function callGeminiAPI() {
-    console.log("🔄 Trying Gemini API as backup...");
+    console.log("🔄 Trying Gemini API...");
     const geminiResponse = await fetch(
-      `${GEMINI_BASE_URL}/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `${GEMINI_BASE_URL}/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -244,7 +245,7 @@ IMPORTANT: Use the SCRAPED SOURCE CONTENT as the primary source. Extract exact t
             maxOutputTokens: 6000,
           },
         }),
-      }
+      },
     );
 
     if (!geminiResponse.ok) {
@@ -269,7 +270,7 @@ IMPORTANT: Use the SCRAPED SOURCE CONTENT as the primary source. Extract exact t
         "X-Title": "HiredUp.me Job Enhancement",
       },
       body: JSON.stringify({
-        model: "tngtech/deepseek-r1t2-chimera:free",
+        model: "meta-llama/llama-3.3-70b-instruct:free",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -290,12 +291,12 @@ IMPORTANT: Use the SCRAPED SOURCE CONTENT as the primary source. Extract exact t
   }
 
   try {
-    // Try OpenRouter first, then fall back to Gemini
-    let content = await callOpenRouterAPI();
-    
+    // Try Gemini first (free), then fall back to OpenRouter
+    let content = await callGeminiAPI();
+
     if (!content) {
-      console.log("OpenRouter failed, trying Gemini backup...");
-      content = await callGeminiAPI();
+      console.log("Gemini failed, trying OpenRouter backup...");
+      content = await callOpenRouterAPI();
     }
 
     if (!content) {
