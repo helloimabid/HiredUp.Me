@@ -46,3 +46,5 @@ next-env.d.ts
 /scraper-service
 /.env
 /.env.local
+/appwrite-functions
+/job-generator-service

@@ -54,10 +54,7 @@ export async function getAllJobs() {
     const batchSize = 100; // Appwrite max limit per request
 
     while (true) {
-      const queries = [
-        Query.orderDesc("$createdAt"),
-        Query.limit(batchSize),
-      ];
+      const queries = [Query.orderDesc("$createdAt"), Query.limit(batchSize)];
 
       // Use cursor-based pagination for efficiency
       if (lastId) {
