@@ -15,6 +15,10 @@ const databases = new Databases(client);
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
+// Gemini API configuration (backup)
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyBSEI8zDAuPvzbmeSERnjzxsdKMTOKvfb0";
+const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
+
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "hiredup";
 const JOBS_COLLECTION_ID = process.env.APPWRITE_JOBS_COLLECTION_ID || "jobs";
 
@@ -221,7 +225,41 @@ ${scrapedData?.url || job.apply_url || "Not available"}
 
 IMPORTANT: Use the SCRAPED SOURCE CONTENT as the primary source. Extract exact text, locations, requirements, and all details. Output valid JSON only.`;
 
-  try {
+  // Helper function to call Gemini API
+  async function callGeminiAPI() {
+    console.log("🔄 Trying Gemini API as backup...");
+    const geminiResponse = await fetch(
+      `${GEMINI_BASE_URL}/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 6000,
+          },
+        }),
+      }
+    );
+
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
+      console.error("Gemini error:", errorText);
+      return null;
+    }
+
+    const geminiData = await geminiResponse.json();
+    return geminiData.candidates?.[0]?.content?.parts?.[0]?.text || null;
+  }
+
+  // Helper function to call OpenRouter API
+  async function callOpenRouterAPI() {
+    console.log("🤖 Trying OpenRouter API...");
     const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
       method: "POST",
       headers: {
@@ -236,7 +274,7 @@ IMPORTANT: Use the SCRAPED SOURCE CONTENT as the primary source. Extract exact t
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        temperature: 0.2, // Very low for accurate extraction
+        temperature: 0.2,
         max_tokens: 6000,
       }),
     });
@@ -248,7 +286,22 @@ IMPORTANT: Use the SCRAPED SOURCE CONTENT as the primary source. Extract exact t
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
+    return data.choices?.[0]?.message?.content || null;
+  }
+
+  try {
+    // Try OpenRouter first, then fall back to Gemini
+    let content = await callOpenRouterAPI();
+    
+    if (!content) {
+      console.log("OpenRouter failed, trying Gemini backup...");
+      content = await callGeminiAPI();
+    }
+
+    if (!content) {
+      console.error("Both APIs failed");
+      return null;
+    }
 
     // Parse JSON from response
     let jsonContent = content;
