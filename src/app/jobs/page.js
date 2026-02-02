@@ -186,7 +186,9 @@ export default async function JobsPage({ searchParams }) {
 
                 {/* Job Items */}
                 {paginatedJobs.map((job) => {
-                  const href = job.slug ? `/jobs/${job.slug}` : `/jobs/${job.$id}`;
+                  const href = job.slug
+                    ? `/jobs/${job.slug}`
+                    : `/jobs/${job.$id}`;
                   const logoUrl = getLogoUrl(job);
 
                   return (
@@ -215,7 +217,9 @@ export default async function JobsPage({ searchParams }) {
                           <span className="text-slate-300 dark:text-slate-600">
                             •
                           </span>
-                          <span>{job.location || "Location not specified"}</span>
+                          <span>
+                            {job.location || "Location not specified"}
+                          </span>
                         </p>
                       </div>
 
