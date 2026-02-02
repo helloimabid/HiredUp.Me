@@ -65,58 +65,6 @@ function getCompanyLogoColor(company) {
   return colors[index];
 }
 
-// Helper: Get company logo URL from various sources
-function getCompanyLogoUrl(company, applyUrl) {
-  if (!company) return null;
-
-  // Try to extract domain from apply URL first
-  let domain = null;
-  if (applyUrl) {
-    try {
-      const url = new URL(applyUrl);
-      domain = url.hostname.replace("www.", "");
-    } catch {
-      // Invalid URL, ignore
-    }
-  }
-
-  // If no domain from URL, try to guess from company name
-  if (!domain) {
-    const companySlug = company
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "")
-      .trim();
-
-    // Common company domain patterns
-    const commonDomains = {
-      google: "google.com",
-      facebook: "facebook.com",
-      meta: "meta.com",
-      amazon: "amazon.com",
-      microsoft: "microsoft.com",
-      apple: "apple.com",
-      netflix: "netflix.com",
-      spotify: "spotify.com",
-      uber: "uber.com",
-      airbnb: "airbnb.com",
-      linkedin: "linkedin.com",
-      twitter: "twitter.com",
-      shikho: "shikho.com",
-      bdjobs: "bdjobs.com",
-      grameenphone: "grameenphone.com",
-      robi: "robi.com.bd",
-      banglalink: "banglalink.net",
-      brac: "brac.net",
-      walton: "waltonbd.com",
-    };
-
-    domain = commonDomains[companySlug] || `${companySlug}.com`;
-  }
-
-  // Return Clearbit Logo API URL (free, high quality)
-  return `https://logo.clearbit.com/${domain}`;
-}
-
 // Parse enhanced JSON content
 function parseEnhancedContent(job) {
   if (!job.enhanced_json) return null;
@@ -401,9 +349,8 @@ export default async function JobDetailPage({ params }) {
   const company = cleanText(header.company);
   const logoColor = getCompanyLogoColor(company);
 
-  // Priority: 1. Scraped logo from AI content, 2. Clearbit fallback
-  const logoUrl =
-    enhanced?.company_logo_url || getCompanyLogoUrl(company, job.apply_url);
+  // Only use scraped logo from AI content (no external API fallback)
+  const logoUrl = enhanced?.company_logo_url || null;
   const timeAgo = getTimeAgo(job.$createdAt);
 
   // Quick info items (for overview cards)

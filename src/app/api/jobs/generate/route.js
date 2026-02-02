@@ -17,7 +17,7 @@ const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 // Gemini API configuration (backup)
 const GEMINI_API_KEY =
-  process.env.GEMINI_API_KEY || "AIzaSyBSEI8zDAuPvzbmeSERnjzxsdKMTOKvfb0";
+  process.env.GEMINI_API_KEY ;
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "hiredup";
