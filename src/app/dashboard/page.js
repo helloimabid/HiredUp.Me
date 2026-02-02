@@ -113,10 +113,10 @@ function DashboardContent() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Welcome Section */}
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-slate-900">
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
           Welcome back, {user?.name?.split(" ")[0] || "there"}! 👋
         </h1>
-        <p className="text-slate-500 mt-1">
+        <p className="text-slate-500 dark:text-slate-400 mt-1">
           {userType === "employer"
             ? "Manage your job postings and find great talent."
             : "Track your applications and find your next opportunity."}
@@ -128,24 +128,26 @@ function DashboardContent() {
         {stats.map((stat, index) => (
           <div
             key={index}
-            className="bg-white rounded-xl border border-slate-200 p-5"
+            className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5"
           >
             <div
               className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center mb-3`}
             >
               <iconify-icon icon={stat.icon} width="20"></iconify-icon>
             </div>
-            <p className="text-2xl font-semibold text-slate-900">
+            <p className="text-2xl font-semibold text-slate-900 dark:text-white">
               {stat.value}
             </p>
-            <p className="text-sm text-slate-500">{stat.label}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {stat.label}
+            </p>
           </div>
         ))}
       </div>
 
       {/* Quick Actions */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
           Quick Actions
         </h2>
         <div className="flex flex-wrap gap-3">
@@ -164,19 +166,21 @@ function DashboardContent() {
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Recent Activity */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
             Recent Activity
           </h2>
           <div className="text-center py-8">
-            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3">
               <iconify-icon
                 icon="solar:clock-circle-linear"
                 class="text-slate-400 text-2xl"
               ></iconify-icon>
             </div>
-            <p className="text-slate-500 text-sm">No recent activity</p>
-            <p className="text-slate-400 text-xs mt-1">
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
+              No recent activity
+            </p>
+            <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">
               {userType === "employer"
                 ? "Post a job to get started"
                 : "Start applying to jobs to see your activity here"}
@@ -185,17 +189,21 @@ function DashboardContent() {
         </div>
 
         {/* Profile Completion / Job Recommendations */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
             {userType === "employer" ? "Company Profile" : "Profile Completion"}
           </h2>
           <div className="space-y-4">
             <div>
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-slate-600">Profile strength</span>
-                <span className="text-slate-900 font-medium">25%</span>
+                <span className="text-slate-600 dark:text-slate-400">
+                  Profile strength
+                </span>
+                <span className="text-slate-900 dark:text-white font-medium">
+                  25%
+                </span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-2">
+              <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2">
                 <div
                   className="bg-indigo-600 h-2 rounded-full"
                   style={{ width: "25%" }}
@@ -203,10 +211,10 @@ function DashboardContent() {
               </div>
             </div>
             <div className="space-y-2">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
                 Complete your profile to:
               </p>
-              <ul className="text-sm text-slate-500 space-y-1">
+              <ul className="text-sm text-slate-500 dark:text-slate-400 space-y-1">
                 <li className="flex items-center gap-2">
                   <iconify-icon
                     icon="solar:check-circle-linear"
@@ -260,7 +268,7 @@ export default function DashboardPage() {
   return (
     <ProtectedRoute>
       <Header />
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gray-50 dark:bg-slate-900">
         <DashboardContent />
       </main>
       <Footer />

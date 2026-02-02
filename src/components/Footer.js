@@ -6,7 +6,7 @@ export default function Footer() {
 
   return (
     <footer
-      className="bg-white border-t border-slate-100 pt-16 pb-8"
+      className="bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 pt-16 pb-8"
       role="contentinfo"
       aria-label="Site footer"
       itemScope
@@ -23,35 +23,37 @@ export default function Footer() {
                   alt="HiredUp.me - Jobs in Bangladesh"
                   width={120}
                   height={32}
-                  className="h-6 w-auto"
+                  className="h-6 w-auto dark:brightness-200"
                 />
               </Link>
             </div>
-            <p className="text-sm text-slate-500 max-w-xs leading-relaxed">
+            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed">
               Bangladesh&apos;s leading job portal connecting talented
               professionals with top employers worldwide.
             </p>
             {/* SEO: Popular Job Searches */}
             <div className="mt-4">
-              <p className="text-xs text-slate-400 mb-2">Popular Searches:</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">
+                Popular Searches:
+              </p>
               <div className="flex flex-wrap gap-2 text-xs">
                 <Link
                   href="/search?q=software+developer"
-                  className="text-slate-500 hover:text-indigo-600"
+                  className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
                 >
                   Software Developer
                 </Link>
-                <span className="text-slate-300">•</span>
+                <span className="text-slate-300 dark:text-slate-600">•</span>
                 <Link
                   href="/search?q=remote"
-                  className="text-slate-500 hover:text-indigo-600"
+                  className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
                 >
                   Remote Jobs
                 </Link>
-                <span className="text-slate-300">•</span>
+                <span className="text-slate-300 dark:text-slate-600">•</span>
                 <Link
                   href="/search?q=dhaka"
-                  className="text-slate-500 hover:text-indigo-600"
+                  className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
                 >
                   Dhaka Jobs
                 </Link>
@@ -61,14 +63,14 @@ export default function Footer() {
 
           {/* Job Seekers */}
           <nav aria-label="Job seeker links">
-            <h4 className="font-semibold text-slate-900 mb-4 text-sm">
+            <h4 className="font-semibold text-slate-900 dark:text-white mb-4 text-sm">
               For Job Seekers
             </h4>
-            <ul className="space-y-3 text-sm text-slate-500">
+            <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
               <li>
                 <Link
                   href="/jobs"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   Browse Jobs
                 </Link>
@@ -76,7 +78,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/companies"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   Browse Companies
                 </Link>
@@ -84,7 +86,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/salary-estimator"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   Salary Estimator
                 </Link>
@@ -92,7 +94,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/success-stories"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   Success Stories
                 </Link>
@@ -100,7 +102,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/blog"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   Career Blog
                 </Link>
@@ -110,14 +112,14 @@ export default function Footer() {
 
           {/* Employers */}
           <nav aria-label="Employer links">
-            <h4 className="font-semibold text-slate-900 mb-4 text-sm">
+            <h4 className="font-semibold text-slate-900 dark:text-white mb-4 text-sm">
               For Employers
             </h4>
-            <ul className="space-y-3 text-sm text-slate-500">
+            <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
               <li>
                 <Link
                   href="/post-job"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   Post a Job
                 </Link>
@@ -125,7 +127,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/talent-search"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   Talent Search
                 </Link>
@@ -133,7 +135,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/pricing"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   Pricing
                 </Link>
@@ -141,7 +143,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/resources"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   Resources
                 </Link>
@@ -151,12 +153,14 @@ export default function Footer() {
 
           {/* Legal */}
           <nav aria-label="Legal links">
-            <h4 className="font-semibold text-slate-900 mb-4 text-sm">Legal</h4>
-            <ul className="space-y-3 text-sm text-slate-500">
+            <h4 className="font-semibold text-slate-900 dark:text-white mb-4 text-sm">
+              Legal
+            </h4>
+            <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
               <li>
                 <Link
                   href="/privacy"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   Privacy Policy
                 </Link>
@@ -164,7 +168,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/terms"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   Terms of Service
                 </Link>
@@ -172,7 +176,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/cookies"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   Cookie Policy
                 </Link>
@@ -180,7 +184,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/contact"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   Contact Us
                 </Link>
@@ -190,20 +194,20 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-slate-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-xs text-slate-400">
+        <div className="border-t border-slate-100 dark:border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="text-xs text-slate-400 dark:text-slate-500">
             © {currentYear} HiredUp.me. All rights reserved. Made with ❤️ in
             Bangladesh.
           </div>
           <div
-            className="flex gap-4 text-slate-400"
+            className="flex gap-4 text-slate-400 dark:text-slate-500"
             aria-label="Social media links"
           >
             <a
               href="https://instagram.com/hiredup"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-slate-900 transition-colors"
+              className="hover:text-slate-900 dark:hover:text-white transition-colors"
               aria-label="Follow us on Instagram"
             >
               <iconify-icon
@@ -215,7 +219,7 @@ export default function Footer() {
               href="https://twitter.com/haborymesadman"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-slate-900 transition-colors"
+              className="hover:text-slate-900 dark:hover:text-white transition-colors"
               aria-label="Follow us on Twitter"
             >
               <iconify-icon
@@ -228,7 +232,7 @@ export default function Footer() {
               href="https://linkedin.com/company/hiredup"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-slate-900 transition-colors"
+              className="hover:text-slate-900 dark:hover:text-white transition-colors"
               aria-label="Follow us on LinkedIn"
             >
               <iconify-icon

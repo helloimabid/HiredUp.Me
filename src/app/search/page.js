@@ -240,19 +240,60 @@ function SearchContent() {
     checkUsage();
   }, [user]);
 
-  // Auto-search if URL has query params
+  // Auto-search if URL has query params - search DATABASE first (no scraping)
   useEffect(() => {
     const q = searchParams.get("q");
     const loc = searchParams.get("loc");
 
-    if (q && searchUsage?.canSearch) {
+    if (q) {
       setQuery(q);
       if (loc) setLocation(loc);
-      handleSearch(q, loc || "Remote");
+      // Search database first (free, no scraping)
+      handleDatabaseSearch(q, loc || "Remote");
     }
-  }, [searchParams, searchUsage]);
+  }, [searchParams]);
 
-  const handleSearch = async (
+  // Search existing jobs in database (FREE - no usage counted)
+  const handleDatabaseSearch = async (
+    searchQuery = query,
+    searchLocation = location,
+  ) => {
+    if (!searchQuery.trim()) {
+      setError("Please enter a job type to search");
+      return;
+    }
+
+    if (searchInProgressRef.current || loading) {
+      return;
+    }
+
+    searchInProgressRef.current = true;
+    setLoading(true);
+    setError("");
+    setResults(null);
+
+    try {
+      const response = await fetch(
+        `/api/jobs/search?q=${encodeURIComponent(searchQuery)}&location=${encodeURIComponent(searchLocation)}&limit=50`,
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Search failed");
+      }
+
+      setResults(data);
+    } catch (err) {
+      setError(err.message || "Failed to search for jobs");
+    } finally {
+      setLoading(false);
+      searchInProgressRef.current = false;
+    }
+  };
+
+  // Scrape fresh jobs (USES QUOTA - only when user explicitly requests)
+  const handleScrapeSearch = async (
     searchQuery = query,
     searchLocation = location,
   ) => {
@@ -320,6 +361,9 @@ function SearchContent() {
       searchInProgressRef.current = false;
     }
   };
+
+  // Default search uses database (free)
+  const handleSearch = handleDatabaseSearch;
 
   const handleCategoryClick = (category) => {
     setQuery(category);
@@ -407,12 +451,12 @@ function SearchContent() {
         </div>
 
         {/* Hero Section */}
-        <section className="bg-gradient-to-b from-indigo-50 to-white py-16">
+        <section className="bg-gradient-to-b from-indigo-50 to-white dark:from-slate-800 dark:to-slate-900 py-16">
           <div className="max-w-4xl mx-auto px-4 text-center">
-            <h1 className="text-3xl md:text-4xl font-semibold text-slate-900 mb-4">
+            <h1 className="text-3xl md:text-4xl font-semibold text-slate-900 dark:text-white mb-4">
               AI-Powered Job Search
             </h1>
-            <p className="text-slate-500 mb-8">
+            <p className="text-slate-500 dark:text-slate-400 mb-8">
               Our AI scans 50+ job boards in real-time to find the best
               opportunities for you.
               <br className="hidden md:block" />
@@ -424,10 +468,10 @@ function SearchContent() {
             <SearchUsageInfo />
 
             {/* Search Form */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg p-6">
               <div className="flex flex-col md:flex-row gap-4 mb-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-slate-700 mb-2 text-left">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 text-left">
                     Job Title / Type
                   </label>
                   <input
@@ -435,7 +479,7 @@ function SearchContent() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="e.g., Marketing Manager, Teacher, Nurse..."
-                    className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-400 dark:placeholder-slate-500"
                     disabled={searchUsage && !searchUsage.canSearch}
                     onKeyDown={(e) =>
                       e.key === "Enter" && handleSearch(query, location)
@@ -443,13 +487,13 @@ function SearchContent() {
                   />
                 </div>
                 <div className="md:w-48">
-                  <label className="block text-sm font-medium text-slate-700 mb-2 text-left">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 text-left">
                     Location
                   </label>
                   <select
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     {locations.map((loc) => (
                       <option key={loc} value={loc}>
@@ -460,37 +504,62 @@ function SearchContent() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm text-slate-600">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                   <input
                     type="checkbox"
                     checked={saveToDb}
                     onChange={(e) => setSaveToDb(e.target.checked)}
-                    className="rounded border-slate-300"
+                    className="rounded border-slate-300 dark:border-slate-600"
                   />
-                  Save results to job board
+                  Save new results to job board
                 </label>
-                <button
-                  onClick={() => handleSearch(query, location)}
-                  disabled={loading}
-                  className="px-8 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Searching...
-                    </>
-                  ) : (
-                    <>
-                      <iconify-icon
-                        icon="solar:magnifer-linear"
-                        width="18"
-                      ></iconify-icon>
-                      Search Jobs
-                    </>
-                  )}
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleDatabaseSearch(query, location)}
+                    disabled={loading}
+                    className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Searching...
+                      </>
+                    ) : (
+                      <>
+                        <iconify-icon
+                          icon="solar:magnifer-linear"
+                          width="18"
+                        ></iconify-icon>
+                        Search Jobs
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleScrapeSearch(query, location)}
+                    disabled={
+                      loading || (searchUsage && !searchUsage.canSearch)
+                    }
+                    title={
+                      searchUsage && !searchUsage.canSearch
+                        ? "Daily limit reached"
+                        : "Search across 50+ job boards (uses 1 search credit)"
+                    }
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    <iconify-icon
+                      icon="solar:refresh-bold"
+                      width="18"
+                    ></iconify-icon>
+                    Find Fresh Jobs
+                  </button>
+                </div>
               </div>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-3 text-center">
+                💡 &quot;Search Jobs&quot; searches our database (free).
+                &quot;Find Fresh Jobs&quot; scrapes new listings (uses 1
+                credit).
+              </p>
             </div>
           </div>
         </section>
@@ -499,7 +568,7 @@ function SearchContent() {
         {!results && !loading && (
           <section className="py-12">
             <div className="max-w-6xl mx-auto px-4">
-              <h2 className="text-lg font-semibold text-slate-900 mb-6 text-center">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-6 text-center">
                 Popular Job Categories
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
@@ -507,15 +576,15 @@ function SearchContent() {
                   <button
                     key={category.name}
                     onClick={() => handleCategoryClick(category.name)}
-                    className="group flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all text-left"
+                    className="group flex items-center gap-3 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md transition-all text-left"
                   >
-                    <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+                    <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
                       <iconify-icon
                         icon={category.icon}
                         width="20"
                       ></iconify-icon>
                     </div>
-                    <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                       {category.name}
                     </span>
                   </button>
@@ -541,7 +610,7 @@ function SearchContent() {
                   {Object.entries(jobCategories).map(
                     ([industry, categories]) => (
                       <div key={industry}>
-                        <h3 className="text-md font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <h3 className="text-md font-semibold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
                           <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
                           {industry}
                         </h3>
@@ -550,14 +619,14 @@ function SearchContent() {
                             <button
                               key={category.name}
                               onClick={() => handleCategoryClick(category.name)}
-                              className="group flex items-center gap-2 p-3 bg-white rounded-lg border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all text-left"
+                              className="group flex items-center gap-2 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-all text-left"
                             >
                               <iconify-icon
                                 icon={category.icon}
                                 width="18"
-                                class="text-slate-400 group-hover:text-indigo-600 transition-colors"
+                                class="text-slate-400 dark:text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
                               ></iconify-icon>
-                              <span className="text-sm text-slate-600 group-hover:text-indigo-600 transition-colors truncate">
+                              <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
                                 {category.name}
                               </span>
                             </button>
@@ -591,13 +660,13 @@ function SearchContent() {
         {loading && (
           <section className="py-16">
             <div className="max-w-4xl mx-auto px-4 text-center">
-              <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
               </div>
-              <h3 className="text-lg font-medium text-slate-900 mb-2">
+              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
                 Searching for jobs...
               </h3>
-              <p className="text-slate-500 text-sm">
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
                 Using AI to find the best matches for &quot;{query}&quot;
               </p>
             </div>
@@ -611,15 +680,15 @@ function SearchContent() {
               {/* Results Header */}
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900">
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
                     {results.success
                       ? `Found ${results.totalExtracted} jobs`
                       : "No results"}
                   </h2>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
                     {results.message}
                     {results.method && (
-                      <span className="ml-2 px-2 py-0.5 bg-slate-100 rounded text-xs">
+                      <span className="ml-2 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-xs">
                         via {results.method}
                       </span>
                     )}
@@ -627,7 +696,7 @@ function SearchContent() {
                 </div>
                 <button
                   onClick={() => setResults(null)}
-                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
                 >
                   New Search
                 </button>
@@ -639,17 +708,17 @@ function SearchContent() {
                   {results.jobs.map((job, index) => (
                     <div
                       key={job.$id || index}
-                      className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow"
+                      className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 hover:shadow-lg transition-shadow"
                     >
                       <div className="flex justify-between items-start gap-4">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-slate-900 text-lg mb-1">
+                          <h3 className="font-semibold text-slate-900 dark:text-white text-lg mb-1">
                             {job.title}
                           </h3>
-                          <p className="text-indigo-600 font-medium mb-2">
+                          <p className="text-indigo-600 dark:text-indigo-400 font-medium mb-2">
                             {job.company}
                           </p>
-                          <div className="flex items-center gap-4 text-sm text-slate-500 mb-3">
+                          <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-3">
                             <span className="flex items-center gap-1">
                               <iconify-icon
                                 icon="solar:map-point-linear"
@@ -659,7 +728,7 @@ function SearchContent() {
                             </span>
                           </div>
                           {job.description && (
-                            <p className="text-sm text-slate-600 line-clamp-2">
+                            <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
                               {job.description}
                             </p>
                           )}
@@ -681,12 +750,12 @@ function SearchContent() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
+                <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                   <iconify-icon
                     icon="solar:folder-open-linear"
-                    class="text-slate-300 text-5xl mb-4"
+                    class="text-slate-300 dark:text-slate-600 text-5xl mb-4"
                   ></iconify-icon>
-                  <p className="text-slate-500">
+                  <p className="text-slate-500 dark:text-slate-400">
                     No jobs found. Try a different search term.
                   </p>
                 </div>
@@ -697,7 +766,7 @@ function SearchContent() {
                 <div className="text-center mt-8">
                   <Link
                     href="/jobs"
-                    className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium"
+                    className="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
                   >
                     View all jobs on the board
                     <iconify-icon

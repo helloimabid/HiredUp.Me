@@ -95,6 +95,64 @@ export async function getJobBySlug(slug) {
 }
 
 /**
+ * Search jobs in database by query and location
+ * Uses full-text search on title, company, and description
+ */
+export async function searchJobs(query, location = "Remote", limit = 50) {
+  try {
+    const queries = [Query.limit(limit), Query.orderDesc("$createdAt")];
+
+    // Build search queries - Appwrite supports search on indexed string fields
+    // We'll use contains for partial matching
+    const searchTerms = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((t) => t.length > 2);
+    const locationLower = location.toLowerCase();
+
+    // Fetch more jobs and filter client-side for better search results
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      JOBS_COLLECTION_ID,
+      [Query.limit(200), Query.orderDesc("$createdAt")],
+    );
+
+    // Filter jobs that match the search query
+    let filteredJobs = response.documents.filter((job) => {
+      const titleLower = (job.title || "").toLowerCase();
+      const companyLower = (job.company || "").toLowerCase();
+      const descLower = (job.description || "").toLowerCase();
+      const jobLocLower = (job.location || "").toLowerCase();
+
+      // Check if any search term matches title, company, or description
+      const matchesQuery = searchTerms.some(
+        (term) =>
+          titleLower.includes(term) ||
+          companyLower.includes(term) ||
+          descLower.includes(term),
+      );
+
+      // Check location match (if not remote/worldwide search)
+      const isRemoteSearch =
+        locationLower === "remote" ||
+        locationLower === "worldwide" ||
+        locationLower === "";
+      const matchesLocation =
+        isRemoteSearch ||
+        jobLocLower.includes("remote") ||
+        jobLocLower.includes(locationLower.split(",")[0].trim());
+
+      return matchesQuery && matchesLocation;
+    });
+
+    return filteredJobs.slice(0, limit);
+  } catch (error) {
+    console.error("Error searching jobs:", error);
+    return [];
+  }
+}
+
+/**
  * Generate a URL-friendly slug from job title and company
  */
 export function generateJobSlug(title, company, id) {

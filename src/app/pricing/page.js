@@ -27,14 +27,14 @@ export default function PricingPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gray-50 dark:bg-slate-900">
         {/* Page Header */}
-        <section className="bg-white border-b border-slate-100 py-16">
+        <section className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl font-semibold text-slate-900 mb-4">
+            <h1 className="text-4xl font-semibold text-slate-900 dark:text-white mb-4">
               Simple, Transparent Pricing
             </h1>
-            <p className="text-xl text-slate-500 max-w-2xl mx-auto">
+            <p className="text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
               Start free, upgrade when you need more. No hidden fees, no
               surprises.
             </p>
@@ -46,20 +46,20 @@ export default function PricingPage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid md:grid-cols-3 gap-8">
               {/* Starter */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-8 hover:shadow-lg transition-shadow">
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 hover:shadow-lg transition-shadow">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
                   Starter
                 </h3>
-                <p className="text-slate-500 text-sm mb-6">
+                <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
                   Perfect for small businesses
                 </p>
                 <div className="mb-6">
-                  <span className="text-4xl font-bold text-slate-900">
+                  <span className="text-4xl font-bold text-slate-900 dark:text-white">
                     Free
                   </span>
                 </div>
                 <ul className="space-y-4 mb-8">
-                  <li className="flex items-start gap-3 text-sm text-slate-600">
+                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
                     <iconify-icon
                       icon="solar:check-circle-linear"
                       class="text-green-500 mt-0.5"
@@ -67,7 +67,7 @@ export default function PricingPage() {
                     ></iconify-icon>
                     <span>1 active job posting</span>
                   </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600">
+                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
                     <iconify-icon
                       icon="solar:check-circle-linear"
                       class="text-green-500 mt-0.5"
@@ -75,7 +75,7 @@ export default function PricingPage() {
                     ></iconify-icon>
                     <span>Basic candidate search</span>
                   </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600">
+                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
                     <iconify-icon
                       icon="solar:check-circle-linear"
                       class="text-green-500 mt-0.5"
@@ -83,7 +83,7 @@ export default function PricingPage() {
                     ></iconify-icon>
                     <span>30-day job listing</span>
                   </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600">
+                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
                     <iconify-icon
                       icon="solar:check-circle-linear"
                       class="text-green-500 mt-0.5"
@@ -91,18 +91,18 @@ export default function PricingPage() {
                     ></iconify-icon>
                     <span>Email support</span>
                   </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-400">
+                  <li className="flex items-start gap-3 text-sm text-slate-400 dark:text-slate-500">
                     <iconify-icon
                       icon="solar:close-circle-linear"
-                      class="text-slate-300 mt-0.5"
+                      class="text-slate-300 dark:text-slate-600 mt-0.5"
                       width="18"
                     ></iconify-icon>
                     <span>Analytics dashboard</span>
                   </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-400">
+                  <li className="flex items-start gap-3 text-sm text-slate-400 dark:text-slate-500">
                     <iconify-icon
                       icon="solar:close-circle-linear"
-                      class="text-slate-300 mt-0.5"
+                      class="text-slate-300 dark:text-slate-600 mt-0.5"
                       width="18"
                     ></iconify-icon>
                     <span>Featured listings</span>
@@ -110,7 +110,7 @@ export default function PricingPage() {
                 </ul>
                 <a
                   href="/signup"
-                  className="block text-center w-full py-3 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+                  className="block text-center w-full py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   Get Started Free
                 </a>
@@ -188,20 +188,20 @@ export default function PricingPage() {
               </div>
 
               {/* Enterprise */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-8 hover:shadow-lg transition-shadow">
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 hover:shadow-lg transition-shadow">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
                   Enterprise
                 </h3>
-                <p className="text-slate-500 text-sm mb-6">
+                <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
                   For large organizations
                 </p>
                 <div className="mb-6">
-                  <span className="text-4xl font-bold text-slate-900">
+                  <span className="text-4xl font-bold text-slate-900 dark:text-white">
                     Custom
                   </span>
                 </div>
                 <ul className="space-y-4 mb-8">
-                  <li className="flex items-start gap-3 text-sm text-slate-600">
+                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
                     <iconify-icon
                       icon="solar:check-circle-linear"
                       class="text-green-500 mt-0.5"
@@ -209,7 +209,7 @@ export default function PricingPage() {
                     ></iconify-icon>
                     <span>Unlimited job postings</span>
                   </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600">
+                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
                     <iconify-icon
                       icon="solar:check-circle-linear"
                       class="text-green-500 mt-0.5"
@@ -217,7 +217,7 @@ export default function PricingPage() {
                     ></iconify-icon>
                     <span>Unlimited candidate access</span>
                   </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600">
+                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
                     <iconify-icon
                       icon="solar:check-circle-linear"
                       class="text-green-500 mt-0.5"
@@ -225,7 +225,7 @@ export default function PricingPage() {
                     ></iconify-icon>
                     <span>Dedicated account manager</span>
                   </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600">
+                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
                     <iconify-icon
                       icon="solar:check-circle-linear"
                       class="text-green-500 mt-0.5"
@@ -233,7 +233,7 @@ export default function PricingPage() {
                     ></iconify-icon>
                     <span>Custom integrations (ATS)</span>
                   </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600">
+                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
                     <iconify-icon
                       icon="solar:check-circle-linear"
                       class="text-green-500 mt-0.5"
@@ -241,7 +241,7 @@ export default function PricingPage() {
                     ></iconify-icon>
                     <span>SLA guarantee</span>
                   </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600">
+                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
                     <iconify-icon
                       icon="solar:check-circle-linear"
                       class="text-green-500 mt-0.5"
@@ -252,7 +252,7 @@ export default function PricingPage() {
                 </ul>
                 <a
                   href="/contact"
-                  className="block text-center w-full py-3 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+                  className="block text-center w-full py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   Contact Sales
                 </a>
@@ -262,45 +262,45 @@ export default function PricingPage() {
         </section>
 
         {/* FAQ */}
-        <section className="py-16 bg-white border-t border-slate-100">
+        <section className="py-16 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-semibold text-slate-900 text-center mb-12">
+            <h2 className="text-2xl font-semibold text-slate-900 dark:text-white text-center mb-12">
               Frequently Asked Questions
             </h2>
 
             <div className="space-y-6">
-              <div className="border border-slate-200 rounded-xl p-6">
-                <h3 className="font-semibold text-slate-900 mb-2">
+              <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-6">
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
                   Can I upgrade or downgrade anytime?
                 </h3>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
                   Yes, you can change your plan at any time. Changes take effect
                   immediately and are prorated.
                 </p>
               </div>
-              <div className="border border-slate-200 rounded-xl p-6">
-                <h3 className="font-semibold text-slate-900 mb-2">
+              <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-6">
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
                   What payment methods do you accept?
                 </h3>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
                   We accept all major credit cards, bKash, Nagad, and bank
                   transfers for Bangladesh customers.
                 </p>
               </div>
-              <div className="border border-slate-200 rounded-xl p-6">
-                <h3 className="font-semibold text-slate-900 mb-2">
+              <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-6">
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
                   Is there a contract or commitment?
                 </h3>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
                   No long-term contracts. All plans are month-to-month and you
                   can cancel anytime.
                 </p>
               </div>
-              <div className="border border-slate-200 rounded-xl p-6">
-                <h3 className="font-semibold text-slate-900 mb-2">
+              <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-6">
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
                   Do you offer discounts for startups?
                 </h3>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
                   Yes! We offer 50% off for verified startups in Bangladesh.
                   Contact us to learn more.
                 </p>

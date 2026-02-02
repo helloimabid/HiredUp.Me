@@ -84,21 +84,21 @@ export default async function JobsPage({ searchParams }) {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gray-50 dark:bg-slate-900">
         {/* Page Header */}
-        <section className="bg-white border-b border-slate-100 py-12">
+        <section className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-semibold text-slate-900 mb-2">
+            <h1 className="text-3xl font-semibold text-slate-900 dark:text-white mb-2">
               Browse Jobs
             </h1>
-            <p className="text-slate-500">
+            <p className="text-slate-500 dark:text-slate-400">
               Find your next opportunity from {jobs.length} available positions
             </p>
           </div>
         </section>
 
         {/* Filters */}
-        <section className="bg-white border-b border-slate-100 py-4 sticky top-16 z-40">
+        <section className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 py-4 sticky top-16 z-40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <form className="flex flex-wrap gap-4 items-center">
               <div className="flex-1 min-w-[200px]">
@@ -107,13 +107,13 @@ export default async function JobsPage({ searchParams }) {
                   name="q"
                   placeholder="Search jobs..."
                   defaultValue={searchQuery}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500"
                 />
               </div>
               <select
                 name="type"
                 defaultValue={typeFilter}
-                className="px-4 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="">All Types</option>
                 <option value="remote">Remote</option>
@@ -122,14 +122,14 @@ export default async function JobsPage({ searchParams }) {
               </select>
               <button
                 type="submit"
-                className="px-6 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors"
+                className="px-6 py-2 bg-slate-900 dark:bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors"
               >
                 Filter
               </button>
               {(typeFilter || locationFilter || searchQuery) && (
                 <Link
                   href="/jobs"
-                  className="px-4 py-2 text-slate-600 hover:text-slate-900 text-sm"
+                  className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-sm"
                 >
                   Clear filters
                 </Link>
@@ -143,7 +143,7 @@ export default async function JobsPage({ searchParams }) {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {filteredJobs.length > 0 ? (
               <>
-                <p className="text-sm text-slate-500 mb-6">
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
                   Showing {filteredJobs.length} job
                   {filteredJobs.length !== 1 ? "s" : ""}
                 </p>
@@ -157,17 +157,17 @@ export default async function JobsPage({ searchParams }) {
               <div className="text-center py-20">
                 <iconify-icon
                   icon="solar:magnifer-linear"
-                  class="text-slate-300 text-6xl mb-4"
+                  class="text-slate-300 dark:text-slate-600 text-6xl mb-4"
                 ></iconify-icon>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
                   No jobs found
                 </h3>
-                <p className="text-slate-500 mb-6">
+                <p className="text-slate-500 dark:text-slate-400 mb-6">
                   Try adjusting your search or filters
                 </p>
                 <Link
                   href="/jobs"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-indigo-600 text-white rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors"
                 >
                   View all jobs
                 </Link>

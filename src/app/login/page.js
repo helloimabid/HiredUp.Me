@@ -58,16 +58,18 @@ function LoginForm() {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
       <div className="text-center mb-8">
-        <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white mx-auto mb-4">
+        <div className="w-12 h-12 bg-slate-900 dark:bg-indigo-600 rounded-xl flex items-center justify-center text-white mx-auto mb-4">
           <iconify-icon
             icon="solar:arrow-right-up-linear"
             width="24"
           ></iconify-icon>
         </div>
-        <h1 className="text-2xl font-semibold text-slate-900">Welcome back</h1>
-        <p className="text-slate-500 text-sm mt-2">
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
+          Welcome back
+        </h1>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">
           Sign in to your hiredup.me account
         </p>
       </div>
@@ -86,7 +88,7 @@ function LoginForm() {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
             Email
           </label>
           <input
@@ -94,13 +96,13 @@ function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
             Password
           </label>
           <input
@@ -108,19 +110,22 @@ function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             required
           />
         </div>
 
         <div className="flex items-center justify-between text-sm">
-          <label className="flex items-center gap-2 text-slate-600">
-            <input type="checkbox" className="rounded border-slate-300" />
+          <label className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+            <input
+              type="checkbox"
+              className="rounded border-slate-300 dark:border-slate-600"
+            />
             Remember me
           </label>
           <Link
             href="/auth/forgot-password"
-            className="text-indigo-600 hover:text-indigo-700 font-medium"
+            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
           >
             Forgot password?
           </Link>
@@ -129,7 +134,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3 bg-slate-900 dark:bg-indigo-600 text-white rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Signing in..." : "Sign in"}
         </button>
@@ -138,10 +143,10 @@ function LoginForm() {
       <div className="mt-6">
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-200"></div>
+            <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-white text-slate-400">
+            <span className="px-4 bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500">
               Or continue with
             </span>
           </div>
@@ -151,7 +156,7 @@ function LoginForm() {
           <button
             onClick={loginWithGoogle}
             type="button"
-            className="flex items-center justify-center gap-2 px-4 py-3 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
           >
             <iconify-icon icon="logos:google-icon" width="18"></iconify-icon>
             Google
@@ -159,7 +164,7 @@ function LoginForm() {
           <button
             onClick={loginWithLinkedIn}
             type="button"
-            className="flex items-center justify-center gap-2 px-4 py-3 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
           >
             <iconify-icon icon="logos:linkedin-icon" width="18"></iconify-icon>
             LinkedIn
@@ -167,11 +172,11 @@ function LoginForm() {
         </div>
       </div>
 
-      <p className="mt-8 text-center text-sm text-slate-500">
+      <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
         Don&apos;t have an account?{" "}
         <Link
           href="/signup"
-          className="text-indigo-600 hover:text-indigo-700 font-medium"
+          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
         >
           Sign up
         </Link>
@@ -184,11 +189,11 @@ export default function LoginPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
+      <main className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-md">
           <Suspense
             fallback={
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center">
                 <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
               </div>
             }

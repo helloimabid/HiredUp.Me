@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useRef, useEffect } from "react";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Header() {
   const { user, loading, logout, isAuthenticated } = useAuth();
@@ -46,16 +47,16 @@ export default function Header() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex space-x-8 text-sm font-medium text-slate-500">
+          <nav className="hidden md:flex space-x-8 text-sm font-medium text-slate-500 dark:text-slate-400">
             <Link
               href="/jobs"
-              className="hover:text-slate-900 transition-colors"
+              className="hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               Browse Jobs
             </Link>
             <Link
               href="/search"
-              className="hover:text-slate-900 transition-colors flex items-center gap-1"
+              className="hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1"
             >
               <iconify-icon
                 icon="solar:magnifer-linear"
@@ -65,13 +66,13 @@ export default function Header() {
             </Link>
             <Link
               href="/employers"
-              className="hover:text-slate-900 transition-colors"
+              className="hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               For Employers
             </Link>
             <Link
               href="/blog"
-              className="hover:text-slate-900 transition-colors"
+              className="hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               Blog
             </Link>
@@ -79,13 +80,14 @@ export default function Header() {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
+            <ThemeToggle />
             {loading ? (
-              <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse"></div>
+              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
             ) : isAuthenticated ? (
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
+                  className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
                     {user?.name?.charAt(0)?.toUpperCase() ||
@@ -103,19 +105,19 @@ export default function Header() {
                 </button>
 
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl border border-slate-200 shadow-lg py-2 z-50">
-                    <div className="px-4 py-2 border-b border-slate-100">
-                      <p className="text-sm font-medium text-slate-900 truncate">
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg py-2 z-50">
+                    <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700">
+                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
                         {user?.name || "User"}
                       </p>
-                      <p className="text-xs text-slate-500 truncate">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                         {user?.email}
                       </p>
                     </div>
                     <Link
                       href="/dashboard"
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
                     >
                       <iconify-icon
                         icon="solar:home-2-linear"
@@ -126,7 +128,7 @@ export default function Header() {
                     <Link
                       href="/dashboard/profile"
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
                     >
                       <iconify-icon
                         icon="solar:user-linear"
@@ -137,7 +139,7 @@ export default function Header() {
                     <Link
                       href="/dashboard/applications"
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
                     >
                       <iconify-icon
                         icon="solar:document-text-linear"
@@ -148,7 +150,7 @@ export default function Header() {
                     <Link
                       href="/dashboard/saved-jobs"
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
                     >
                       <iconify-icon
                         icon="solar:bookmark-linear"
@@ -156,10 +158,10 @@ export default function Header() {
                       ></iconify-icon>
                       Saved Jobs
                     </Link>
-                    <div className="border-t border-slate-100 mt-2 pt-2">
+                    <div className="border-t border-slate-100 dark:border-slate-700 mt-2 pt-2">
                       <button
                         onClick={handleLogout}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 w-full"
                       >
                         <iconify-icon
                           icon="solar:logout-2-linear"
@@ -175,13 +177,13 @@ export default function Header() {
               <>
                 <Link
                   href="/login"
-                  className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+                  className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   Log in
                 </Link>
                 <Link
                   href="/signup"
-                  className="text-sm font-medium bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition-all shadow-sm"
+                  className="text-sm font-medium bg-slate-900 dark:bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-slate-800 dark:hover:bg-indigo-700 transition-all shadow-sm"
                 >
                   Sign up
                 </Link>
@@ -190,8 +192,9 @@ export default function Header() {
           </div>
 
           {/* Mobile Menu Icon */}
-          <div className="md:hidden flex items-center">
-            <button className="text-slate-500 hover:text-slate-900">
+          <div className="md:hidden flex items-center gap-2">
+            <ThemeToggle />
+            <button className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
               <iconify-icon
                 icon="solar:hamburger-menu-linear"
                 width="24"

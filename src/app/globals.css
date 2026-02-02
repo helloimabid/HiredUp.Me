@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* ============ DARK MODE SUPPORT ============ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Custom scrollbar for webkit */
 ::-webkit-scrollbar {
   width: 8px;
@@ -15,26 +18,49 @@
   background-color: #94a3b8;
 }
 
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #475569;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b;
+}
+
 /* Glass navigation */
 .glass-nav {
   background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.dark .glass-nav {
+  background: rgba(15, 23, 42, 0.9);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.6);
 }
 
 /* Gradient text for logo/hero */
 .text-gradient {
-  background-clip: text;
   -webkit-background-clip: text;
+  background-clip: text;
   color: transparent;
   background-image: linear-gradient(to right, #0f172a, #334155);
+}
+
+.dark .text-gradient {
+  background-image: linear-gradient(to right, #f1f5f9, #94a3b8);
 }
 
 .subtle-shadow {
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.02),
     0 2px 4px -1px rgba(0, 0, 0, 0.02);
+}
+
+.dark .subtle-shadow {
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.3),
+    0 2px 4px -1px rgba(0, 0, 0, 0.2);
 }
 
 /* Smooth scrolling */
@@ -46,4 +72,9 @@ html {
 ::selection {
   background-color: rgb(224 231 255);
   color: rgb(67 56 202);
+}
+
+.dark ::selection {
+  background-color: rgb(67 56 202);
+  color: rgb(224 231 255);
 }

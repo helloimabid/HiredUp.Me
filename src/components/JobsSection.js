@@ -112,20 +112,20 @@ export default function JobsSection({ jobs = [], showSampleData = true }) {
   return (
     <>
       {/* Trending Jobs (Bangladesh) */}
-      <section className="py-20 border-t border-slate-100">
+      <section className="py-20 border-t border-slate-100 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-end mb-10">
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
                 Trending jobs in Bangladesh
               </h2>
-              <p className="text-slate-500 text-sm mt-1">
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
                 Top opportunities in Dhaka, Chittagong, and Sylhet.
               </p>
             </div>
             <Link
               href="/jobs"
-              className="text-indigo-600 text-sm font-medium hover:text-indigo-700 flex items-center gap-1 group"
+              className="text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 group"
             >
               View all
               <iconify-icon
@@ -142,7 +142,7 @@ export default function JobsSection({ jobs = [], showSampleData = true }) {
           </div>
 
           {displayLocalJobs.length === 0 && (
-            <div className="text-center py-12 text-slate-400">
+            <div className="text-center py-12 text-slate-400 dark:text-slate-500">
               <p>No local jobs available yet. Check back soon!</p>
             </div>
           )}
@@ -150,20 +150,20 @@ export default function JobsSection({ jobs = [], showSampleData = true }) {
       </section>
 
       {/* Remote Jobs (Worldwide) */}
-      <section className="py-20 bg-slate-50/50">
+      <section className="py-20 bg-slate-50/50 dark:bg-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-end mb-10">
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
                 Remote jobs worldwide
               </h2>
-              <p className="text-slate-500 text-sm mt-1">
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
                 Work from anywhere for global companies.
               </p>
             </div>
             <Link
               href="/jobs?type=remote"
-              className="text-indigo-600 text-sm font-medium hover:text-indigo-700 flex items-center gap-1 group"
+              className="text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 group"
             >
               View all
               <iconify-icon
@@ -180,7 +180,7 @@ export default function JobsSection({ jobs = [], showSampleData = true }) {
           </div>
 
           {displayRemoteJobs.length === 0 && (
-            <div className="text-center py-12 text-slate-400">
+            <div className="text-center py-12 text-slate-400 dark:text-slate-500">
               <p>No remote jobs available yet. Check back soon!</p>
             </div>
           )}

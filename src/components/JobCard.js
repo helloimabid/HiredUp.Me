@@ -67,7 +67,7 @@ export default function JobCard({ job, index = 0 }) {
       href={href}
       target={isExternal ? "_blank" : undefined}
       rel={isExternal ? "noopener noreferrer" : undefined}
-      className="group block p-5 rounded-xl border border-slate-200 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5 transition-all bg-white"
+      className="group block p-5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-lg hover:shadow-indigo-500/5 transition-all bg-white dark:bg-slate-800"
     >
       <div className="flex justify-between items-start mb-4">
         <div
@@ -76,18 +76,18 @@ export default function JobCard({ job, index = 0 }) {
           {initial}
         </div>
         <span
-          className={`px-2 py-1 rounded-md ${badge.bg} ${badge.text} text-xs font-medium capitalize`}
+          className={`px-2 py-1 rounded-md ${badge.bg} ${badge.text} text-xs font-medium capitalize dark:bg-opacity-20`}
         >
           {jobType.replace("-", " ")}
         </span>
       </div>
-      <h3 className="font-semibold text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors line-clamp-1">
+      <h3 className="font-semibold text-slate-900 dark:text-white mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-1">
         {job.title}
       </h3>
-      <p className="text-sm text-slate-500 mb-4 line-clamp-1">
+      <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-1">
         {job.company} • {job.location}
       </p>
-      <div className="flex items-center gap-2 text-xs text-slate-400">
+      <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
         <iconify-icon icon="solar:clock-circle-linear"></iconify-icon>
         <span>{formatTimeAgo(job.$createdAt)}</span>
       </div>

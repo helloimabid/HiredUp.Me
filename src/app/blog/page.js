@@ -95,12 +95,14 @@ export default function BlogPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gray-50 dark:bg-slate-900">
         {/* Page Header */}
-        <section className="bg-white border-b border-slate-100 py-12">
+        <section className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-semibold text-slate-900 mb-2">Blog</h1>
-            <p className="text-slate-500">
+            <h1 className="text-3xl font-semibold text-slate-900 dark:text-white mb-2">
+              Blog
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400">
               Career tips, industry insights, and job market trends
             </p>
           </div>
@@ -111,19 +113,21 @@ export default function BlogPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Link
               href="#"
-              className="group block bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow"
+              className="group block bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-shadow"
             >
               <div className="grid md:grid-cols-2">
                 <div className={`${blogPosts[0].image} h-64 md:h-auto`}></div>
                 <div className="p-8 flex flex-col justify-center">
-                  <span className="text-xs font-medium text-indigo-600 mb-2">
+                  <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-2">
                     {blogPosts[0].category}
                   </span>
-                  <h2 className="text-2xl font-semibold text-slate-900 mb-3 group-hover:text-indigo-600 transition-colors">
+                  <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {blogPosts[0].title}
                   </h2>
-                  <p className="text-slate-500 mb-4">{blogPosts[0].excerpt}</p>
-                  <div className="flex items-center gap-4 text-sm text-slate-400">
+                  <p className="text-slate-500 dark:text-slate-400 mb-4">
+                    {blogPosts[0].excerpt}
+                  </p>
+                  <div className="flex items-center gap-4 text-sm text-slate-400 dark:text-slate-500">
                     <span>{blogPosts[0].date}</span>
                     <span>•</span>
                     <span>{blogPosts[0].readTime}</span>
@@ -142,20 +146,20 @@ export default function BlogPage() {
                 <Link
                   key={post.id}
                   href="#"
-                  className="group bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow"
+                  className="group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-shadow"
                 >
                   <div className={`${post.image} h-48`}></div>
                   <div className="p-6">
-                    <span className="text-xs font-medium text-indigo-600 mb-2 block">
+                    <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-2 block">
                       {post.category}
                     </span>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-2 group-hover:text-indigo-600 transition-colors line-clamp-2">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">
                       {post.title}
                     </h3>
-                    <p className="text-sm text-slate-500 mb-4 line-clamp-2">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">
                       {post.excerpt}
                     </p>
-                    <div className="flex items-center gap-4 text-xs text-slate-400">
+                    <div className="flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
                       <span>{post.date}</span>
                       <span>•</span>
                       <span>{post.readTime}</span>

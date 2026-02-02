@@ -2,7 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getJobBySlug, getJobs, generateJobSlug } from "@/lib/appwrite";
+import { getJobBySlug, getJobs } from "@/lib/appwrite";
 import SaveJobButton from "@/components/SaveJobButton";
 import ApplyButton from "@/components/ApplyButton";
 
@@ -19,7 +19,7 @@ export async function generateStaticParams() {
   }
 }
 
-// Helper: Clean HTML entities from job titles
+// Helper: Clean HTML entities
 function cleanText(text) {
   if (!text) return "";
   return text
@@ -31,45 +31,6 @@ function cleanText(text) {
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .trim();
-}
-
-// Helper: Extract job type from title/location
-function detectJobType(title, location) {
-  const text = `${title} ${location}`.toLowerCase();
-  if (text.includes("remote")) return "Remote";
-  if (text.includes("hybrid")) return "Hybrid";
-  if (text.includes("contract")) return "Contract";
-  if (text.includes("freelance")) return "Freelance";
-  if (text.includes("part-time") || text.includes("part time"))
-    return "Part-time";
-  if (text.includes("intern")) return "Internship";
-  return "Full-time";
-}
-
-// Helper: Extract experience level
-function detectExperienceLevel(title) {
-  const titleLower = title.toLowerCase();
-  if (
-    titleLower.includes("senior") ||
-    titleLower.includes("sr.") ||
-    titleLower.includes("lead")
-  )
-    return "Senior";
-  if (
-    titleLower.includes("junior") ||
-    titleLower.includes("jr.") ||
-    titleLower.includes("entry")
-  )
-    return "Entry Level";
-  if (
-    titleLower.includes("principal") ||
-    titleLower.includes("staff") ||
-    titleLower.includes("director")
-  )
-    return "Executive";
-  if (titleLower.includes("mid") || titleLower.includes("intermediate"))
-    return "Mid-Level";
-  return "Mid-Level";
 }
 
 // Helper: Get time ago text
@@ -88,22 +49,32 @@ function getTimeAgo(date) {
   return posted.toLocaleDateString();
 }
 
-// Helper: Get company color
-function getCompanyColor(company) {
+// Helper: Get company logo color based on first letter
+function getCompanyLogoColor(company) {
   const colors = [
-    { bg: "bg-blue-100", text: "text-blue-600" },
-    { bg: "bg-orange-100", text: "text-orange-600" },
-    { bg: "bg-purple-100", text: "text-purple-600" },
-    { bg: "bg-teal-100", text: "text-teal-600" },
-    { bg: "bg-pink-100", text: "text-pink-600" },
-    { bg: "bg-green-100", text: "text-green-600" },
-    { bg: "bg-indigo-100", text: "text-indigo-600" },
+    "bg-green-600 shadow-green-600/20",
+    "bg-blue-600 shadow-blue-600/20",
+    "bg-purple-600 shadow-purple-600/20",
+    "bg-orange-600 shadow-orange-600/20",
+    "bg-pink-600 shadow-pink-600/20",
+    "bg-teal-600 shadow-teal-600/20",
+    "bg-indigo-600 shadow-indigo-600/20",
   ];
-  const index = company.charCodeAt(0) % colors.length;
+  const index = (company || "A").charCodeAt(0) % colors.length;
   return colors[index];
 }
 
-// Generate rich metadata for SEO
+// Parse enhanced JSON content
+function parseEnhancedContent(job) {
+  if (!job.enhanced_json) return null;
+  try {
+    return JSON.parse(job.enhanced_json);
+  } catch {
+    return null;
+  }
+}
+
+// Generate SEO metadata
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const job = await getJobBySlug(slug);
@@ -111,33 +82,26 @@ export async function generateMetadata({ params }) {
   if (!job) {
     return {
       title: "Job Not Found | HiredUp.me",
-      description:
-        "This job posting is no longer available. Browse thousands of other opportunities on HiredUp.me",
+      description: "This job posting is no longer available.",
     };
   }
 
-  const title = cleanText(job.title);
-  const company = cleanText(job.company);
-  const location = job.location || "Remote";
-  const jobType = detectJobType(title, location);
+  const enhanced = parseEnhancedContent(job);
+  const title = cleanText(enhanced?.header?.title || job.title);
+  const company = cleanText(enhanced?.header?.company || job.company);
+  const location = enhanced?.header?.location || job.location || "Remote";
 
-  const metaDescription = job.description
-    ? cleanText(job.description).slice(0, 155) + "..."
-    : `${title} job at ${company}. ${jobType} position in ${location}. Apply now on HiredUp.me!`;
+  const metaDescription =
+    enhanced?.seo?.meta_description ||
+    `${title} job at ${company}. ${enhanced?.header?.employment_type || "Full-time"} position in ${location}. Apply now on HiredUp.me!`;
 
   return {
-    title: `${title} at ${company} | ${location} | HiredUp.me`,
+    title:
+      enhanced?.seo?.meta_title ||
+      `${title} at ${company} | ${location} | HiredUp.me`,
     description: metaDescription,
-    keywords: [
-      title,
-      company,
-      location,
-      jobType,
-      `${title} jobs`,
-      `${company} careers`,
-      "job opening",
-      "career opportunity",
-    ].join(", "),
+    keywords:
+      enhanced?.seo?.keywords?.join(", ") || `${title}, ${company}, jobs`,
     openGraph: {
       title: `${title} at ${company} - Now Hiring!`,
       description: metaDescription,
@@ -155,174 +119,207 @@ export async function generateMetadata({ params }) {
   };
 }
 
-// Generate job content based on role
-function generateJobContent(job) {
-  const title = cleanText(job.title);
-  const company = cleanText(job.company);
-  const location = job.location || "Remote";
-  const titleLower = title.toLowerCase();
-  const jobType = detectJobType(title, location);
-  const experienceLevel = detectExperienceLevel(title);
+// ============ DYNAMIC SECTION RENDERERS ============
+// Following reference-job-post-page.html design: clean, minimal, slate colors
 
-  // Default content template
-  let aboutRole = `Join ${company} as a ${title}. This ${jobType.toLowerCase()} position in ${location} offers an excellent opportunity to grow your career and make an impact.`;
-
-  let responsibilities = [
-    "Execute core job responsibilities with excellence",
-    "Collaborate effectively with cross-functional teams",
-    "Contribute to team goals and company objectives",
-    "Maintain high standards of quality in all deliverables",
-    "Continuously learn and adapt to new challenges",
-  ];
-
-  let qualifications = [
-    "Relevant experience in the field",
-    "Strong communication and interpersonal skills",
-    "Ability to work independently and in teams",
-    "Problem-solving mindset with attention to detail",
-    "Passion for professional growth",
-  ];
-
-  let skills = [
-    "Communication",
-    "Teamwork",
-    "Problem Solving",
-    "Time Management",
-    "Adaptability",
-  ];
-
-  // Customize based on role type
-  if (
-    titleLower.includes("developer") ||
-    titleLower.includes("engineer") ||
-    titleLower.includes("software")
-  ) {
-    aboutRole = `As a ${title} at ${company}, you'll be building innovative software solutions. This ${jobType.toLowerCase()} position in ${location} offers the chance to work with cutting-edge technologies.`;
-    responsibilities = [
-      "Design, develop, and maintain high-quality software applications",
-      "Write clean, efficient, and well-documented code",
-      "Collaborate with cross-functional teams on features",
-      "Participate in code reviews and knowledge sharing",
-      "Debug and resolve technical issues",
-    ];
-    qualifications = [
-      `${experienceLevel === "Senior" ? "5+ years" : experienceLevel === "Entry Level" ? "0-2 years" : "2-5 years"} of software development experience`,
-      "Proficiency in relevant programming languages",
-      "Experience with version control systems (Git)",
-      "Strong problem-solving skills",
-      "Excellent communication abilities",
-    ];
-    skills = [
-      "JavaScript",
-      "React",
-      "Node.js",
-      "Python",
-      "Git",
-      "AWS",
-      "Docker",
-      "SQL",
-      "REST APIs",
-    ];
-  } else if (
-    titleLower.includes("designer") ||
-    titleLower.includes("ux") ||
-    titleLower.includes("ui")
-  ) {
-    aboutRole = `Join ${company} as a ${title} and shape exceptional user experiences. This ${jobType.toLowerCase()} role in ${location} offers creative freedom and impact.`;
-    responsibilities = [
-      "Create intuitive and visually appealing user interfaces",
-      "Conduct user research and translate insights into designs",
-      "Develop wireframes, prototypes, and high-fidelity mockups",
-      "Collaborate with developers to bring designs to life",
-      "Maintain and evolve the design system",
-    ];
-    skills = [
-      "Figma",
-      "Adobe XD",
-      "Sketch",
-      "Prototyping",
-      "User Research",
-      "Wireframing",
-      "Design Systems",
-    ];
-  } else if (
-    titleLower.includes("manager") ||
-    titleLower.includes("lead") ||
-    titleLower.includes("director")
-  ) {
-    aboutRole = `${company} is seeking a ${title} to lead strategic initiatives. This ${jobType.toLowerCase()} position in ${location} offers the opportunity to shape key business functions.`;
-    responsibilities = [
-      "Lead and mentor a team of professionals",
-      "Develop and execute strategic plans",
-      "Manage budgets and resources effectively",
-      "Build relationships across the organization",
-      "Drive continuous improvement",
-    ];
-    skills = [
-      "Leadership",
-      "Strategic Planning",
-      "Team Management",
-      "Budget Management",
-      "Communication",
-    ];
-  } else if (
-    titleLower.includes("marketing") ||
-    titleLower.includes("content") ||
-    titleLower.includes("seo")
-  ) {
-    aboutRole = `Join ${company} as a ${title} and help build our brand. This ${jobType.toLowerCase()} position in ${location} offers the chance to execute creative campaigns.`;
-    responsibilities = [
-      "Develop and execute marketing strategies",
-      "Create compelling content for target audiences",
-      "Manage and optimize digital campaigns",
-      "Analyze performance and report on ROI",
-      "Collaborate on go-to-market strategies",
-    ];
-    skills = [
-      "Digital Marketing",
-      "Content Marketing",
-      "SEO/SEM",
-      "Social Media",
-      "Analytics",
-      "Copywriting",
-    ];
-  } else if (titleLower.includes("sales") || titleLower.includes("account")) {
-    aboutRole = `${company} is looking for a ${title} to drive revenue growth. This ${jobType.toLowerCase()} opportunity in ${location} offers unlimited earning potential.`;
-    responsibilities = [
-      "Identify and pursue new business opportunities",
-      "Build strong relationships with clients",
-      "Meet and exceed sales targets",
-      "Conduct product demonstrations",
-      "Negotiate and close deals",
-    ];
-    skills = [
-      "Sales Strategy",
-      "Negotiation",
-      "CRM",
-      "Lead Generation",
-      "Account Management",
-      "Presentation",
-    ];
-  }
-
-  const benefits = [
-    "Competitive salary",
-    "Health insurance",
-    "Professional development",
-    "Flexible work arrangements",
-    "Collaborative team culture",
-  ];
-
-  return {
-    aboutRole,
-    responsibilities,
-    qualifications,
-    skills,
-    benefits,
-    jobType,
-    experienceLevel,
-  };
+// Render a paragraph/description section
+function ParagraphSection({ section }) {
+  return (
+    <section>
+      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">
+        {section.title}
+      </h3>
+      <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed whitespace-pre-line">
+        {section.content}
+      </p>
+    </section>
+  );
 }
+
+// Render a numbered list section (like Job Responsibilities)
+function NumberedListSection({ section }) {
+  if (!section.items?.length) return null;
+  return (
+    <section>
+      <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
+        {section.title}
+      </h4>
+      <ul className="space-y-3">
+        {section.items.map((item, i) => (
+          <li key={i} className="flex gap-4">
+            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold flex items-center justify-center">
+              {i + 1}
+            </span>
+            <span className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed pt-0.5">
+              {item}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+// Render a bullet list section (like Additional Requirements)
+function BulletListSection({ section }) {
+  if (!section.items?.length) return null;
+  return (
+    <section>
+      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-3">
+        {section.title}
+      </h3>
+      <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+        {section.items.map((item, i) => (
+          <li key={i} className="flex items-start gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 mt-2 flex-shrink-0"></div>
+            <span className="flex-1">{item}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+// Render a tags/skills section (rounded-full pills)
+function TagsSection({ section }) {
+  if (!section.items?.length) return null;
+  return (
+    <section>
+      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-3">
+        {section.title}
+      </h3>
+      <div className="flex flex-wrap gap-2">
+        {section.items.map((item, i) => (
+          <span
+            key={i}
+            className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-xs font-medium bg-white dark:bg-slate-800"
+          >
+            {item}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// Render a grouped list section (like Requirements with Education, Experience subsections)
+function GroupedListSection({ section }) {
+  if (!section.groups?.length) return null;
+  return (
+    <section>
+      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-3">
+        {section.title}
+      </h3>
+      <div className="space-y-4">
+        {section.groups.map(
+          (group, gi) =>
+            group.items?.length > 0 && (
+              <div key={gi}>
+                <h5 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
+                  {group.title}
+                </h5>
+                <ul className="list-disc list-inside text-sm text-slate-600 dark:text-slate-400 space-y-1 pl-1">
+                  {group.items.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ),
+        )}
+      </div>
+    </section>
+  );
+}
+
+// Render a table section
+function TableSection({ section }) {
+  if (!section.content?.headers?.length) return null;
+  return (
+    <section>
+      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-3">
+        {section.title}
+      </h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 dark:border-slate-700">
+              {section.content.headers.map((h, i) => (
+                <th
+                  key={i}
+                  className="py-2 px-3 text-left font-medium text-slate-700 dark:text-slate-300"
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+            {section.content.rows?.map((row, ri) => (
+              <tr key={ri}>
+                {row.map((cell, ci) => (
+                  <td
+                    key={ci}
+                    className="py-2 px-3 text-slate-600 dark:text-slate-400"
+                  >
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+// Render key-value section
+function KeyValueSection({ section }) {
+  if (!section.items?.length) return null;
+  return (
+    <section>
+      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-3">
+        {section.title}
+      </h3>
+      <dl className="space-y-2 text-sm">
+        {section.items.map((item, i) => (
+          <div key={i} className="flex gap-2">
+            <dt className="font-medium text-slate-700 dark:text-slate-300">
+              {item.label}:
+            </dt>
+            <dd className="text-slate-600 dark:text-slate-400">{item.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+// Dynamic section renderer
+function RenderSection({ section }) {
+  switch (section.type) {
+    case "paragraph":
+      return <ParagraphSection section={section} />;
+    case "numbered-list":
+      return <NumberedListSection section={section} />;
+    case "bullet-list":
+      return <BulletListSection section={section} />;
+    case "tags":
+      return <TagsSection section={section} />;
+    case "grouped-list":
+      return <GroupedListSection section={section} />;
+    case "table":
+      return <TableSection section={section} />;
+    case "key-value":
+      return <KeyValueSection section={section} />;
+    default:
+      if (section.content) return <ParagraphSection section={section} />;
+      if (section.items) return <BulletListSection section={section} />;
+      return null;
+  }
+}
+
+// ============ MAIN PAGE COMPONENT ============
 
 export default async function JobDetailPage({ params }) {
   const { slug } = await params;
@@ -332,81 +329,62 @@ export default async function JobDetailPage({ params }) {
     notFound();
   }
 
-  const title = cleanText(job.title);
-  const company = cleanText(job.company);
-  const content = generateJobContent(job);
-  const companyColor = getCompanyColor(company);
+  // Parse AI-generated content
+  const enhanced = parseEnhancedContent(job);
+  const isEnhanced = Boolean(enhanced);
+
+  // Extract header info (from enhanced or fallback to job record)
+  const header = enhanced?.header || {
+    title: job.title,
+    company: job.company,
+    location: job.location,
+    location_type: job.location?.toLowerCase().includes("remote")
+      ? "Remote"
+      : "On-site",
+    employment_type: "Full-time",
+  };
+
+  const title = cleanText(header.title);
+  const company = cleanText(header.company);
+  const logoColor = getCompanyLogoColor(company);
   const timeAgo = getTimeAgo(job.$createdAt);
 
-  // JSON-LD structured data for Google Jobs
-  const isRemote = (job.location || "").toLowerCase().includes("remote");
-  const validThroughDate = new Date();
-  validThroughDate.setDate(validThroughDate.getDate() + 30);
+  // Quick info items (for overview cards)
+  const quickInfo =
+    enhanced?.quick_info?.filter(
+      (item) => item.value && item.value !== "null",
+    ) || [];
 
+  // Highlights
+  const highlights = enhanced?.highlights || [];
+
+  // Dynamic sections from AI
+  const sections = enhanced?.sections || [];
+
+  // Apply info
+  const applyInfo = enhanced?.apply_info;
+
+  // JSON-LD structured data
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
     title: title,
-    description: `${content.aboutRole}\n\nResponsibilities:\n${content.responsibilities.join("\n")}\n\nQualifications:\n${content.qualifications.join("\n")}`,
+    description:
+      sections.find((s) => s.id === "about")?.content || job.description || "",
     datePosted: job.$createdAt,
-    validThrough: validThroughDate.toISOString(),
-    employmentType: content.jobType.toUpperCase().replace("-", "_"),
+    validThrough: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    employmentType: (header.employment_type || "Full-time")
+      .toUpperCase()
+      .replace("-", "_"),
     hiringOrganization: {
       "@type": "Organization",
       name: company,
-      sameAs: `https://hiredup.me/companies?search=${encodeURIComponent(company)}`,
     },
-    jobLocation: isRemote
-      ? undefined
-      : {
-          "@type": "Place",
-          address: {
-            "@type": "PostalAddress",
-            addressLocality:
-              job.location?.split(",")[0]?.trim() || job.location,
-            addressCountry: job.location?.includes("Bangladesh")
-              ? "BD"
-              : undefined,
-          },
-        },
-    jobLocationType: isRemote ? "TELECOMMUTE" : undefined,
-    applicantLocationRequirements: isRemote
-      ? { "@type": "Country", name: "Bangladesh" }
-      : undefined,
+    jobLocation: {
+      "@type": "Place",
+      address: { "@type": "PostalAddress", addressLocality: header.location },
+    },
     directApply: true,
-    identifier: {
-      "@type": "PropertyValue",
-      name: "HiredUp.me",
-      value: job.$id,
-    },
-    skills: content.skills.join(", "),
-    experienceRequirements: content.experienceLevel,
-  };
-
-  // Remove undefined fields
-  Object.keys(jsonLd).forEach(
-    (key) => jsonLd[key] === undefined && delete jsonLd[key],
-  );
-
-  // Breadcrumb schema
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Home",
-        item: "https://hiredup.me",
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "Jobs",
-        item: "https://hiredup.me/jobs",
-      },
-      { "@type": "ListItem", position: 3, name: title },
-    ],
   };
 
   return (
@@ -415,20 +393,17 @@ export default async function JobDetailPage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
       <Header />
-      <main className="bg-gray-50 min-h-screen">
-        {/* Breadcrumb */}
-        <nav className="bg-white border-b border-slate-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <ol className="flex items-center gap-2 text-sm text-slate-500">
+
+      <main className="min-h-screen pb-20 bg-white dark:bg-slate-900">
+        {/* Breadcrumbs */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <nav className="flex text-xs font-medium text-slate-500 dark:text-slate-400">
+            <ol className="flex items-center space-x-2">
               <li>
                 <Link
                   href="/"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   Home
                 </Link>
@@ -436,13 +411,13 @@ export default async function JobDetailPage({ params }) {
               <li>
                 <iconify-icon
                   icon="solar:alt-arrow-right-linear"
-                  width="16"
+                  class="text-slate-400"
                 ></iconify-icon>
               </li>
               <li>
                 <Link
                   href="/jobs"
-                  className="hover:text-indigo-600 transition-colors"
+                  className="hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   Jobs
                 </Link>
@@ -450,329 +425,346 @@ export default async function JobDetailPage({ params }) {
               <li>
                 <iconify-icon
                   icon="solar:alt-arrow-right-linear"
-                  width="16"
+                  class="text-slate-400"
                 ></iconify-icon>
               </li>
-              <li className="text-slate-900 font-medium truncate max-w-[200px]">
+              <li className="text-slate-900 dark:text-white truncate">
                 {title}
               </li>
             </ol>
-          </div>
-        </nav>
+          </nav>
+        </div>
 
-        {/* Hero Header */}
-        <section className="bg-white border-b border-slate-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-              {/* Left: Job Info */}
-              <div className="flex items-start gap-4">
-                {/* Company Logo */}
-                <div
-                  className={`w-14 h-14 lg:w-16 lg:h-16 ${companyColor.bg} rounded-xl flex items-center justify-center ${companyColor.text} font-bold text-xl lg:text-2xl shrink-0`}
-                >
-                  {company.charAt(0)}
+        {/* Job Header */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+          <div className="flex flex-col md:flex-row gap-6 md:items-start justify-between">
+            <div className="flex gap-5">
+              {/* Company Logo */}
+              <div
+                className={`w-16 h-16 md:w-20 md:h-20 ${logoColor} rounded-xl flex items-center justify-center text-white text-2xl md:text-3xl font-bold shadow-lg flex-shrink-0`}
+              >
+                {company.charAt(0)}
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-2">
+                  {title}
+                </h1>
+                <div className="text-sm md:text-base font-medium text-slate-900 dark:text-white mb-3">
+                  {company}
                 </div>
-                <div>
-                  <h1 className="text-2xl lg:text-3xl font-semibold tracking-tight text-slate-900 mb-2">
-                    {title}
-                  </h1>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-500 text-sm">
-                    <span className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-xs text-slate-500 dark:text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <iconify-icon
+                      icon="solar:map-point-linear"
+                      class="text-slate-400"
+                    ></iconify-icon>
+                    {header.location || "Remote"}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <iconify-icon
+                      icon="solar:clock-circle-linear"
+                      class="text-slate-400"
+                    ></iconify-icon>
+                    {timeAgo}
+                  </span>
+                  {header.applicants && (
+                    <span className="flex items-center gap-1">
                       <iconify-icon
-                        icon="solar:buildings-2-linear"
-                        width="18"
+                        icon="solar:users-group-rounded-linear"
+                        class="text-slate-400"
                       ></iconify-icon>
-                      {company}
+                      {header.applicants} Applicants
                     </span>
-                    <span className="flex items-center gap-1.5">
+                  )}
+                </div>
+
+                {/* Tags */}
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-semibold uppercase tracking-wide">
+                    {header.employment_type || "Full-time"}
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-1 rounded border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-semibold uppercase tracking-wide">
+                    {header.location_type || "On-site"}
+                  </span>
+                  {isEnhanced && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-semibold uppercase tracking-wide">
+                      <iconify-icon icon="solar:stars-minimalistic-linear"></iconify-icon>{" "}
+                      AI Enhanced
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-3 mt-4 md:mt-0 w-full md:w-auto">
+              <SaveJobButton jobId={job.$id} variant="outline" />
+              <ApplyButton applyUrl={job.apply_url} />
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Grid - 12 columns like reference */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+            {/* Left Column (Job Details) - 8 columns */}
+            <div className="lg:col-span-8 space-y-10">
+              {/* Key Highlights */}
+              {highlights.length > 0 && (
+                <section className="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700 p-6">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                    <iconify-icon
+                      icon="solar:star-fall-linear"
+                      class="text-amber-500"
+                    ></iconify-icon>
+                    Key Highlights
+                  </h3>
+                  <ul className="space-y-2">
+                    {highlights.map((highlight, i) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400"
+                      >
+                        <iconify-icon
+                          icon="solar:check-circle-linear"
+                          class="text-slate-400 mt-0.5 flex-shrink-0"
+                        ></iconify-icon>
+                        <span>{highlight}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {/* Job Overview Cards */}
+              {quickInfo.length > 0 && (
+                <section>
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">
+                    Job Overview
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {quickInfo.slice(0, 3).map((item, i) => (
+                      <div
+                        key={i}
+                        className="p-4 rounded-lg border border-slate-200 dark:border-slate-700"
+                      >
+                        <div className="text-xs text-slate-400 uppercase tracking-wider font-medium mb-1">
+                          {item.label}
+                        </div>
+                        <div className="font-semibold text-slate-900 dark:text-white text-sm">
+                          {item.value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <hr className="border-slate-100 dark:border-slate-800" />
+
+              {/* Dynamic Sections from AI */}
+              {sections.map((section, i) => (
+                <div key={section.id || i}>
+                  <RenderSection section={section} />
+                  {i < sections.length - 1 && (
+                    <hr className="border-slate-100 dark:border-slate-800 mt-10" />
+                  )}
+                </div>
+              ))}
+
+              {/* Fallback: If no enhanced content, show basic job description */}
+              {!isEnhanced && job.description && (
+                <section>
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">
+                    Job Description
+                  </h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed whitespace-pre-line">
+                    {cleanText(job.description)}
+                  </p>
+                </section>
+              )}
+
+              {/* Bottom CTA */}
+              <div className="bg-slate-900 dark:bg-slate-800 rounded-xl p-8 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    Ready to Apply?
+                  </h3>
+                  <p className="text-sm text-slate-400 max-w-md">
+                    Don't miss this opportunity at {company}. Click below to
+                    submit your application.
+                  </p>
+                  {applyInfo?.deadline && (
+                    <p className="text-amber-400 text-xs mt-2">
+                      ⏰ Deadline: {applyInfo.deadline}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2 w-full sm:w-auto">
+                  <a
+                    href={job.apply_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-10 px-6 rounded bg-white text-slate-900 text-sm font-semibold hover:bg-slate-100 transition-colors inline-flex items-center justify-center whitespace-nowrap"
+                  >
+                    Apply Now
+                  </a>
+                  <span className="text-[10px] text-slate-500 text-center">
+                    You'll be redirected to the employer's site
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column (Sidebar) - 4 columns */}
+            <div className="lg:col-span-4">
+              <div className="sticky top-24 space-y-6">
+                {/* Job Summary Card */}
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                  <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+                      Job Summary
+                    </h4>
+                  </div>
+                  <div className="p-5 space-y-5">
+                    <div className="flex items-start gap-3">
+                      <iconify-icon
+                        icon="solar:buildings-linear"
+                        class="text-slate-400 text-lg mt-0.5"
+                      ></iconify-icon>
+                      <div>
+                        <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                          Company
+                        </div>
+                        <div className="text-sm font-medium text-slate-900 dark:text-white">
+                          {company}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
                       <iconify-icon
                         icon="solar:map-point-linear"
-                        width="18"
+                        class="text-slate-400 text-lg mt-0.5"
                       ></iconify-icon>
-                      {job.location || "Remote"}
-                    </span>
-                    <span className="flex items-center gap-1.5">
+                      <div>
+                        <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                          Location
+                        </div>
+                        <div className="text-sm font-medium text-slate-900 dark:text-white">
+                          {header.location || "Remote"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <iconify-icon
+                        icon="solar:case-minimalistic-linear"
+                        class="text-slate-400 text-lg mt-0.5"
+                      ></iconify-icon>
+                      <div>
+                        <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                          Job Type
+                        </div>
+                        <div className="text-sm font-medium text-slate-900 dark:text-white">
+                          {header.employment_type || "Full-time"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <iconify-icon
+                        icon="solar:laptop-minimalistic-linear"
+                        class="text-slate-400 text-lg mt-0.5"
+                      ></iconify-icon>
+                      <div>
+                        <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                          Work Mode
+                        </div>
+                        <div className="text-sm font-medium text-slate-900 dark:text-white">
+                          {header.location_type || "On-site"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <iconify-icon
+                        icon="solar:calendar-linear"
+                        class="text-slate-400 text-lg mt-0.5"
+                      ></iconify-icon>
+                      <div>
+                        <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                          Posted
+                        </div>
+                        <div className="text-sm font-medium text-slate-900 dark:text-white">
+                          {timeAgo}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Apply Button in Card */}
+                  <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-800/30">
+                    <div className="flex items-center gap-2 mb-2 justify-center">
                       <iconify-icon
                         icon="solar:clock-circle-linear"
-                        width="18"
+                        class="text-slate-400 text-sm"
                       ></iconify-icon>
-                      {timeAgo}
-                    </span>
-                  </div>
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    <span className="px-3 py-1 rounded-md bg-slate-100 text-slate-600 text-xs font-medium">
-                      {content.jobType}
-                    </span>
-                    <span className="px-3 py-1 rounded-md bg-indigo-50 text-indigo-600 text-xs font-medium">
-                      {content.experienceLevel}
-                    </span>
-                    {job.location?.toLowerCase().includes("remote") && (
-                      <span className="px-3 py-1 rounded-md bg-green-50 text-green-600 text-xs font-medium">
-                        🌍 Remote
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        Apply before it's too late
                       </span>
-                    )}
+                    </div>
+                    <a
+                      href={job.apply_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full h-10 px-6 rounded bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white text-sm font-medium transition-colors shadow-lg shadow-slate-900/20 dark:shadow-indigo-600/20 inline-flex items-center justify-center gap-2"
+                    >
+                      Apply Now{" "}
+                      <iconify-icon icon="solar:arrow-right-up-linear"></iconify-icon>
+                    </a>
                   </div>
                 </div>
-              </div>
 
-              {/* Right: Action Buttons */}
-              <div className="flex items-center gap-3 lg:flex-col lg:items-stretch">
-                <SaveJobButton job={job} />
-                <ApplyButton applyUrl={job.apply_url} />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Main Content */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Left Column - Main Content */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* About This Role */}
-              <div className="bg-white rounded-xl border border-slate-200 p-6 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5 transition-all">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <iconify-icon
-                    icon="solar:info-circle-linear"
-                    width="22"
-                    class="text-indigo-600"
-                  ></iconify-icon>
-                  About This Role
-                </h2>
-                <p className="text-slate-600 leading-relaxed">
-                  {content.aboutRole}
-                </p>
-                {job.description && (
-                  <div className="mt-4 pt-4 border-t border-slate-100">
-                    <h3 className="font-medium text-slate-800 mb-2">
-                      From the Employer:
-                    </h3>
-                    <p className="text-slate-600 whitespace-pre-line text-sm leading-relaxed">
-                      {cleanText(job.description)}
-                    </p>
+                {/* Share This Job */}
+                <div>
+                  <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3 pl-1">
+                    Share This Job
                   </div>
-                )}
-              </div>
-
-              {/* What You'll Do */}
-              <div className="bg-white rounded-xl border border-slate-200 p-6 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5 transition-all">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <iconify-icon
-                    icon="solar:checklist-minimalistic-linear"
-                    width="22"
-                    class="text-indigo-600"
-                  ></iconify-icon>
-                  What You'll Do
-                </h2>
-                <ul className="space-y-3">
-                  {content.responsibilities.map((item, i) => (
-                    <li
-                      key={i}
-                      className="flex items-start gap-3 text-slate-600"
-                    >
-                      <span className="w-6 h-6 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs font-medium">
-                        {i + 1}
-                      </span>
-                      <span className="text-sm leading-relaxed">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* What We're Looking For */}
-              <div className="bg-white rounded-xl border border-slate-200 p-6 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5 transition-all">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <iconify-icon
-                    icon="solar:user-check-linear"
-                    width="22"
-                    class="text-indigo-600"
-                  ></iconify-icon>
-                  What We're Looking For
-                </h2>
-                <ul className="space-y-3">
-                  {content.qualifications.map((item, i) => (
-                    <li
-                      key={i}
-                      className="flex items-start gap-3 text-slate-600"
+                  <div className="flex gap-2">
+                    <a
+                      href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`https://hiredup.me/jobs/${slug}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 h-10 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors inline-flex items-center justify-center gap-2"
                     >
                       <iconify-icon
-                        icon="solar:check-circle-bold"
-                        width="18"
-                        class="text-green-500 mt-0.5 shrink-0"
-                      ></iconify-icon>
-                      <span className="text-sm leading-relaxed">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Benefits */}
-              <div className="bg-white rounded-xl border border-slate-200 p-6 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5 transition-all">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <iconify-icon
-                    icon="solar:gift-linear"
-                    width="22"
-                    class="text-indigo-600"
-                  ></iconify-icon>
-                  Benefits & Perks
-                </h2>
-                <div className="flex flex-wrap gap-2">
-                  {content.benefits.map((benefit, i) => (
-                    <span
-                      key={i}
-                      className="px-4 py-2 bg-slate-50 text-slate-700 rounded-lg text-sm border border-slate-100"
+                        icon="mdi:linkedin"
+                        class="text-[#0077b5]"
+                      ></iconify-icon>{" "}
+                      LinkedIn
+                    </a>
+                    <a
+                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(`https://hiredup.me/jobs/${slug}`)}&text=${encodeURIComponent(`Check out this job: ${title} at ${company}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 h-10 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors inline-flex items-center justify-center gap-2"
                     >
-                      ✨ {benefit}
-                    </span>
-                  ))}
+                      <iconify-icon icon="ri:twitter-x-fill"></iconify-icon>{" "}
+                      Twitter
+                    </a>
+                  </div>
                 </div>
-                <p className="text-xs text-slate-400 mt-4">
-                  * Benefits may vary. Check with employer for details.
-                </p>
-              </div>
 
-              {/* Apply CTA */}
-              <div className="bg-slate-900 rounded-xl p-6 text-white">
-                <h2 className="text-xl font-semibold mb-2">Ready to Apply?</h2>
-                <p className="text-slate-300 mb-4 text-sm">
-                  Don't miss this opportunity at {company}. Click below to
-                  submit your application.
-                </p>
-                <ApplyButton applyUrl={job.apply_url} fullWidth />
-              </div>
-            </div>
-
-            {/* Right Column - Sidebar */}
-            <div className="space-y-6">
-              {/* Quick Apply */}
-              <div className="bg-white rounded-xl border border-slate-200 p-6 sticky top-24">
-                <h3 className="font-semibold text-slate-900 mb-4">
-                  Quick Apply
-                </h3>
-                <ApplyButton applyUrl={job.apply_url} fullWidth />
-                <p className="text-xs text-slate-500 mt-3 text-center">
-                  You'll be redirected to the employer's site
-                </p>
-              </div>
-
-              {/* Skills */}
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <iconify-icon
-                    icon="solar:star-linear"
-                    width="18"
-                    class="text-indigo-600"
-                  ></iconify-icon>
-                  Skills & Technologies
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {content.skills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Job Summary */}
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <h3 className="font-semibold text-slate-900 mb-4">
-                  Job Summary
-                </h3>
-                <dl className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-slate-500">Job Type</dt>
-                    <dd className="text-slate-900 font-medium">
-                      {content.jobType}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate-500">Experience</dt>
-                    <dd className="text-slate-900 font-medium">
-                      {content.experienceLevel}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate-500">Location</dt>
-                    <dd className="text-slate-900 font-medium">
-                      {job.location || "Remote"}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate-500">Posted</dt>
-                    <dd className="text-slate-900 font-medium">{timeAgo}</dd>
-                  </div>
-                </dl>
-              </div>
-
-              {/* Share */}
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <h3 className="font-semibold text-slate-900 mb-4">
-                  Share This Job
-                </h3>
-                <p className="text-sm text-slate-500 mb-3">
-                  Know someone perfect for this role?
-                </p>
-                <div className="flex gap-2">
-                  <a
-                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`https://hiredup.me/jobs/${slug}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[#0077b5] text-white rounded-lg hover:bg-[#006699] transition-colors text-sm"
-                  >
-                    <iconify-icon icon="mdi:linkedin" width="18"></iconify-icon>
-                    LinkedIn
-                  </a>
-                  <a
-                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`🚀 ${title} at ${company}!`)}&url=${encodeURIComponent(`https://hiredup.me/jobs/${slug}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm"
-                  >
-                    <iconify-icon icon="mdi:twitter" width="18"></iconify-icon>
-                    Tweet
-                  </a>
+                {/* Report */}
+                <div className="text-center pt-4">
+                  <button className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 flex items-center justify-center gap-1 mx-auto transition-colors">
+                    <iconify-icon icon="solar:flag-linear"></iconify-icon>{" "}
+                    Report this job
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </section>
-
-        {/* Related Jobs CTA */}
-        <section className="bg-white border-t border-slate-100 py-16">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-900 mb-2">
-              Explore More Opportunities
-            </h2>
-            <p className="text-slate-500 mb-6 max-w-xl mx-auto">
-              Didn't find what you're looking for? We have thousands of jobs
-              waiting for talented professionals like you.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href={`/search?q=${encodeURIComponent(title.split(" ").slice(0, 2).join(" "))}`}
-                className="inline-flex justify-center items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
-              >
-                <iconify-icon
-                  icon="solar:magnifer-linear"
-                  width="18"
-                ></iconify-icon>
-                Find Similar Jobs
-              </Link>
-              <Link
-                href="/jobs"
-                className="inline-flex justify-center items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-50 hover:border-slate-300 transition-all"
-              >
-                Browse All Jobs
-              </Link>
-            </div>
-          </div>
-        </section>
+        </div>
       </main>
+
       <Footer />
     </>
   );
