@@ -24,6 +24,90 @@ const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "hiredup";
 const JOBS_COLLECTION_ID = process.env.APPWRITE_JOBS_COLLECTION_ID || "jobs";
 
 /**
+ * Extract company logo from HTML using multiple strategies
+ */
+function extractLogoFromHtml(html, baseUrl) {
+  const logos = [];
+
+  // Strategy 1: Open Graph image (og:image)
+  const ogImageMatch =
+    html.match(
+      /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,
+    ) ||
+    html.match(
+      /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i,
+    );
+  if (ogImageMatch?.[1]) {
+    logos.push({ url: ogImageMatch[1], priority: 1, source: "og:image" });
+  }
+
+  // Strategy 2: Schema.org Organization logo
+  const schemaLogoMatch =
+    html.match(/"logo"\s*:\s*["']([^"']+)["']/i) ||
+    html.match(/"logo"\s*:\s*\{\s*"url"\s*:\s*["']([^"']+)["']/i);
+  if (schemaLogoMatch?.[1]) {
+    logos.push({ url: schemaLogoMatch[1], priority: 2, source: "schema.org" });
+  }
+
+  // Strategy 3: Look for img tags with logo-related attributes
+  const logoImgPatterns = [
+    /<img[^>]+class=["'][^"']*logo[^"']*["'][^>]+src=["']([^"']+)["']/gi,
+    /<img[^>]+src=["']([^"']+)["'][^>]+class=["'][^"']*logo[^"']*["']/gi,
+    /<img[^>]+id=["'][^"']*logo[^"']*["'][^>]+src=["']([^"']+)["']/gi,
+    /<img[^>]+alt=["'][^"']*logo[^"']*["'][^>]+src=["']([^"']+)["']/gi,
+    /<img[^>]+src=["']([^"']+logo[^"']+)["']/gi,
+  ];
+
+  for (const pattern of logoImgPatterns) {
+    let match;
+    while ((match = pattern.exec(html)) !== null) {
+      if (match[1] && !match[1].includes("data:image")) {
+        logos.push({ url: match[1], priority: 3, source: "img-tag" });
+      }
+    }
+  }
+
+  // Strategy 4: Company header image (common in job sites)
+  const headerImgMatch = html.match(
+    /<(?:header|div)[^>]+class=["'][^"']*(?:company|employer|header)[^"']*["'][^>]*>[\s\S]*?<img[^>]+src=["']([^"']+)["']/i,
+  );
+  if (headerImgMatch?.[1]) {
+    logos.push({ url: headerImgMatch[1], priority: 4, source: "header-img" });
+  }
+
+  // Strategy 5: Apple touch icon or favicon
+  const iconMatch =
+    html.match(
+      /<link[^>]+rel=["']apple-touch-icon["'][^>]+href=["']([^"']+)["']/i,
+    ) ||
+    html.match(
+      /<link[^>]+rel=["']icon["'][^>]+href=["']([^"']+)["'][^>]+sizes=["'](?:32|48|64|96|128|192|256)[^"']*["']/i,
+    );
+  if (iconMatch?.[1]) {
+    logos.push({ url: iconMatch[1], priority: 5, source: "favicon" });
+  }
+
+  if (logos.length === 0) return null;
+
+  // Sort by priority and get the best one
+  logos.sort((a, b) => a.priority - b.priority);
+  let logoUrl = logos[0].url;
+
+  // Make absolute URL if relative
+  if (logoUrl && !logoUrl.startsWith("http")) {
+    try {
+      const base = new URL(baseUrl);
+      logoUrl = new URL(logoUrl, base.origin).href;
+    } catch {
+      // Invalid URL, skip
+    }
+  }
+
+  console.log(`Found logo: ${logoUrl} (source: ${logos[0].source})`);
+  return logoUrl;
+}
+
+/**
  * Scrape job details from source URL
  */
 async function scrapeJobUrl(url) {
@@ -48,6 +132,9 @@ async function scrapeJobUrl(url) {
 
     const html = await response.text();
 
+    // Extract company logo from the page
+    const logoUrl = extractLogoFromHtml(html, url);
+
     // Extract text content while preserving structure
     const textContent = html
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
@@ -69,6 +156,7 @@ async function scrapeJobUrl(url) {
     return {
       content: textContent,
       url: url,
+      logoUrl: logoUrl,
     };
   } catch (error) {
     console.error("Scrape error:", error.message);
@@ -316,6 +404,11 @@ IMPORTANT: Use the SCRAPED SOURCE CONTENT as the primary source. Extract exact t
     parsed.generated_at = new Date().toISOString();
     parsed.source_url = scrapedData?.url || job.apply_url;
     parsed.job_id = job.$id;
+
+    // Add scraped logo URL if available
+    if (scrapedData?.logoUrl) {
+      parsed.company_logo_url = scrapedData.logoUrl;
+    }
 
     return parsed;
   } catch (error) {

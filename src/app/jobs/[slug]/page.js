@@ -400,7 +400,10 @@ export default async function JobDetailPage({ params }) {
   const title = cleanText(header.title);
   const company = cleanText(header.company);
   const logoColor = getCompanyLogoColor(company);
-  const logoUrl = getCompanyLogoUrl(company, job.apply_url);
+
+  // Priority: 1. Scraped logo from AI content, 2. Clearbit fallback
+  const logoUrl =
+    enhanced?.company_logo_url || getCompanyLogoUrl(company, job.apply_url);
   const timeAgo = getTimeAgo(job.$createdAt);
 
   // Quick info items (for overview cards)
