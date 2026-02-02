@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { getJobBySlug, getJobs } from "@/lib/appwrite";
 import SaveJobButton from "@/components/SaveJobButton";
 import ApplyButton from "@/components/ApplyButton";
+import CompanyLogo from "@/components/CompanyLogo";
 
 // Revalidate every 5 minutes
 export const revalidate = 300;
@@ -62,6 +63,58 @@ function getCompanyLogoColor(company) {
   ];
   const index = (company || "A").charCodeAt(0) % colors.length;
   return colors[index];
+}
+
+// Helper: Get company logo URL from various sources
+function getCompanyLogoUrl(company, applyUrl) {
+  if (!company) return null;
+  
+  // Try to extract domain from apply URL first
+  let domain = null;
+  if (applyUrl) {
+    try {
+      const url = new URL(applyUrl);
+      domain = url.hostname.replace('www.', '');
+    } catch {
+      // Invalid URL, ignore
+    }
+  }
+  
+  // If no domain from URL, try to guess from company name
+  if (!domain) {
+    const companySlug = company
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
+    
+    // Common company domain patterns
+    const commonDomains = {
+      'google': 'google.com',
+      'facebook': 'facebook.com',
+      'meta': 'meta.com',
+      'amazon': 'amazon.com',
+      'microsoft': 'microsoft.com',
+      'apple': 'apple.com',
+      'netflix': 'netflix.com',
+      'spotify': 'spotify.com',
+      'uber': 'uber.com',
+      'airbnb': 'airbnb.com',
+      'linkedin': 'linkedin.com',
+      'twitter': 'twitter.com',
+      'shikho': 'shikho.com',
+      'bdjobs': 'bdjobs.com',
+      'grameenphone': 'grameenphone.com',
+      'robi': 'robi.com.bd',
+      'banglalink': 'banglalink.net',
+      'brac': 'brac.net',
+      'walton': 'waltonbd.com',
+    };
+    
+    domain = commonDomains[companySlug] || `${companySlug}.com`;
+  }
+  
+  // Return Clearbit Logo API URL (free, high quality)
+  return `https://logo.clearbit.com/${domain}`;
 }
 
 // Parse enhanced JSON content
@@ -347,6 +400,7 @@ export default async function JobDetailPage({ params }) {
   const title = cleanText(header.title);
   const company = cleanText(header.company);
   const logoColor = getCompanyLogoColor(company);
+  const logoUrl = getCompanyLogoUrl(company, job.apply_url);
   const timeAgo = getTimeAgo(job.$createdAt);
 
   // Quick info items (for overview cards)
@@ -440,11 +494,11 @@ export default async function JobDetailPage({ params }) {
           <div className="flex flex-col md:flex-row gap-6 md:items-start justify-between">
             <div className="flex gap-5">
               {/* Company Logo */}
-              <div
-                className={`w-16 h-16 md:w-20 md:h-20 ${logoColor} rounded-xl flex items-center justify-center text-white text-2xl md:text-3xl font-bold shadow-lg flex-shrink-0`}
-              >
-                {company.charAt(0)}
-              </div>
+              <CompanyLogo
+                company={company}
+                logoUrl={logoUrl}
+                size="md"
+              />
               <div>
                 <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-2">
                   {title}
