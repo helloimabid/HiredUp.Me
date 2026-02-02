@@ -68,51 +68,51 @@ function getCompanyLogoColor(company) {
 // Helper: Get company logo URL from various sources
 function getCompanyLogoUrl(company, applyUrl) {
   if (!company) return null;
-  
+
   // Try to extract domain from apply URL first
   let domain = null;
   if (applyUrl) {
     try {
       const url = new URL(applyUrl);
-      domain = url.hostname.replace('www.', '');
+      domain = url.hostname.replace("www.", "");
     } catch {
       // Invalid URL, ignore
     }
   }
-  
+
   // If no domain from URL, try to guess from company name
   if (!domain) {
     const companySlug = company
       .toLowerCase()
-      .replace(/[^a-z0-9]/g, '')
+      .replace(/[^a-z0-9]/g, "")
       .trim();
-    
+
     // Common company domain patterns
     const commonDomains = {
-      'google': 'google.com',
-      'facebook': 'facebook.com',
-      'meta': 'meta.com',
-      'amazon': 'amazon.com',
-      'microsoft': 'microsoft.com',
-      'apple': 'apple.com',
-      'netflix': 'netflix.com',
-      'spotify': 'spotify.com',
-      'uber': 'uber.com',
-      'airbnb': 'airbnb.com',
-      'linkedin': 'linkedin.com',
-      'twitter': 'twitter.com',
-      'shikho': 'shikho.com',
-      'bdjobs': 'bdjobs.com',
-      'grameenphone': 'grameenphone.com',
-      'robi': 'robi.com.bd',
-      'banglalink': 'banglalink.net',
-      'brac': 'brac.net',
-      'walton': 'waltonbd.com',
+      google: "google.com",
+      facebook: "facebook.com",
+      meta: "meta.com",
+      amazon: "amazon.com",
+      microsoft: "microsoft.com",
+      apple: "apple.com",
+      netflix: "netflix.com",
+      spotify: "spotify.com",
+      uber: "uber.com",
+      airbnb: "airbnb.com",
+      linkedin: "linkedin.com",
+      twitter: "twitter.com",
+      shikho: "shikho.com",
+      bdjobs: "bdjobs.com",
+      grameenphone: "grameenphone.com",
+      robi: "robi.com.bd",
+      banglalink: "banglalink.net",
+      brac: "brac.net",
+      walton: "waltonbd.com",
     };
-    
+
     domain = commonDomains[companySlug] || `${companySlug}.com`;
   }
-  
+
   // Return Clearbit Logo API URL (free, high quality)
   return `https://logo.clearbit.com/${domain}`;
 }
@@ -494,11 +494,7 @@ export default async function JobDetailPage({ params }) {
           <div className="flex flex-col md:flex-row gap-6 md:items-start justify-between">
             <div className="flex gap-5">
               {/* Company Logo */}
-              <CompanyLogo
-                company={company}
-                logoUrl={logoUrl}
-                size="md"
-              />
+              <CompanyLogo company={company} logoUrl={logoUrl} size="md" />
               <div>
                 <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-2">
                   {title}
