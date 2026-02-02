@@ -44,6 +44,51 @@ export async function getJobs(limit = 20) {
 }
 
 /**
+ * Fetch ALL jobs from Appwrite using pagination
+ * Appwrite limits to 100 docs per request, so we paginate through all
+ */
+export async function getAllJobs() {
+  try {
+    const allJobs = [];
+    let lastId = null;
+    const batchSize = 100; // Appwrite max limit per request
+
+    while (true) {
+      const queries = [
+        Query.orderDesc("$createdAt"),
+        Query.limit(batchSize),
+      ];
+
+      // Use cursor-based pagination for efficiency
+      if (lastId) {
+        queries.push(Query.cursorAfter(lastId));
+      }
+
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        JOBS_COLLECTION_ID,
+        queries,
+      );
+
+      allJobs.push(...response.documents);
+
+      // If we got fewer than batchSize, we've reached the end
+      if (response.documents.length < batchSize) {
+        break;
+      }
+
+      // Set cursor for next batch
+      lastId = response.documents[response.documents.length - 1].$id;
+    }
+
+    return allJobs;
+  } catch (error) {
+    console.error("Error fetching all jobs:", error);
+    return [];
+  }
+}
+
+/**
  * Check if a job already exists by source_id
  */
 export async function jobExists(sourceId) {

@@ -1,7 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import JobCard from "@/components/JobCard";
-import { getJobs } from "@/lib/appwrite";
+import { getAllJobs } from "@/lib/appwrite";
 import Link from "next/link";
 
 export const revalidate = 60;
@@ -41,7 +41,7 @@ export const metadata = {
 
 async function fetchAllJobs() {
   try {
-    const jobs = await getJobs(100);
+    const jobs = await getAllJobs();
     return jobs;
   } catch (error) {
     console.error("Failed to fetch jobs:", error);
