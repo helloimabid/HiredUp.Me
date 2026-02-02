@@ -761,7 +761,7 @@ function SearchContent() {
                 Searching for jobs...
               </h3>
               <p className="text-slate-500 dark:text-slate-400 text-sm">
-                Using AI to find the best matches for &quot;{query}&quot;
+                Using heavy compute to find the best matches for &quot;{query}&quot;
               </p>
             </div>
           </section>
