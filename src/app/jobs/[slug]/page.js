@@ -92,6 +92,13 @@ export async function generateMetadata({ params }) {
   const company = cleanText(enhanced?.header?.company || job.company);
   const location = enhanced?.header?.location || job.location || "Remote";
 
+  // Get job image - check enhanced_json for scraped image or company logo
+  const jobImage =
+    enhanced?.company_logo_url ||
+    enhanced?.job_image_url ||
+    enhanced?.circular_image_url ||
+    `https://hiredup.me/api/og/job?title=${encodeURIComponent(title)}&company=${encodeURIComponent(company)}&location=${encodeURIComponent(location)}`;
+
   const metaDescription =
     enhanced?.seo?.meta_description ||
     `${title} job at ${company}. ${enhanced?.header?.employment_type || "Full-time"} position in ${location}. Apply now on HiredUp.me!`;
@@ -109,11 +116,20 @@ export async function generateMetadata({ params }) {
       type: "website",
       url: `https://hiredup.me/jobs/${slug}`,
       siteName: "HiredUp.me",
+      images: [
+        {
+          url: jobImage,
+          width: 1200,
+          height: 630,
+          alt: `${title} at ${company}`,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: `${title} at ${company}`,
       description: metaDescription,
+      images: [jobImage],
     },
     alternates: { canonical: `https://hiredup.me/jobs/${slug}` },
     robots: { index: true, follow: true },

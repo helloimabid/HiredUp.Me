@@ -23,7 +23,7 @@ export const NOTIFICATIONS_COLLECTION_ID = "notifications";
 export const SEARCH_USAGE_COLLECTION_ID = "search_usage";
 
 // Search limits
-export const FREE_SEARCH_LIMIT = 2; // Free users get 2 searches per day
+export const FREE_SEARCH_LIMIT = 10;
 export const PREMIUM_SEARCH_LIMIT = 100; // Premium users get 100 searches per day
 
 /**
@@ -138,51 +138,74 @@ export async function getJobBySlug(slug) {
 
 /**
  * Search jobs in database by query and location
- * Uses full-text search on title, company, and description
+ * Supports both English and Bangla text searches
  */
 export async function searchJobs(query, location = "Remote", limit = 50) {
   try {
-    const queries = [Query.limit(limit), Query.orderDesc("$createdAt")];
+    // Normalize query - handle both English and Bangla
+    const normalizedQuery = query.normalize("NFC").trim();
 
-    // Build search queries - Appwrite supports search on indexed string fields
-    // We'll use contains for partial matching
-    const searchTerms = query
+    // Split search terms - handle both English (space) and Bangla text
+    const searchTerms = normalizedQuery
       .toLowerCase()
-      .split(/\s+/)
-      .filter((t) => t.length > 2);
-    const locationLower = location.toLowerCase();
+      .split(/[\s,।]+/) // Split by space, comma, or Bangla danda
+      .filter((t) => t.length > 1); // Allow shorter Bangla words
 
-    // Fetch more jobs and filter client-side for better search results
+    const locationLower = location.toLowerCase().normalize("NFC");
+
+    // Fetch jobs and filter client-side for better search results
     const response = await databases.listDocuments(
       DATABASE_ID,
       JOBS_COLLECTION_ID,
-      [Query.limit(200), Query.orderDesc("$createdAt")],
+      [Query.limit(300), Query.orderDesc("$createdAt")],
     );
 
     // Filter jobs that match the search query
     let filteredJobs = response.documents.filter((job) => {
-      const titleLower = (job.title || "").toLowerCase();
-      const companyLower = (job.company || "").toLowerCase();
-      const descLower = (job.description || "").toLowerCase();
-      const jobLocLower = (job.location || "").toLowerCase();
+      // Normalize all text fields for comparison
+      const titleLower = (job.title || "").toLowerCase().normalize("NFC");
+      const companyLower = (job.company || "").toLowerCase().normalize("NFC");
+      const descLower = (job.description || "").toLowerCase().normalize("NFC");
+      const jobLocLower = (job.location || "").toLowerCase().normalize("NFC");
 
-      // Check if any search term matches title, company, or description
+      // Also check enhanced_json for additional searchable content
+      let enhancedText = "";
+      if (job.enhanced_json) {
+        try {
+          const enhanced = JSON.parse(job.enhanced_json);
+          enhancedText = [
+            enhanced?.header?.title,
+            enhanced?.header?.company,
+            enhanced?.seo?.keywords?.join(" "),
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase()
+            .normalize("NFC");
+        } catch {}
+      }
+
+      // Check if any search term matches title, company, description, or enhanced content
       const matchesQuery = searchTerms.some(
         (term) =>
           titleLower.includes(term) ||
           companyLower.includes(term) ||
-          descLower.includes(term),
+          descLower.includes(term) ||
+          enhancedText.includes(term),
       );
 
       // Check location match (if not remote/worldwide search)
       const isRemoteSearch =
         locationLower === "remote" ||
         locationLower === "worldwide" ||
-        locationLower === "";
+        locationLower === "" ||
+        locationLower.includes("বাংলাদেশ"); // Bangladesh in Bangla
+
       const matchesLocation =
         isRemoteSearch ||
         jobLocLower.includes("remote") ||
-        jobLocLower.includes(locationLower.split(",")[0].trim());
+        jobLocLower.includes(locationLower.split(",")[0].trim()) ||
+        jobLocLower.includes("bangladesh");
 
       return matchesQuery && matchesLocation;
     });

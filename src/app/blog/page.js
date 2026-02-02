@@ -31,171 +31,167 @@ export const metadata = {
 const blogPosts = [
   {
     id: 1,
+    slug: "top-10-in-demand-tech-skills-bangladesh-2026",
     title: "Top 10 In-Demand Tech Skills in Bangladesh for 2026",
     excerpt:
       "Discover which technical skills are most sought after by employers in the Bangladeshi tech industry this year.",
     category: "Career Tips",
     date: "Jan 28, 2026",
     readTime: "5 min read",
-    image: "bg-gradient-to-br from-blue-500 to-purple-600",
   },
   {
     id: 2,
+    slug: "how-to-negotiate-your-salary-complete-guide",
     title: "How to Negotiate Your Salary: A Complete Guide",
     excerpt:
       "Learn effective strategies to negotiate your salary and get paid what you deserve in your next job offer.",
     category: "Career Tips",
     date: "Jan 25, 2026",
     readTime: "8 min read",
-    image: "bg-gradient-to-br from-green-500 to-teal-600",
   },
   {
     id: 3,
+    slug: "remote-work-bangladesh-opportunities-challenges",
     title: "Remote Work in Bangladesh: Opportunities and Challenges",
     excerpt:
       "An in-depth look at the remote work landscape in Bangladesh and how to find international remote opportunities.",
     category: "Industry Insights",
     date: "Jan 22, 2026",
     readTime: "6 min read",
-    image: "bg-gradient-to-br from-orange-500 to-red-600",
   },
   {
     id: 4,
+    slug: "building-portfolio-that-gets-you-hired",
     title: "Building a Portfolio That Gets You Hired",
     excerpt:
       "Tips from hiring managers on what makes a portfolio stand out and land you more interviews.",
     category: "Career Tips",
     date: "Jan 18, 2026",
     readTime: "7 min read",
-    image: "bg-gradient-to-br from-pink-500 to-rose-600",
   },
   {
     id: 5,
+    slug: "rise-of-fintech-jobs-bangladesh",
     title: "The Rise of Fintech Jobs in Bangladesh",
     excerpt:
       "Exploring the booming fintech sector and the career opportunities it offers for tech professionals.",
     category: "Industry Insights",
     date: "Jan 15, 2026",
     readTime: "5 min read",
-    image: "bg-gradient-to-br from-indigo-500 to-blue-600",
   },
   {
     id: 6,
+    slug: "interview-tips-common-questions-how-to-answer",
     title: "Interview Tips: Common Questions and How to Answer Them",
     excerpt:
       "Prepare for your next interview with these frequently asked questions and expert-approved answers.",
     category: "Career Tips",
     date: "Jan 12, 2026",
     readTime: "10 min read",
-    image: "bg-gradient-to-br from-yellow-500 to-orange-600",
   },
 ];
+
+// Category badge styles
+function getCategoryStyles(category) {
+  if (category === "Industry Insights") {
+    return "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-800";
+  }
+  return "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-100 dark:border-purple-800";
+}
 
 export default function BlogPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50 dark:bg-slate-900">
-        {/* Page Header */}
-        <section className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-semibold text-slate-900 dark:text-white mb-2">
+      <main className="min-h-screen pb-20 pt-12 bg-white dark:bg-slate-900">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Blog Header */}
+          <div className="max-w-2xl mb-12">
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-3">
               Blog
             </h1>
-            <p className="text-slate-500 dark:text-slate-400">
-              Career tips, industry insights, and job market trends
+            <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
+              Career tips, industry insights, and job market trends to help you
+              navigate your professional journey.
             </p>
           </div>
-        </section>
 
-        {/* Featured Post */}
-        <section className="py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <Link
-              href="#"
-              className="group block bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-shadow"
-            >
-              <div className="grid md:grid-cols-2">
-                <div className={`${blogPosts[0].image} h-64 md:h-auto`}></div>
-                <div className="p-8 flex flex-col justify-center">
-                  <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-2">
-                    {blogPosts[0].category}
+          {/* Articles Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-20">
+            {blogPosts.map((post) => (
+              <Link
+                key={post.id}
+                href={`/blog/${post.slug}`}
+                className="group flex flex-col h-full bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-sm transition-all duration-300"
+              >
+                {/* Category & Date Row */}
+                <div className="flex items-center justify-between mb-4">
+                  <span
+                    className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider border ${getCategoryStyles(post.category)}`}
+                  >
+                    {post.category}
                   </span>
-                  <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                    {blogPosts[0].title}
-                  </h2>
-                  <p className="text-slate-500 dark:text-slate-400 mb-4">
-                    {blogPosts[0].excerpt}
-                  </p>
-                  <div className="flex items-center gap-4 text-sm text-slate-400 dark:text-slate-500">
-                    <span>{blogPosts[0].date}</span>
-                    <span>•</span>
-                    <span>{blogPosts[0].readTime}</span>
+                  <div className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                    {post.date}
                   </div>
                 </div>
-              </div>
-            </Link>
-          </div>
-        </section>
 
-        {/* Blog Grid */}
-        <section className="pb-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {blogPosts.slice(1).map((post) => (
-                <Link
-                  key={post.id}
-                  href="#"
-                  className="group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-shadow"
+                {/* Title */}
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  {post.title}
+                </h2>
+
+                {/* Excerpt */}
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 leading-relaxed">
+                  {post.excerpt}
+                </p>
+
+                {/* Read Time Footer */}
+                <div className="mt-auto flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500 font-medium pt-4 border-t border-slate-100 dark:border-slate-700">
+                  <iconify-icon
+                    icon="solar:clock-circle-linear"
+                    width="14"
+                  ></iconify-icon>
+                  <span>{post.readTime}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Newsletter */}
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 md:p-12 relative overflow-hidden">
+            {/* Decorative background elements */}
+            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-slate-200/50 dark:bg-slate-700/30 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 bg-slate-200/50 dark:bg-slate-700/30 rounded-full blur-3xl"></div>
+
+            <div className="relative z-10 max-w-lg">
+              <h3 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white mb-2">
+                Subscribe to Our Newsletter
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                Get the latest career tips and job market insights delivered to
+                your inbox
+              </p>
+
+              <form className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1">
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    className="w-full h-10 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-indigo-500 focus:border-slate-900 dark:focus:border-indigo-500 transition-all"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="h-10 px-5 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
-                  <div className={`${post.image} h-48`}></div>
-                  <div className="p-6">
-                    <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-2 block">
-                      {post.category}
-                    </span>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">
-                      {post.title}
-                    </h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">
-                      {post.excerpt}
-                    </p>
-                    <div className="flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
-                      <span>{post.date}</span>
-                      <span>•</span>
-                      <span>{post.readTime}</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  Subscribe
+                  <iconify-icon icon="solar:letter-linear"></iconify-icon>
+                </button>
+              </form>
             </div>
           </div>
-        </section>
-
-        {/* Newsletter */}
-        <section className="py-16 bg-indigo-600">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <h2 className="text-2xl font-semibold text-white mb-4">
-              Subscribe to Our Newsletter
-            </h2>
-            <p className="text-indigo-100 mb-8">
-              Get the latest career tips and job market insights delivered to
-              your inbox
-            </p>
-            <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-white"
-              />
-              <button
-                type="submit"
-                className="px-6 py-3 bg-white text-indigo-600 rounded-lg font-medium hover:bg-indigo-50 transition-colors"
-              >
-                Subscribe
-              </button>
-            </form>
-          </div>
-        </section>
+        </div>
       </main>
       <Footer />
     </>

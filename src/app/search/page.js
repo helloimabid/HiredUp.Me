@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Search limit for free users
-const FREE_SEARCH_LIMIT = 2;
+const FREE_SEARCH_LIMIT = 10;
 
 // Job categories organized by industry
 const jobCategories = {
@@ -166,11 +166,26 @@ const popularCategories = [
   { name: "Project Manager", icon: "solar:clipboard-list-linear" },
 ];
 
+// Popular Bangla job searches
+const banglaCategories = [
+  { name: "সরকারি চাকরি", icon: "solar:buildings-2-linear" },
+  { name: "শিক্ষক নিয়োগ", icon: "solar:book-2-linear" },
+  { name: "ব্যাংক চাকরি", icon: "solar:bank-linear" },
+  { name: "এনজিও চাকরি", icon: "solar:hand-heart-linear" },
+  { name: "পুলিশ চাকরি", icon: "solar:shield-linear" },
+  { name: "সেনাবাহিনী", icon: "solar:star-linear" },
+  { name: "রেলওয়ে চাকরি", icon: "solar:bus-linear" },
+  { name: "স্বাস্থ্য সেবা", icon: "solar:heart-pulse-linear" },
+];
+
 const locations = [
   "Remote",
   "Dhaka, Bangladesh",
   "Chittagong, Bangladesh",
   "Sylhet, Bangladesh",
+  "Rajshahi, Bangladesh",
+  "Khulna, Bangladesh",
+  "Comilla, Bangladesh",
   "United States",
   "United Kingdom",
   "Canada",
@@ -404,9 +419,9 @@ function SearchContent() {
                 className={`text-sm ${remaining > 0 ? "text-blue-600" : "text-amber-600"}`}
               >
                 {isPremium
-                  ? "Unlimited AI-powered job searches"
+                  ? "Unlimited  job searches"
                   : remaining > 0
-                    ? "Each search uses AI to find the best jobs for you"
+                    ? "Each search uses heavy computing resources to find the best jobs for you"
                     : "Upgrade to Premium for unlimited searches"}
               </p>
             </div>
@@ -428,112 +443,125 @@ function SearchContent() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50">
-        {/* Resource Notice Banner */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 text-center">
-          <p className="text-sm flex items-center justify-center gap-2">
+      <main className="flex-grow bg-gray-50 dark:bg-slate-900">
+        {/* Alert Banner */}
+        <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-800/30 py-3 px-4">
+          <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 text-amber-700 dark:text-amber-300 text-xs font-medium">
             <iconify-icon
-              icon="solar:cpu-bolt-linear"
-              width="18"
+              icon="solar:bolt-linear"
+              className="text-amber-500"
             ></iconify-icon>
             <span>
-              Our AI-powered search uses advanced web scraping to find the best
-              jobs.
-              <span className="hidden sm:inline">
-                {" "}
-                Computing resources are limited -{" "}
-              </span>
-              <Link href="/pricing" className="underline font-medium ml-1">
-                upgrade for unlimited searches
-              </Link>
+              Computing resources are limited - upgrade for unlimited searches
             </span>
-          </p>
+            <Link
+              href="/pricing"
+              className="ml-1 underline hover:text-amber-900"
+            >
+              Get Premium
+            </Link>
+          </div>
         </div>
 
-        {/* Hero Section */}
-        <section className="bg-gradient-to-b from-indigo-50 to-white dark:from-slate-800 dark:to-slate-900 py-16">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <h1 className="text-3xl md:text-4xl font-semibold text-slate-900 dark:text-white mb-4">
-              AI-Powered Job Search
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 mb-8">
-              Our AI scans 50+ job boards in real-time to find the best
-              opportunities for you.
-              <br className="hidden md:block" />
-              From tech to healthcare, marketing to finance - we&apos;ve got you
-              covered.
-            </p>
+        {/* Hero & Search Section */}
+        <section className="relative pt-12 pb-20 px-4 sm:px-6">
+          <div className="max-w-4xl mx-auto relative z-10">
+            <div className="text-center mb-10">
+              <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight text-slate-900 dark:text-white mb-4">
+                Smart Job Discovery
+              </h1>
+              <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                Our advanced engine scans 50+ job boards in real-time to find
+                the best opportunities for you. From tech to healthcare,
+                marketing to finance.
+              </p>
+            </div>
 
-            {/* Search Usage Info */}
-            <SearchUsageInfo />
-
-            {/* Search Form */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg p-6">
-              <div className="flex flex-col md:flex-row gap-4 mb-4">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 text-left">
+            {/* Search Card */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-slate-200/60 dark:shadow-slate-950/60 border border-slate-200 dark:border-slate-700 overflow-hidden">
+              {/* Search Inputs */}
+              <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-slate-700">
+                <div className="p-5">
+                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">
                     Job Title / Type
                   </label>
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="e.g., Marketing Manager, Teacher, Nurse..."
-                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-400 dark:placeholder-slate-500"
-                    disabled={searchUsage && !searchUsage.canSearch}
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && handleSearch(query, location)
-                    }
-                  />
+                  <div className="flex items-center gap-3">
+                    <iconify-icon
+                      icon="solar:magnifer-linear"
+                      className="text-slate-400 dark:text-slate-500 text-xl flex-shrink-0"
+                    ></iconify-icon>
+                    <input
+                      type="text"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="e.g., Marketing Manager, Developer..."
+                      className="w-full text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none bg-transparent font-medium"
+                      disabled={searchUsage && !searchUsage.canSearch}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleSearch(query, location)
+                      }
+                    />
+                  </div>
                 </div>
-                <div className="md:w-48">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 text-left">
+                <div className="p-5">
+                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">
                     Location
                   </label>
-                  <select
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    {locations.map((loc) => (
-                      <option key={loc} value={loc}>
-                        {loc}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex items-center gap-3">
+                    <iconify-icon
+                      icon="solar:map-point-linear"
+                      className="text-slate-400 dark:text-slate-500 text-xl flex-shrink-0"
+                    ></iconify-icon>
+                    <select
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      className="w-full text-sm text-slate-900 dark:text-white outline-none bg-transparent font-medium"
+                    >
+                      {locations.map((loc) => (
+                        <option key={loc} value={loc}>
+                          {loc}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                  <input
-                    type="checkbox"
-                    checked={saveToDb}
-                    onChange={(e) => setSaveToDb(e.target.checked)}
-                    className="rounded border-slate-300 dark:border-slate-600"
-                  />
-                  Save new results to job board
-                </label>
-                <div className="flex gap-3">
+              {/* Filters & Actions */}
+              <div className="bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700 p-5 flex flex-col md:flex-row justify-between items-center gap-6">
+                {/* Filters */}
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <div className="relative flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={saveToDb}
+                        onChange={(e) => setSaveToDb(e.target.checked)}
+                        className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-slate-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 transition-all"
+                      />
+                      <iconify-icon
+                        icon="solar:check-read-linear"
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100 pointer-events-none text-xs"
+                      ></iconify-icon>
+                    </div>
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors select-none">
+                      Save new results
+                    </span>
+                  </label>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                   <button
                     onClick={() => handleDatabaseSearch(query, location)}
                     disabled={loading}
-                    className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-5 py-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium text-sm hover:bg-white dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Searching...
-                      </>
-                    ) : (
-                      <>
-                        <iconify-icon
-                          icon="solar:magnifer-linear"
-                          width="18"
-                        ></iconify-icon>
-                        Search Jobs
-                      </>
-                    )}
+                    <iconify-icon
+                      icon="solar:database-linear"
+                      className="text-slate-400"
+                    ></iconify-icon>
+                    {loading ? "Searching..." : "Search Database"}
                   </button>
                   <button
                     onClick={() => handleScrapeSearch(query, location)}
@@ -545,46 +573,73 @@ function SearchContent() {
                         ? "Daily limit reached"
                         : "Search across 50+ job boards (uses 1 search credit)"
                     }
-                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-5 py-2.5 rounded-lg bg-slate-900 dark:bg-slate-700 text-white font-medium text-sm hover:bg-slate-800 dark:hover:bg-slate-600 transition-all shadow-lg shadow-slate-200 dark:shadow-slate-950/60 flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <iconify-icon
-                      icon="solar:refresh-bold"
-                      width="18"
+                      icon="solar:refresh-circle-linear"
+                      className="group-hover:rotate-180 transition-transform duration-500"
                     ></iconify-icon>
                     Find Fresh Jobs
                   </button>
                 </div>
               </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-3 text-center">
-                💡 &quot;Search Jobs&quot; searches our database (free).
-                &quot;Find Fresh Jobs&quot; scrapes new listings (uses 1
-                credit).
+            </div>
+
+            {/* Info & Credits */}
+            <div className="mt-6 flex flex-col items-center gap-3">
+              <SearchUsageInfo />
+              <p className="text-center text-xs text-slate-400 dark:text-slate-500 max-w-lg">
+                <span className="font-medium text-slate-600 dark:text-slate-400">
+                  💡 Tip:
+                </span>{" "}
+                &quot;Search Database&quot; is free. &quot;Find Fresh Jobs&quot;
+                scrapes new listings live and uses 1 credit per search.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Popular Categories */}
+        {/* Categories Section */}
         {!results && !loading && (
-          <section className="py-12">
-            <div className="max-w-6xl mx-auto px-4">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-6 text-center">
+          <section className="py-12 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-6 text-center">
                 Popular Job Categories
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
+              </h3>
+
+              <div className="flex flex-wrap justify-center gap-3 mb-8">
                 {popularCategories.map((category) => (
                   <button
                     key={category.name}
                     onClick={() => handleCategoryClick(category.name)}
-                    className="group flex items-center gap-3 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md transition-all text-left"
+                    className="group flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-full text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-600 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all"
                   >
-                    <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg flex items-center justify-center group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
-                      <iconify-icon
-                        icon={category.icon}
-                        width="20"
-                      ></iconify-icon>
-                    </div>
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    <iconify-icon
+                      icon={category.icon}
+                      className="text-slate-400 dark:text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
+                    ></iconify-icon>
+                    {category.name}
+                  </button>
+                ))}
+              </div>
+
+              {/* Bangla Categories */}
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-6 text-center mt-10">
+                বাংলায় চাকরি খুঁজুন (Search in Bangla)
+              </h3>
+
+              <div className="flex flex-wrap justify-center gap-3 mb-8">
+                {banglaCategories.map((category) => (
+                  <button
+                    key={category.name}
+                    onClick={() => handleCategoryClick(category.name)}
+                    className="group flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-full text-sm font-medium text-emerald-700 dark:text-emerald-300 hover:border-emerald-600 dark:hover:border-emerald-500 hover:text-emerald-800 dark:hover:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all"
+                  >
+                    <iconify-icon
+                      icon={category.icon}
+                      className="text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors"
+                    ></iconify-icon>
+                    <span style={{ fontFamily: "var(--font-bengali)" }}>
                       {category.name}
                     </span>
                   </button>
@@ -592,65 +647,104 @@ function SearchContent() {
               </div>
 
               {/* All Categories by Industry */}
-              <details className="group">
-                <summary className="flex items-center justify-center gap-2 cursor-pointer text-indigo-600 hover:text-indigo-700 font-medium mb-6">
-                  <iconify-icon
-                    icon="solar:list-linear"
-                    width="20"
-                  ></iconify-icon>
-                  Browse All Categories by Industry
-                  <iconify-icon
-                    icon="solar:alt-arrow-down-linear"
-                    width="20"
-                    class="group-open:rotate-180 transition-transform"
-                  ></iconify-icon>
-                </summary>
+              <div className="mt-8 text-center">
+                <details className="group">
+                  <summary className="inline-flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 font-medium hover:text-indigo-700 dark:hover:text-indigo-300 hover:underline underline-offset-4 cursor-pointer">
+                    Browse All Categories by Industry
+                    <iconify-icon
+                      icon="solar:alt-arrow-down-linear"
+                      width="16"
+                      className="group-open:rotate-180 transition-transform"
+                    ></iconify-icon>
+                  </summary>
 
-                <div className="space-y-8 mt-8">
-                  {Object.entries(jobCategories).map(
-                    ([industry, categories]) => (
-                      <div key={industry}>
-                        <h3 className="text-md font-semibold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
-                          <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
-                          {industry}
-                        </h3>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                          {categories.map((category) => (
-                            <button
-                              key={category.name}
-                              onClick={() => handleCategoryClick(category.name)}
-                              className="group flex items-center gap-2 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-all text-left"
-                            >
-                              <iconify-icon
-                                icon={category.icon}
-                                width="18"
-                                class="text-slate-400 dark:text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
-                              ></iconify-icon>
-                              <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+                  <div className="space-y-8 mt-8">
+                    {Object.entries(jobCategories).map(
+                      ([industry, categories]) => (
+                        <div key={industry} className="text-left">
+                          <h3 className="text-md font-semibold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+                            <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                            {industry}
+                          </h3>
+                          <div className="flex flex-wrap gap-3">
+                            {categories.map((category) => (
+                              <button
+                                key={category.name}
+                                onClick={() =>
+                                  handleCategoryClick(category.name)
+                                }
+                                className="group flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-full text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-600 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all"
+                              >
+                                <iconify-icon
+                                  icon={category.icon}
+                                  className="text-slate-400 dark:text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
+                                ></iconify-icon>
                                 {category.name}
-                              </span>
-                            </button>
-                          ))}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ),
-                  )}
-                </div>
-              </details>
+                      ),
+                    )}
+                  </div>
+                </details>
+              </div>
             </div>
           </section>
         )}
-
+        {/* Stats / SEO Text */}
+        {!results && !loading && (
+          <section className="py-12 bg-slate-50 dark:bg-slate-800/50">
+            <div className="max-w-3xl mx-auto px-4 text-center">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                HiredUp.me - Jobs in Bangladesh
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                Bangladesh&apos;s leading job portal connecting talented
+                professionals with top employers worldwide.
+              </p>
+              <div className="flex justify-center items-center gap-3 text-xs text-slate-400 dark:text-slate-500 flex-wrap">
+                <span>Popular Searches:</span>
+                <button
+                  onClick={() => handleCategoryClick("Software Developer")}
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                >
+                  Software Developer
+                </button>
+                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                <button
+                  onClick={() => {
+                    setQuery("Remote");
+                    handleSearch("Remote", location);
+                  }}
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                >
+                  Remote Jobs
+                </button>
+                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                <button
+                  onClick={() => {
+                    setLocation("Dhaka, Bangladesh");
+                    handleSearch(query, "Dhaka, Bangladesh");
+                  }}
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                >
+                  Dhaka Jobs
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
         {/* Error Message */}
         {error && (
           <section className="py-8">
             <div className="max-w-4xl mx-auto px-4">
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
                 <iconify-icon
                   icon="solar:danger-triangle-linear"
-                  class="text-red-500 text-2xl mb-2"
+                  className="text-red-500 text-3xl mb-3"
                 ></iconify-icon>
-                <p className="text-red-600">{error}</p>
+                <p className="text-red-700 font-medium">{error}</p>
               </div>
             </div>
           </section>
@@ -733,18 +827,16 @@ function SearchContent() {
                             </p>
                           )}
                         </div>
-                        <a
-                          href={job.apply_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <Link
+                          href={`/jobs/${job.slug || job.$id}`}
                           className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2 whitespace-nowrap"
                         >
-                          Apply
+                          View & Apply
                           <iconify-icon
-                            icon="solar:arrow-right-up-linear"
+                            icon="solar:arrow-right-linear"
                             width="16"
                           ></iconify-icon>
-                        </a>
+                        </Link>
                       </div>
                     </div>
                   ))}
@@ -753,7 +845,7 @@ function SearchContent() {
                 <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                   <iconify-icon
                     icon="solar:folder-open-linear"
-                    class="text-slate-300 dark:text-slate-600 text-5xl mb-4"
+                    className="text-slate-300 dark:text-slate-600 text-5xl mb-4"
                   ></iconify-icon>
                   <p className="text-slate-500 dark:text-slate-400">
                     No jobs found. Try a different search term.

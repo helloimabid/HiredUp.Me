@@ -1,4 +1,4 @@
-import { Inter } from "next/font/google";
+import { Inter, Noto_Sans_Bengali } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import { AuthProvider } from "@/context/AuthContext";
@@ -8,7 +8,14 @@ import { Analytics } from "@vercel/analytics/next";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-  display: "swap", // Prevent FOIT for better CLS
+  display: "swap",
+});
+
+const notoBengali = Noto_Sans_Bengali({
+  subsets: ["bengali"],
+  variable: "--font-bengali",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
 });
 
 // ============ COMPREHENSIVE SEO METADATA ============
@@ -19,8 +26,9 @@ export const metadata = {
     template: "%s | HiredUp.me",
   },
   description:
-    "Bangladesh's #1 job portal. Find 10,000+ jobs in Dhaka, Chittagong, Sylhet & remote positions worldwide. Connect with top employers. Free job search, career advice & salary insights.",
+    "Bangladesh's #1 job portal. Find 10,000+ jobs in Dhaka, Chittagong, Sylhet & remote positions worldwide. Connect with top employers. Free job search, career advice & salary insights. বাংলাদেশের সেরা চাকরির পোর্টাল।",
   keywords: [
+    // English keywords
     "jobs in Bangladesh",
     "Dhaka jobs",
     "remote jobs",
@@ -36,6 +44,17 @@ export const metadata = {
     "employment Bangladesh",
     "tech jobs Bangladesh",
     "marketing jobs Dhaka",
+    // Bangla keywords
+    "বাংলাদেশে চাকরি",
+    "ঢাকায় চাকরি",
+    "সরকারি চাকরি",
+    "বেসরকারি চাকরি",
+    "চাকরির খবর",
+    "নিয়োগ বিজ্ঞপ্তি",
+    "চাকরির সার্কুলার",
+    "শিক্ষক নিয়োগ",
+    "ব্যাংক চাকরি",
+    "এনজিও চাকরি",
   ],
   authors: [{ name: "HiredUp.me", url: "https://hiredup.me" }],
   creator: "HiredUp.me",
@@ -105,12 +124,12 @@ export const metadata = {
     // bing: "your-bing-code",
   },
 
-  // Alternate Languages (if you add Bangla later)
+  // Alternate Languages - Bangla support enabled
   alternates: {
     canonical: "https://hiredup.me",
     languages: {
       "en-US": "https://hiredup.me",
-      // "bn-BD": "https://hiredup.me/bn",
+      "bn-BD": "https://hiredup.me",
     },
   },
 
@@ -153,7 +172,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body
-        className={`${inter.variable} font-sans bg-gray-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 antialiased transition-colors duration-200`}
+        className={`${inter.variable} ${notoBengali.variable} font-sans bg-gray-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 antialiased transition-colors duration-200`}
       >
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>

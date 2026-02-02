@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Link from "next/link";
 
 export const metadata = {
   title: "Pricing - Affordable Job Posting Plans | HiredUp.me",
@@ -27,287 +28,64 @@ export default function PricingPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50 dark:bg-slate-900">
-        {/* Page Header */}
-        <section className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl font-semibold text-slate-900 dark:text-white mb-4">
-              Simple, Transparent Pricing
+      <main className="min-h-screen bg-white dark:bg-slate-900">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <div className="text-center">
+            {/* Icon */}
+            <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <iconify-icon
+                icon="solar:tag-price-linear"
+                class="text-slate-400 dark:text-slate-500 text-4xl"
+              ></iconify-icon>
+            </div>
+
+            {/* Badge */}
+            <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-semibold uppercase tracking-wider border border-amber-100 dark:border-amber-800 mb-4">
+              Coming Soon
+            </span>
+
+            {/* Title */}
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-3">
+              Pricing Plans
             </h1>
-            <p className="text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-              Start free, upgrade when you need more. No hidden fees, no
-              surprises.
+
+            {/* Description */}
+            <p className="text-slate-500 dark:text-slate-400 max-w-lg mx-auto mb-6 leading-relaxed">
+              We&apos;re working on simple, transparent pricing plans for
+              employers. Right now, all job postings are completely free!
             </p>
-          </div>
-        </section>
 
-        {/* Pricing Cards */}
-        <section className="py-16">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid md:grid-cols-3 gap-8">
-              {/* Starter */}
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 hover:shadow-lg transition-shadow">
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                  Starter
-                </h3>
-                <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
-                  Perfect for small businesses
-                </p>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-slate-900 dark:text-white">
-                    Free
-                  </span>
-                </div>
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>1 active job posting</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>Basic candidate search</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>30-day job listing</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>Email support</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-400 dark:text-slate-500">
-                    <iconify-icon
-                      icon="solar:close-circle-linear"
-                      class="text-slate-300 dark:text-slate-600 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>Analytics dashboard</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-400 dark:text-slate-500">
-                    <iconify-icon
-                      icon="solar:close-circle-linear"
-                      class="text-slate-300 dark:text-slate-600 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>Featured listings</span>
-                  </li>
-                </ul>
-                <a
-                  href="/signup"
-                  className="block text-center w-full py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  Get Started Free
-                </a>
-              </div>
-
-              {/* Professional */}
-              <div className="bg-indigo-600 rounded-2xl p-8 text-white relative hover:shadow-xl transition-shadow">
-                <span className="absolute top-0 right-6 -translate-y-1/2 px-4 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full">
-                  Most Popular
+            {/* Explicit Message Card */}
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl p-6 max-w-md mx-auto mb-8">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <iconify-icon
+                  icon="solar:verified-check-bold"
+                  class="text-emerald-600 dark:text-emerald-400 text-xl"
+                ></iconify-icon>
+                <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                  Currently Free for Everyone!
                 </span>
-                <h3 className="text-xl font-semibold mb-2">Professional</h3>
-                <p className="text-indigo-200 text-sm mb-6">
-                  For growing companies
-                </p>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">$99</span>
-                  <span className="text-indigo-200">/month</span>
-                </div>
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-start gap-3 text-sm text-indigo-100">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-indigo-300 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>10 active job postings</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-indigo-100">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-indigo-300 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>Advanced candidate search</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-indigo-100">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-indigo-300 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>60-day job listings</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-indigo-100">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-indigo-300 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>Analytics dashboard</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-indigo-100">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-indigo-300 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>Priority support</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-indigo-100">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-indigo-300 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>2 featured listings/month</span>
-                  </li>
-                </ul>
-                <a
-                  href="/signup"
-                  className="block text-center w-full py-3 bg-white text-indigo-600 rounded-lg font-medium hover:bg-indigo-50 transition-colors"
-                >
-                  Start 14-Day Trial
-                </a>
               </div>
-
-              {/* Enterprise */}
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 hover:shadow-lg transition-shadow">
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                  Enterprise
-                </h3>
-                <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
-                  For large organizations
-                </p>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-slate-900 dark:text-white">
-                    Custom
-                  </span>
-                </div>
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>Unlimited job postings</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>Unlimited candidate access</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>Dedicated account manager</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>Custom integrations (ATS)</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>SLA guarantee</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500 mt-0.5"
-                      width="18"
-                    ></iconify-icon>
-                    <span>Invoice billing</span>
-                  </li>
-                </ul>
-                <a
-                  href="/contact"
-                  className="block text-center w-full py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  Contact Sales
-                </a>
-              </div>
+              <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                During our launch period, employers can post unlimited jobs at
+                no cost. Enjoy premium features for free while we build out our
+                pricing tiers.
+              </p>
             </div>
-          </div>
-        </section>
 
-        {/* FAQ */}
-        <section className="py-16 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-semibold text-slate-900 dark:text-white text-center mb-12">
-              Frequently Asked Questions
-            </h2>
-
-            <div className="space-y-6">
-              <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-6">
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
-                  Can I upgrade or downgrade anytime?
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Yes, you can change your plan at any time. Changes take effect
-                  immediately and are prorated.
-                </p>
-              </div>
-              <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-6">
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
-                  What payment methods do you accept?
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  We accept all major credit cards, bKash, Nagad, and bank
-                  transfers for Bangladesh customers.
-                </p>
-              </div>
-              <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-6">
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
-                  Is there a contract or commitment?
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  No long-term contracts. All plans are month-to-month and you
-                  can cancel anytime.
-                </p>
-              </div>
-              <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-6">
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
-                  Do you offer discounts for startups?
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Yes! We offer 50% off for verified startups in Bangladesh.
-                  Contact us to learn more.
-                </p>
-              </div>
-            </div>
+            {/* CTA */}
+            <Link
+              href="/post-job"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-indigo-600 text-white rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors"
+            >
+              <iconify-icon
+                icon="solar:add-circle-linear"
+                width="18"
+              ></iconify-icon>
+              Post a Job for Free
+            </Link>
           </div>
-        </section>
+        </div>
       </main>
       <Footer />
     </>
