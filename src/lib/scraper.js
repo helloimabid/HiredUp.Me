@@ -777,15 +777,25 @@ export async function scrapeJobsByQuery(
           body: JSON.stringify({ query, location }),
         });
 
+        const responseText = await response.text();
+
         if (response.ok) {
-          const data = await response.json();
-          jobs = data.jobs || [];
-          console.log(`External scraper returned ${jobs.length} jobs`);
+          try {
+            const data = JSON.parse(responseText);
+            jobs = data.jobs || [];
+            console.log(`External scraper returned ${jobs.length} jobs`);
+          } catch (parseError) {
+            console.error(
+              "Failed to parse scraper response:",
+              parseError.message,
+            );
+            console.error("Response was:", responseText.substring(0, 200));
+          }
         } else {
           console.error(
             "External scraper failed:",
             response.status,
-            await response.text(),
+            responseText.substring(0, 200),
           );
         }
       } catch (err) {

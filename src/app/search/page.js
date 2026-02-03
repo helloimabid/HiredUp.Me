@@ -316,7 +316,21 @@ function SearchContent() {
         `/api/jobs/search?q=${encodeURIComponent(searchQuery)}&location=${encodeURIComponent(searchLocation)}&limit=50`,
       );
 
-      const data = await response.json();
+      // Get response text first to handle non-JSON responses
+      const responseText = await response.text();
+      let data;
+
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error(
+          "Failed to parse response:",
+          responseText.substring(0, 200),
+        );
+        throw new Error(
+          "Server returned an invalid response. Please try again.",
+        );
+      }
 
       if (!response.ok) {
         throw new Error(data.error || "Search failed");
@@ -372,7 +386,21 @@ function SearchContent() {
         }),
       });
 
-      const data = await response.json();
+      // Get response text first to handle non-JSON responses
+      const responseText = await response.text();
+      let data;
+
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error(
+          "Failed to parse response:",
+          responseText.substring(0, 200),
+        );
+        throw new Error(
+          "Server returned an invalid response. Please try again.",
+        );
+      }
 
       if (!response.ok) {
         throw new Error(data.error || "Search failed");
