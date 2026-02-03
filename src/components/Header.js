@@ -19,7 +19,10 @@ export default function Header() {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
       }
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target)
+      ) {
         setMobileMenuOpen(false);
       }
     }
@@ -199,12 +202,17 @@ export default function Header() {
 
           {/* Mobile Menu Icon */}
           <div className="md:hidden flex items-center gap-2">
-            <ThemeTo
+            <ThemeToggle />
+            <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             >
               <iconify-icon
-                icon={mobileMenuOpen ? "solar:close-circle-linear" : "solar:hamburger-menu-linear"}
+                icon={
+                  mobileMenuOpen
+                    ? "solar:close-circle-linear"
+                    : "solar:hamburger-menu-linear"
+                }
                 width="24"
                 stroke-width="1.5"
               ></iconify-icon>
@@ -215,7 +223,7 @@ export default function Header() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div 
+        <div
           ref={mobileMenuRef}
           className="md:hidden bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700"
         >
@@ -232,7 +240,10 @@ export default function Header() {
               onClick={() => setMobileMenuOpen(false)}
               className="block text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2 flex items-center gap-2"
             >
-              <iconify-icon icon="solar:magnifer-linear" width="16"></iconify-icon>
+              <iconify-icon
+                icon="solar:magnifer-linear"
+                width="16"
+              ></iconify-icon>
               Search Jobs
             </Link>
             <Link
@@ -275,7 +286,10 @@ export default function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2"
                   >
-                    <iconify-icon icon="solar:home-2-linear" width="18"></iconify-icon>
+                    <iconify-icon
+                      icon="solar:home-2-linear"
+                      width="18"
+                    ></iconify-icon>
                     Dashboard
                   </Link>
                   <Link
@@ -283,7 +297,10 @@ export default function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2"
                   >
-                    <iconify-icon icon="solar:user-linear" width="18"></iconify-icon>
+                    <iconify-icon
+                      icon="solar:user-linear"
+                      width="18"
+                    ></iconify-icon>
                     My Profile
                   </Link>
                   <Link
@@ -291,7 +308,10 @@ export default function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2"
                   >
-                    <iconify-icon icon="solar:document-text-linear" width="18"></iconify-icon>
+                    <iconify-icon
+                      icon="solar:document-text-linear"
+                      width="18"
+                    ></iconify-icon>
                     My Applications
                   </Link>
                   <Link
@@ -299,14 +319,20 @@ export default function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2"
                   >
-                    <iconify-icon icon="solar:bookmark-linear" width="18"></iconify-icon>
+                    <iconify-icon
+                      icon="solar:bookmark-linear"
+                      width="18"
+                    ></iconify-icon>
                     Saved Jobs
                   </Link>
                   <button
                     onClick={handleLogout}
                     className="flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors py-2 w-full"
                   >
-                    <iconify-icon icon="solar:logout-2-linear" width="18"></iconify-icon>
+                    <iconify-icon
+                      icon="solar:logout-2-linear"
+                      width="18"
+                    ></iconify-icon>
                     Sign out
                   </button>
                 </>
@@ -331,8 +357,7 @@ export default function Header() {
             </div>
           </nav>
         </div>
-      )}v>
-      </div>
+      )}
     </header>
   );
 }
