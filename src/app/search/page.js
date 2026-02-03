@@ -186,12 +186,36 @@ const locations = [
   "Rajshahi, Bangladesh",
   "Khulna, Bangladesh",
   "Comilla, Bangladesh",
+  "Gazipur, Bangladesh",
+  "Narayanganj, Bangladesh",
+  "Mymensingh, Bangladesh",
+  "Rangpur, Bangladesh",
+  "Barishal, Bangladesh",
   "United States",
+  "New York, USA",
+  "San Francisco, USA",
+  "Los Angeles, USA",
+  "Chicago, USA",
+  "Seattle, USA",
+  "Austin, USA",
   "United Kingdom",
+  "London, UK",
+  "Manchester, UK",
   "Canada",
+  "Toronto, Canada",
+  "Vancouver, Canada",
   "Germany",
+  "Berlin, Germany",
+  "Munich, Germany",
   "Singapore",
   "India",
+  "Mumbai, India",
+  "Bangalore, India",
+  "Delhi, India",
+  "Dubai, UAE",
+  "Australia",
+  "Sydney, Australia",
+  "Melbourne, Australia",
   "Worldwide",
 ];
 
@@ -512,17 +536,22 @@ function SearchContent() {
                       icon="solar:map-point-linear"
                       className="text-slate-400 dark:text-slate-500 text-xl flex-shrink-0"
                     ></iconify-icon>
-                    <select
+                    <input
+                      type="text"
+                      list="location-suggestions"
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
-                      className="w-full text-sm text-slate-900 dark:text-white outline-none bg-transparent font-medium"
-                    >
+                      placeholder="Type or select a location..."
+                      className="w-full text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none bg-transparent font-medium"
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleSearch(query, location)
+                      }
+                    />
+                    <datalist id="location-suggestions">
                       {locations.map((loc) => (
-                        <option key={loc} value={loc}>
-                          {loc}
-                        </option>
+                        <option key={loc} value={loc} />
                       ))}
-                    </select>
+                    </datalist>
                   </div>
                 </div>
               </div>
@@ -761,7 +790,8 @@ function SearchContent() {
                 Searching for jobs...
               </h3>
               <p className="text-slate-500 dark:text-slate-400 text-sm">
-                Using heavy compute to find the best matches for &quot;{query}&quot;
+                Using heavy compute to find the best matches for &quot;{query}
+                &quot;
               </p>
             </div>
           </section>
