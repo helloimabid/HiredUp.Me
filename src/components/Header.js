@@ -9,13 +9,18 @@ import ThemeToggle from "./ThemeToggle";
 export default function Header() {
   const { user, loading, logout, isAuthenticated } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+        setMobileMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -25,6 +30,7 @@ export default function Header() {
   const handleLogout = async () => {
     await logout();
     setDropdownOpen(false);
+    setMobileMenuOpen(false);
   };
 
   return (
@@ -193,16 +199,139 @@ export default function Header() {
 
           {/* Mobile Menu Icon */}
           <div className="md:hidden flex items-center gap-2">
-            <ThemeToggle />
-            <button className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+            <ThemeTo
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            >
               <iconify-icon
-                icon="solar:hamburger-menu-linear"
+                icon={mobileMenuOpen ? "solar:close-circle-linear" : "solar:hamburger-menu-linear"}
                 width="24"
                 stroke-width="1.5"
               ></iconify-icon>
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div 
+          ref={mobileMenuRef}
+          className="md:hidden bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700"
+        >
+          <nav className="px-4 py-4 space-y-3">
+            <Link
+              href="/jobs"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2"
+            >
+              Browse Jobs
+            </Link>
+            <Link
+              href="/search"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2 flex items-center gap-2"
+            >
+              <iconify-icon icon="solar:magnifer-linear" width="16"></iconify-icon>
+              Search Jobs
+            </Link>
+            <Link
+              href="/employers"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2"
+            >
+              For Employers
+            </Link>
+            <Link
+              href="/blog"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2"
+            >
+              Blog
+            </Link>
+
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-4 mt-4 space-y-3">
+              {loading ? (
+                <div className="w-full h-10 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
+              ) : isAuthenticated ? (
+                <>
+                  <div className="flex items-center gap-3 pb-3 border-b border-slate-200 dark:border-slate-700">
+                    <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                      {user?.name?.charAt(0)?.toUpperCase() ||
+                        user?.email?.charAt(0)?.toUpperCase() ||
+                        "U"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                        {user?.name || "User"}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2"
+                  >
+                    <iconify-icon icon="solar:home-2-linear" width="18"></iconify-icon>
+                    Dashboard
+                  </Link>
+                  <Link
+                    href="/dashboard/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2"
+                  >
+                    <iconify-icon icon="solar:user-linear" width="18"></iconify-icon>
+                    My Profile
+                  </Link>
+                  <Link
+                    href="/dashboard/applications"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2"
+                  >
+                    <iconify-icon icon="solar:document-text-linear" width="18"></iconify-icon>
+                    My Applications
+                  </Link>
+                  <Link
+                    href="/dashboard/saved-jobs"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2"
+                  >
+                    <iconify-icon icon="solar:bookmark-linear" width="18"></iconify-icon>
+                    Saved Jobs
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors py-2 w-full"
+                  >
+                    <iconify-icon icon="solar:logout-2-linear" width="18"></iconify-icon>
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <div className="space-y-3">
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-center text-sm font-medium text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+                  >
+                    Log in
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-center text-sm font-medium bg-slate-900 dark:bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-slate-800 dark:hover:bg-indigo-700 transition-all shadow-sm"
+                  >
+                    Sign up
+                  </Link>
+                </div>
+              )}
+            </div>
+          </nav>
+        </div>
+      )}v>
       </div>
     </header>
   );
