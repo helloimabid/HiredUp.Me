@@ -34,7 +34,7 @@ export default function AIJobLoader({ job, onComplete, onError }) {
 
       updateProgress(3, "AI is analyzing the job...", 40);
 
-      // Call server-side API that uses your Puter token
+      // Call server-side API that uses your OpenRouter token
       const response = await fetch("/api/jobs/generate-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -51,23 +51,37 @@ export default function AIJobLoader({ job, onComplete, onError }) {
 
       updateProgress(4, "AI is writing content...", 60);
 
+      // Always try to parse the response
+      const result = await response.json();
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "AI generation failed");
+        console.error("AI API returned error:", result);
+        throw new Error(result.error || "AI generation failed");
       }
 
-      updateProgress(5, "Fetching company logo...", 70);
+      // Verify the response has the expected data
+      if (!result.success) {
+        console.error("AI response missing success flag:", result);
+        throw new Error(result.error || "AI generation did not complete successfully");
+      }
 
-      updateProgress(6, "Creating job page...", 80);
+      console.log("AI generation successful:", result.message);
 
-      updateProgress(7, "Saving to database...", 90);
+      updateProgress(5, "Content generated!", 70);
 
-      updateProgress(8, "Done! Loading page...", 100);
+      updateProgress(6, "Page created!", 80);
+
+      updateProgress(7, "Saved to database!", 90);
+
+      updateProgress(8, "Done! Reloading...", 100);
       setStatus("complete");
 
-      // Reload page after short delay
+      // Reload page after short delay with cache bust
       setTimeout(() => {
-        window.location.reload();
+        // Force a fresh page load by adding a timestamp query param
+        const url = new URL(window.location.href);
+        url.searchParams.set('_t', Date.now());
+        window.location.href = url.toString();
       }, 800);
     } catch (error) {
       console.error("AI generation error:", error);

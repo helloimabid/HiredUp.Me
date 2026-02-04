@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { Client, Databases } from "node-appwrite";
+
+// Allow longer execution time for AI generation
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 
 // Logo.dev configuration (fallback)
 const LOGO_DEV_KEY =
@@ -165,10 +170,14 @@ async function fetchCompanyLogo(companyName) {
 }
 
 export async function POST(request) {
+  console.log("[generate-ai] Request received");
+  
   try {
     const { jobId, job } = await request.json();
+    console.log(`[generate-ai] Processing job: ${jobId} - ${job?.title}`);
 
     if (!jobId || !job) {
+      console.log("[generate-ai] Error: Missing jobId or job data");
       return NextResponse.json(
         { error: "Missing jobId or job data" },
         { status: 400 },
@@ -176,6 +185,7 @@ export async function POST(request) {
     }
 
     // Step 1: Generate AI content
+    console.log("[generate-ai] Step 1: Calling AI...");
     const prompt = `You are creating professional content for a job posting page. Analyze this job thoroughly.
 
 JOB DETAILS:
@@ -203,17 +213,23 @@ Create a comprehensive JSON response with these EXACT fields:
 
 Return ONLY valid JSON. No markdown, no explanation.`;
 
+    console.log("[generate-ai] Calling OpenRouter API...");
     const aiResponse = await callAI(prompt);
+    console.log("[generate-ai] AI response received, length:", aiResponse?.length);
 
     // Extract JSON from response
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
+      console.error("[generate-ai] No JSON found in AI response:", aiResponse?.substring(0, 500));
       throw new Error("AI response was not valid JSON");
     }
 
+    console.log("[generate-ai] Step 2: Parsing AI response...");
     const analysis = JSON.parse(jsonMatch[0]);
+    console.log("[generate-ai] Parsed successfully, summary:", analysis.summary?.substring(0, 100));
 
     // Step 2: Fetch company logo
+    console.log("[generate-ai] Step 3: Fetching logo for", job.company);
     let companyLogo = null;
     try {
       companyLogo = await fetchCompanyLogo(job.company);
@@ -312,21 +328,52 @@ Return ONLY valid JSON. No markdown, no explanation.`;
     };
 
     // Step 4: Save to database
-    await databases.updateDocument(DATABASE_ID, JOBS_COLLECTION_ID, jobId, {
-      description: (analysis.about || analysis.summary || "").substring(
-        0,
-        5000,
-      ),
-      enhanced_json: JSON.stringify(enhanced).substring(0, 50000),
-    });
+    console.log("[generate-ai] Step 4: Saving to database...");
+    console.log(`[generate-ai] Database: ${DATABASE_ID}, Collection: ${JOBS_COLLECTION_ID}, Job: ${jobId}`);
+    
+    // First, get the job's slug for cache revalidation
+    let jobSlug = null;
+    try {
+      const existingJob = await databases.getDocument(DATABASE_ID, JOBS_COLLECTION_ID, jobId);
+      jobSlug = existingJob.slug;
+      console.log(`[generate-ai] Found job slug: ${jobSlug}`);
+    } catch (fetchError) {
+      console.warn("[generate-ai] Could not fetch job slug:", fetchError.message);
+    }
+    
+    try {
+      await databases.updateDocument(DATABASE_ID, JOBS_COLLECTION_ID, jobId, {
+        description: (analysis.about || analysis.summary || "").substring(
+          0,
+          5000,
+        ),
+        enhanced_json: JSON.stringify(enhanced).substring(0, 50000),
+      });
+      console.log("[generate-ai] Database update successful!");
+      
+      // Revalidate the job page cache so the new content shows immediately
+      if (jobSlug) {
+        console.log(`[generate-ai] Revalidating cache for /jobs/${jobSlug}`);
+        revalidatePath(`/jobs/${jobSlug}`);
+      }
+      // Also revalidate the jobs list page
+      revalidatePath('/jobs');
+      
+    } catch (dbError) {
+      console.error("[generate-ai] Database error:", dbError.message);
+      console.error("[generate-ai] DB Error details:", JSON.stringify(dbError));
+      throw new Error(`Database save failed: ${dbError.message}`);
+    }
 
+    console.log("[generate-ai] Complete! Returning success response.");
     return NextResponse.json({
       success: true,
       enhanced,
       message: "Job enhanced with AI successfully",
     });
   } catch (error) {
-    console.error("AI generation error:", error);
+    console.error("[generate-ai] Error:", error.message);
+    console.error("[generate-ai] Stack:", error.stack);
     return NextResponse.json(
       { error: error.message || "AI generation failed" },
       { status: 500 },
