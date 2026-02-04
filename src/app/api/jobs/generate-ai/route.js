@@ -35,40 +35,105 @@ const JOBS_COLLECTION_ID =
   process.env.APPWRITE_JOBS_COLLECTION_ID ||
   "jobs";
 
-// Call AI using OpenRouter (free models available)
+// Initialize Puter.js for AI (unlimited usage)
+let puter = null;
+async function initPuter() {
+  if (puter) return puter;
+  try {
+    const { init } = await import("@heyputer/puter.js/src/init.cjs");
+    const authToken = process.env.PUTER_AUTH_TOKEN;
+    if (!authToken) {
+      console.log("[Puter] No auth token found, will fall back to OpenRouter");
+      return null;
+    }
+    puter = init(authToken);
+    console.log("[Puter] Initialized successfully");
+    return puter;
+  } catch (err) {
+    console.error("[Puter] Failed to initialize:", err.message);
+    return null;
+  }
+}
+
+// Call AI using Puter.js (unlimited, no rate limits) with OpenRouter fallback
 async function callAI(prompt) {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    throw new Error("OpenRouter API key not configured");
-  }
+  // Add timeout to prevent Vercel gateway timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
 
-  const response = await fetch(
-    "https://openrouter.ai/api/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://hiredup.me",
-        "X-Title": "HiredUp.me Job Board",
+  try {
+    // Try Puter.js first (unlimited)
+    const puterClient = await initPuter();
+    if (puterClient) {
+      console.log("[AI] Using Puter.js for generation...");
+      try {
+        const response = await puterClient.ai.chat(prompt);
+        clearTimeout(timeoutId);
+        // Puter returns the message directly or as an object
+        const content =
+          typeof response === "string"
+            ? response
+            : response?.message?.content ||
+              response?.content ||
+              JSON.stringify(response);
+        console.log("[AI] Puter response received, length:", content?.length);
+        return content;
+      } catch (puterErr) {
+        console.error(
+          "[AI] Puter error, falling back to OpenRouter:",
+          puterErr.message,
+        );
+      }
+    }
+
+    // Fallback to OpenRouter
+    console.log("[AI] Using OpenRouter fallback...");
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "No AI service available (Puter failed and no OpenRouter key)",
+      );
+    }
+
+    const response = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+          "HTTP-Referer": "https://hiredup.me",
+          "X-Title": "HiredUp.me Job Board",
+        },
+        body: JSON.stringify({
+          model: "tngtech/deepseek-r1t2-chimera:free",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.7,
+          max_tokens: 2000,
+        }),
+        signal: controller.signal,
       },
-      body: JSON.stringify({
-        model: "tngtech/deepseek-r1t2-chimera:free",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 2000,
-      }),
-    },
-  );
+    );
 
-  if (!response.ok) {
-    const error = await response.text();
-    console.error("OpenRouter error:", error);
-    throw new Error(`AI API error: ${response.status}`);
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("OpenRouter error:", error);
+      throw new Error(`AI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || "";
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      const timeoutError = new Error("AI_TIMEOUT");
+      timeoutError.isTimeout = true;
+      throw timeoutError;
+    }
+    throw err;
   }
-
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content || "";
 }
 
 // Fetch company logo using Tavily search (with Logo.dev fallback)
@@ -76,6 +141,9 @@ async function fetchCompanyLogo(companyName) {
   // Try Tavily first for more accurate logo search
   if (TAVILY_API_KEY) {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout for logo
+
       const response = await fetch("https://api.tavily.com/search", {
         method: "POST",
         headers: {
@@ -88,7 +156,10 @@ async function fetchCompanyLogo(companyName) {
           include_images: true,
           max_results: 5,
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         const data = await response.json();
@@ -391,6 +462,19 @@ Return ONLY valid JSON. No markdown, no explanation.`;
   } catch (error) {
     console.error("[generate-ai] Error:", error.message);
     console.error("[generate-ai] Stack:", error.stack);
+
+    // Handle timeout specifically with a user-friendly message
+    if (error.isTimeout || error.message === "AI_TIMEOUT") {
+      console.log("[generate-ai] AI timed out, returning friendly message");
+      return NextResponse.json({
+        timeout: true,
+        message:
+          "AI generation is taking longer than expected. Please refresh the page in 1-2 minutes to try again.",
+        suggestion:
+          "The AI service may be experiencing high demand. Your job page will still work with the basic content.",
+      });
+    }
+
     return NextResponse.json(
       { error: error.message || "AI generation failed" },
       { status: 500 },
