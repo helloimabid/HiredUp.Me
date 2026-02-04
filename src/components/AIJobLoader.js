@@ -53,7 +53,7 @@ export default function AIJobLoader({ job, onComplete, onError }) {
 
       // Always try to parse the response
       const result = await response.json();
-      
+
       if (!response.ok) {
         console.error("AI API returned error:", result);
         throw new Error(result.error || "AI generation failed");
@@ -62,7 +62,9 @@ export default function AIJobLoader({ job, onComplete, onError }) {
       // Verify the response has the expected data
       if (!result.success) {
         console.error("AI response missing success flag:", result);
-        throw new Error(result.error || "AI generation did not complete successfully");
+        throw new Error(
+          result.error || "AI generation did not complete successfully",
+        );
       }
 
       console.log("AI generation successful:", result.message);
@@ -80,7 +82,7 @@ export default function AIJobLoader({ job, onComplete, onError }) {
       setTimeout(() => {
         // Force a fresh page load by adding a timestamp query param
         const url = new URL(window.location.href);
-        url.searchParams.set('_t', Date.now());
+        url.searchParams.set("_t", Date.now());
         window.location.href = url.toString();
       }, 800);
     } catch (error) {
@@ -237,8 +239,6 @@ export default function AIJobLoader({ job, onComplete, onError }) {
               {job.company} • {job.location}
             </p>
           </div>
-
-          
         </div>
       </div>
     </div>
