@@ -170,6 +170,11 @@ export default function RootLayout({ children }) {
           src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"
           strategy="beforeInteractive"
         />
+        {/* Puter.js for free unlimited AI - loaded async */}
+        <Script
+          src="https://js.puter.com/v2/"
+          strategy="lazyOnload"
+        />
       </head>
       <body
         className={`${inter.variable} ${notoBengali.variable} font-sans bg-gray-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 antialiased transition-colors duration-200`}

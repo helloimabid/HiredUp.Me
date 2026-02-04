@@ -22,6 +22,46 @@ export default function AIJobLoader({ job, onComplete, onError }) {
     setStatus("generating");
   };
 
+  // Wait for Puter.js to load (it's loaded async)
+  const waitForPuter = (timeout = 10000) => {
+    return new Promise((resolve, reject) => {
+      const start = Date.now();
+      const check = () => {
+        if (typeof window !== "undefined" && window.puter?.ai?.chat) {
+          resolve(window.puter);
+        } else if (Date.now() - start > timeout) {
+          reject(new Error("Puter.js failed to load"));
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
+  };
+
+  // Call Puter AI directly from browser (free, unlimited)
+  const callPuterAI = async (prompt) => {
+    const puter = await waitForPuter();
+    console.log("[Puter] Calling AI with model: gpt-4.1-nano...");
+    
+    const response = await puter.ai.chat(prompt, { 
+      model: "gpt-4.1-nano",  // Fast free model
+      temperature: 0.7 
+    });
+    
+    // Handle response - can be string or object
+    if (typeof response === "string") {
+      return response;
+    }
+    if (response?.message?.content) {
+      return response.message.content;
+    }
+    if (response?.content) {
+      return response.content;
+    }
+    return JSON.stringify(response);
+  };
+
   const startGeneration = async () => {
     if (generationStartedRef.current) return;
     generationStartedRef.current = true;
@@ -29,13 +69,61 @@ export default function AIJobLoader({ job, onComplete, onError }) {
     try {
       updateProgress(1, "Preparing job data...", 10);
 
-      // Step 2: Send to server-side AI
-      updateProgress(2, "Connecting to AI service...", 20);
+      updateProgress(2, "Loading AI service...", 20);
+
+      // Build the AI prompt
+      const prompt = `You are creating professional content for a job posting page. Analyze this job thoroughly.
+
+JOB DETAILS:
+- Title: ${job.title}
+- Company: ${job.company}
+- Location: ${job.location}
+${job.description ? `- Description: ${job.description.substring(0, 2000)}` : ""}
+
+Create a comprehensive JSON response with these EXACT fields:
+{
+  "summary": "Write a compelling 2-3 sentence summary of this opportunity",
+  "about": "Write 2-3 detailed paragraphs about this role, the company culture, and what makes it exciting. Be specific and engaging.",
+  "responsibilities": ["Write 5-6 specific, detailed responsibilities"],
+  "requirements": ["Write 5-6 specific qualifications and requirements"],
+  "skills": ["List 6-8 relevant technical and soft skills"],
+  "experienceLevel": "entry or mid or senior",
+  "salaryRange": "Realistic salary range (use BDT for Bangladesh jobs)",
+  "industry": "Specific industry category",
+  "workType": "remote or hybrid or onsite",
+  "benefits": ["List 4-5 typical benefits for this role"],
+  "whyApply": "Write 2-3 compelling reasons why someone should apply",
+  "applicationTips": "Write 2-3 specific tips for applying to this role",
+  "highlights": ["3-4 key highlights or selling points of this job"]
+}
+
+Return ONLY valid JSON. No markdown, no explanation.`;
 
       updateProgress(3, "AI is analyzing the job...", 40);
 
-      // Call server-side API that uses your OpenRouter token
-      const response = await fetch("/api/jobs/generate-ai", {
+      // Call Puter AI directly from browser (free, unlimited!)
+      console.log("[AIJobLoader] Calling Puter.js AI directly...");
+      const aiResponse = await callPuterAI(prompt);
+      console.log("[AIJobLoader] AI response received, length:", aiResponse?.length);
+
+      updateProgress(4, "AI is writing content...", 60);
+
+      // Extract JSON from response
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error("[AIJobLoader] No JSON found in AI response:", aiResponse?.substring(0, 500));
+        throw new Error("AI response was not valid JSON");
+      }
+
+      const analysis = JSON.parse(jsonMatch[0]);
+      console.log("[AIJobLoader] Parsed successfully, summary:", analysis.summary?.substring(0, 100));
+
+      updateProgress(5, "Content generated!", 70);
+
+      // Send to server to save (logo fetch + database save)
+      updateProgress(6, "Saving to database...", 80);
+      
+      const saveResponse = await fetch("/api/jobs/generate-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -46,49 +134,27 @@ export default function AIJobLoader({ job, onComplete, onError }) {
             location: job.location,
             description: job.description || "",
           },
+          analysis, // Send the AI analysis to server for saving
+          clientGenerated: true, // Flag that AI was done client-side
         }),
       });
 
-      updateProgress(4, "AI is writing content...", 60);
+      const result = await saveResponse.json();
 
-      // Always try to parse the response
-      const result = await response.json();
-
-      // Handle timeout response
-      if (result.timeout) {
-        console.log("AI generation timed out:", result.message);
-        setStatus("timeout");
-        setMessage(result.message);
-        return;
+      if (!saveResponse.ok) {
+        console.error("Save API returned error:", result);
+        throw new Error(result.error || "Failed to save generated content");
       }
-
-      if (!response.ok) {
-        console.error("AI API returned error:", result);
-        throw new Error(result.error || "AI generation failed");
-      }
-
-      // Verify the response has the expected data
-      if (!result.success) {
-        console.error("AI response missing success flag:", result);
-        throw new Error(
-          result.error || "AI generation did not complete successfully",
-        );
-      }
-
-      console.log("AI generation successful:", result.message);
-
-      updateProgress(5, "Content generated!", 70);
-
-      updateProgress(6, "Page created!", 80);
 
       updateProgress(7, "Saved to database!", 90);
+
+      console.log("AI generation successful:", result.message);
 
       updateProgress(8, "Done! Reloading...", 100);
       setStatus("complete");
 
       // Reload page after short delay with cache bust
       setTimeout(() => {
-        // Force a fresh page load by adding a timestamp query param
         const url = new URL(window.location.href);
         url.searchParams.set("_t", Date.now());
         window.location.href = url.toString();

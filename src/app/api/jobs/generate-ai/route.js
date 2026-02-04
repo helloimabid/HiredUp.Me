@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { Client, Databases } from "node-appwrite";
 
-// Allow longer execution time for AI generation
-export const maxDuration = 60;
+// Shorter timeout since AI is now done client-side
+export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
 // Logo.dev configuration (fallback)
@@ -35,84 +35,16 @@ const JOBS_COLLECTION_ID =
   process.env.APPWRITE_JOBS_COLLECTION_ID ||
   "jobs";
 
-// Call Puter AI via HTTP API (no SDK needed, works in any environment)
-async function callPuterAI(prompt, authToken) {
-  const response = await fetch("https://api.puter.com/drivers/call", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${authToken}`,
-    },
-    body: JSON.stringify({
-      interface: "puter-chat-completion",
-      driver: "claude",
-      method: "complete",
-      args: {
-        messages: [{ role: "user", content: prompt }],
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Puter API error: ${response.status} - ${error}`);
-  }
-
-  const data = await response.json();
-  console.log("[Puter] Raw response:", JSON.stringify(data).substring(0, 500));
-
-  // Handle different response formats
-  if (data?.result?.message?.content) {
-    return data.result.message.content;
-  }
-  if (data?.result?.content) {
-    return data.result.content;
-  }
-  if (data?.message?.content) {
-    return data.message.content;
-  }
-  if (typeof data?.result === "string") {
-    return data.result;
-  }
-  if (typeof data === "string") {
-    return data;
-  }
-
-  // Return stringified response as fallback
-  return JSON.stringify(data);
-}
-
-// Call AI using Puter.js (unlimited, no rate limits) with OpenRouter fallback
+// Server-side AI fallback using OpenRouter (only used if client-side Puter fails)
 async function callAI(prompt) {
-  // Add timeout to prevent Vercel gateway timeout
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
+  const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
 
   try {
-    // Try Puter API first (unlimited)
-    const puterToken = process.env.PUTER_AUTH_TOKEN;
-    if (puterToken) {
-      console.log("[AI] Using Puter API for generation...");
-      try {
-        const content = await callPuterAI(prompt, puterToken);
-        clearTimeout(timeoutId);
-        console.log("[AI] Puter response received, length:", content?.length);
-        return content;
-      } catch (puterErr) {
-        console.error(
-          "[AI] Puter error, falling back to OpenRouter:",
-          puterErr.message,
-        );
-      }
-    }
-
-    // Fallback to OpenRouter
-    console.log("[AI] Using OpenRouter fallback...");
+    console.log("[AI] Using OpenRouter for generation...");
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
-      throw new Error(
-        "No AI service available (Puter failed and no OpenRouter key)",
-      );
+      throw new Error("No OpenRouter API key configured");
     }
 
     const response = await fetch(
@@ -264,8 +196,9 @@ export async function POST(request) {
   console.log("[generate-ai] Request received");
 
   try {
-    const { jobId, job } = await request.json();
+    const { jobId, job, analysis: clientAnalysis, clientGenerated } = await request.json();
     console.log(`[generate-ai] Processing job: ${jobId} - ${job?.title}`);
+    console.log(`[generate-ai] Client generated: ${clientGenerated}`);
 
     if (!jobId || !job) {
       console.log("[generate-ai] Error: Missing jobId or job data");
@@ -275,9 +208,16 @@ export async function POST(request) {
       );
     }
 
-    // Step 1: Generate AI content
-    console.log("[generate-ai] Step 1: Calling AI...");
-    const prompt = `You are creating professional content for a job posting page. Analyze this job thoroughly.
+    let analysis;
+
+    // Check if client already generated the AI content (using Puter.js)
+    if (clientGenerated && clientAnalysis) {
+      console.log("[generate-ai] Using client-generated AI content (Puter.js)");
+      analysis = clientAnalysis;
+    } else {
+      // Fallback: Generate AI content server-side (OpenRouter)
+      console.log("[generate-ai] Step 1: Calling server-side AI (fallback)...");
+      const prompt = `You are creating professional content for a job posting page. Analyze this job thoroughly.
 
 JOB DETAILS:
 - Title: ${job.title}
@@ -304,32 +244,34 @@ Create a comprehensive JSON response with these EXACT fields:
 
 Return ONLY valid JSON. No markdown, no explanation.`;
 
-    console.log("[generate-ai] Calling OpenRouter API...");
-    const aiResponse = await callAI(prompt);
-    console.log(
-      "[generate-ai] AI response received, length:",
-      aiResponse?.length,
-    );
-
-    // Extract JSON from response
-    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error(
-        "[generate-ai] No JSON found in AI response:",
-        aiResponse?.substring(0, 500),
+      console.log("[generate-ai] Calling OpenRouter API...");
+      const aiResponse = await callAI(prompt);
+      console.log(
+        "[generate-ai] AI response received, length:",
+        aiResponse?.length,
       );
-      throw new Error("AI response was not valid JSON");
+
+      // Extract JSON from response
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error(
+          "[generate-ai] No JSON found in AI response:",
+          aiResponse?.substring(0, 500),
+        );
+        throw new Error("AI response was not valid JSON");
+      }
+
+      console.log("[generate-ai] Parsing AI response...");
+      analysis = JSON.parse(jsonMatch[0]);
     }
 
-    console.log("[generate-ai] Step 2: Parsing AI response...");
-    const analysis = JSON.parse(jsonMatch[0]);
     console.log(
-      "[generate-ai] Parsed successfully, summary:",
+      "[generate-ai] Analysis ready, summary:",
       analysis.summary?.substring(0, 100),
     );
 
     // Step 2: Fetch company logo
-    console.log("[generate-ai] Step 3: Fetching logo for", job.company);
+    console.log("[generate-ai] Fetching logo for", job.company);
     let companyLogo = null;
     try {
       companyLogo = await fetchCompanyLogo(job.company);
