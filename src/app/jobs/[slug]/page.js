@@ -6,6 +6,7 @@ import { getJobBySlug, getJobs } from "@/lib/appwrite";
 import SaveJobButton from "@/components/SaveJobButton";
 import ApplyButton from "@/components/ApplyButton";
 import CompanyLogo from "@/components/CompanyLogo";
+import JobPageContent from "@/components/JobPageContent";
 
 // Revalidate every 5 minutes
 export const revalidate = 300;
@@ -407,8 +408,11 @@ export default async function JobDetailPage({ params }) {
     directApply: true,
   };
 
+  // Check if this job needs AI enhancement
+  const needsAI = enhanced?.needsAI === true && !enhanced?.aiEnhanced;
+
   return (
-    <>
+    <JobPageContent job={job} enhanced={enhanced}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -782,6 +786,6 @@ export default async function JobDetailPage({ params }) {
       </main>
 
       <Footer />
-    </>
+    </JobPageContent>
   );
 }

@@ -195,9 +195,19 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="border-t border-slate-100 dark:border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-xs text-slate-400 dark:text-slate-500">
-            © {currentYear} HiredUp.me. All rights reserved. Made with ❤️ in
-            Bangladesh.
+          <div className="text-xs text-slate-400 dark:text-slate-500 flex flex-col sm:flex-row items-center gap-2">
+            <span>
+              © {currentYear} HiredUp.me. All rights reserved. Made with ❤️ in
+              Bangladesh.
+            </span>
+            <span className="hidden sm:inline">•</span>
+            <a
+              href="https://logo.dev"
+              title="Logo API"
+              className="hover:text-indigo-500 transition-colors"
+            >
+              Logos provided by Logo.dev
+            </a>
           </div>
           <div
             className="flex gap-4 text-slate-400 dark:text-slate-500"
