@@ -9,19 +9,43 @@ import {
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-// Wake up scraper service on request start (helps with cold starts)
-async function wakeUpScraper() {
+// Aggressively wake up scraper service (wait for it to be ready)
+async function wakeUpScraperWithRetry(maxWaitTime = 20000) {
   const url = process.env.SCRAPER_SERVICE_URL;
-  if (!url) return;
-  try {
-    const controller = new AbortController();
-    setTimeout(() => controller.abort(), 5000); // 5 second timeout for wake-up
-    await fetch(`${url.replace(/\/+$/, "")}/health`, {
-      signal: controller.signal,
-    }).catch(() => {});
-  } catch {
-    // Ignore - just warming up
+  if (!url) return false;
+
+  const baseUrl = url.replace(/\/+$/, "");
+  const startTime = Date.now();
+
+  console.log("[API] Starting aggressive wake-up for scraper service...");
+
+  // Keep trying until service responds or we timeout
+  while (Date.now() - startTime < maxWaitTime) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(`${baseUrl}/health`, {
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        console.log(
+          `[API] Scraper service ready in ${Date.now() - startTime}ms`,
+        );
+        return true;
+      }
+    } catch {
+      // Not ready yet, wait a bit
+      console.log("[API] Scraper not ready, retrying in 2s...");
+      await new Promise((r) => setTimeout(r, 2000));
+    }
   }
+
+  console.log("[API] Scraper wake-up timed out after", maxWaitTime, "ms");
+  return false;
 }
 
 /**
@@ -38,10 +62,10 @@ export async function POST(request) {
     if (body.query) {
       const { query, location = "Remote", save = true, userId } = body;
 
-      // Start warming up the scraper service in parallel with user checks
-      const wakeUpPromise = wakeUpScraper();
+      // Start warming up the scraper service IMMEDIATELY (run in parallel with user checks)
+      const wakeUpPromise = wakeUpScraperWithRetry(20000);
 
-      // Check if user has search quota
+      // Check if user has search quota (runs in parallel with wake-up)
       if (userId) {
         const isPremium = await isUserPremium(userId);
         const usage = await canUserSearch(userId, isPremium);
@@ -59,7 +83,7 @@ export async function POST(request) {
         }
       }
 
-      // Wait for wake-up to complete (max 5 seconds)
+      // Wait for wake-up to complete before calling scraper
       await wakeUpPromise;
 
       console.log(`Job search requested: "${query}" in "${location}"`);

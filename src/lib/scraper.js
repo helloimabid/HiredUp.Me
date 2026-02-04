@@ -10,21 +10,68 @@ const SCRAPER_API_KEY =
 const isProduction =
   process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
 
-// Wake up the scraper service (fire and forget - helps with cold starts)
-async function wakeUpScraperService() {
+// Track if service was recently verified as ready (within last 30 seconds)
+let lastSuccessfulWakeUp = 0;
+const WAKEUP_CACHE_DURATION = 30000; // 30 seconds
+
+// Wake up the scraper service and wait for it to be ready
+async function wakeUpScraperService(maxWaitTime = 15000) {
+  if (!SCRAPER_SERVICE_URL) return false;
+
+  // If we recently verified the service is up, skip the check
+  if (Date.now() - lastSuccessfulWakeUp < WAKEUP_CACHE_DURATION) {
+    console.log(
+      "[Scraper] Service was recently verified as ready, skipping wake-up",
+    );
+    return true;
+  }
+
+  const baseUrl = SCRAPER_SERVICE_URL.replace(/\/+$/, "");
+  const startTime = Date.now();
+
+  console.log("[Scraper] Waking up external service...");
+
+  // Try multiple pings with increasing delays
+  while (Date.now() - startTime < maxWaitTime) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(`${baseUrl}/health`, {
+        method: "GET",
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        console.log(
+          `[Scraper] Service is ready (took ${Date.now() - startTime}ms)`,
+        );
+        lastSuccessfulWakeUp = Date.now();
+        return true;
+      }
+    } catch (err) {
+      // Service not ready yet, wait a bit and retry
+      console.log("[Scraper] Service not ready, waiting...");
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+  }
+
+  console.log("[Scraper] Wake-up timed out, proceeding anyway");
+  return false;
+}
+
+// Quick fire-and-forget wake up (for module load)
+function quickWakeUp() {
   if (!SCRAPER_SERVICE_URL) return;
   const baseUrl = SCRAPER_SERVICE_URL.replace(/\/+$/, "");
-  try {
-    // Fire and forget - don't await
-    fetch(`${baseUrl}/health`, { method: "GET" }).catch(() => {});
-  } catch {
-    // Ignore errors - this is just a warm-up
-  }
+  fetch(`${baseUrl}/health`, { method: "GET" }).catch(() => {});
 }
 
 // Try to wake up scraper on module load
 if (SCRAPER_SERVICE_URL) {
-  wakeUpScraperService();
+  quickWakeUp();
 }
 
 /**
@@ -784,10 +831,14 @@ export async function scrapeJobsByQuery(
     if (SCRAPER_SERVICE_URL) {
       const baseUrl = SCRAPER_SERVICE_URL.replace(/\/+$/, ""); // Remove trailing slashes
       console.log(`[External Service] Calling ${baseUrl}/scrape...`);
+
+      // Ensure the service is awake (uses cache if recently verified)
+      await wakeUpScraperService(10000);
+
       try {
-        // Create abort controller with 45 second timeout (Vercel has 60s limit)
+        // Create abort controller with 30 second timeout for the actual scrape request
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 45000);
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
 
         const response = await fetch(`${baseUrl}/scrape`, {
           method: "POST",
