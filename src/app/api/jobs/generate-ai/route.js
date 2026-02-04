@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { Client, Databases } from "node-appwrite";
 
-// Puter AI configuration
-const PUTER_AUTH_TOKEN = process.env.PUTER_AUTH_TOKEN;
-const PUTER_AI_MODEL = "tngtech/deepseek-r1t2-chimera:free";
-
 // Logo.dev configuration
 const LOGO_DEV_KEY =
   process.env.LOGO_DEV_PUBLISHABLE_KEY || "pk_XCMtoIJ7RMy7XgG2Ruf6UA";
@@ -31,35 +27,40 @@ const JOBS_COLLECTION_ID =
   process.env.APPWRITE_JOBS_COLLECTION_ID ||
   "jobs";
 
-// Call Puter AI API directly
-async function callPuterAI(prompt) {
-  if (!PUTER_AUTH_TOKEN) {
-    throw new Error("Puter AI token not configured");
+// Call AI using OpenRouter (free models available)
+async function callAI(prompt) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    throw new Error("OpenRouter API key not configured");
   }
 
-  const response = await fetch("https://api.puter.com/ai/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${PUTER_AUTH_TOKEN}`,
+  const response = await fetch(
+    "https://openrouter.ai/api/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        "HTTP-Referer": "https://hiredup.me",
+        "X-Title": "HiredUp.me Job Board",
+      },
+      body: JSON.stringify({
+        model: "tngtech/deepseek-r1t2-chimera:free",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 2000,
+      }),
     },
-    body: JSON.stringify({
-      model: PUTER_AI_MODEL,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
+  );
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Puter AI error: ${error}`);
+    console.error("OpenRouter error:", error);
+    throw new Error(`AI API error: ${response.status}`);
   }
 
   const data = await response.json();
-  return (
-    data.message?.content ||
-    data.choices?.[0]?.message?.content ||
-    JSON.stringify(data)
-  );
+  return data.choices?.[0]?.message?.content || "";
 }
 
 // Fetch company logo using Logo.dev
@@ -132,7 +133,7 @@ Create a comprehensive JSON response with these EXACT fields:
 
 Return ONLY valid JSON. No markdown, no explanation.`;
 
-    const aiResponse = await callPuterAI(prompt);
+    const aiResponse = await callAI(prompt);
 
     // Extract JSON from response
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
