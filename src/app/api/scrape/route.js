@@ -9,6 +9,21 @@ import {
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+// Wake up scraper service on request start (helps with cold starts)
+async function wakeUpScraper() {
+  const url = process.env.SCRAPER_SERVICE_URL;
+  if (!url) return;
+  try {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 5000); // 5 second timeout for wake-up
+    await fetch(`${url.replace(/\/+$/, "")}/health`, {
+      signal: controller.signal,
+    }).catch(() => {});
+  } catch {
+    // Ignore - just warming up
+  }
+}
+
 /**
  * User-driven job search endpoint
  * POST /api/scrape
@@ -22,6 +37,9 @@ export async function POST(request) {
     // New query-based search
     if (body.query) {
       const { query, location = "Remote", save = true, userId } = body;
+
+      // Start warming up the scraper service in parallel with user checks
+      const wakeUpPromise = wakeUpScraper();
 
       // Check if user has search quota
       if (userId) {
@@ -40,6 +58,9 @@ export async function POST(request) {
           );
         }
       }
+
+      // Wait for wake-up to complete (max 5 seconds)
+      await wakeUpPromise;
 
       console.log(`Job search requested: "${query}" in "${location}"`);
       const result = await scrapeJobsByQuery(query, location, save);

@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { Client, Databases } from "node-appwrite";
 
-// Logo.dev configuration
+// Logo.dev configuration (fallback)
 const LOGO_DEV_KEY =
   process.env.LOGO_DEV_PUBLISHABLE_KEY || "pk_XCMtoIJ7RMy7XgG2Ruf6UA";
+
+// Tavily API for logo search
+const TAVILY_API_KEY = process.env.TAVILY_API_KEY;
 
 // Initialize Appwrite
 const client = new Client()
@@ -63,8 +66,71 @@ async function callAI(prompt) {
   return data.choices?.[0]?.message?.content || "";
 }
 
-// Fetch company logo using Logo.dev
+// Fetch company logo using Tavily search (with Logo.dev fallback)
 async function fetchCompanyLogo(companyName) {
+  // Try Tavily first for more accurate logo search
+  if (TAVILY_API_KEY) {
+    try {
+      const response = await fetch("https://api.tavily.com/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          api_key: TAVILY_API_KEY,
+          query: `${companyName} company official logo`,
+          search_depth: "basic",
+          include_images: true,
+          max_results: 5,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Check for images in results
+        if (data.images && data.images.length > 0) {
+          // Filter for likely logo images (png, svg, or contains 'logo')
+          const logoImage =
+            data.images.find(
+              (img) =>
+                img.toLowerCase().includes("logo") ||
+                img.toLowerCase().endsWith(".svg") ||
+                img.toLowerCase().endsWith(".png"),
+            ) || data.images[0];
+
+          if (logoImage) {
+            console.log(`Tavily found logo for ${companyName}: ${logoImage}`);
+            return logoImage;
+          }
+        }
+
+        // Check result URLs for logo hints
+        if (data.results && data.results.length > 0) {
+          for (const result of data.results) {
+            if (
+              result.url &&
+              (result.url.includes("logo") ||
+                result.url.includes("brand") ||
+                result.url.includes("cdn"))
+            ) {
+              // Try to extract image from the result
+              if (result.url.match(/\.(png|jpg|jpeg|svg|webp)(\?|$)/i)) {
+                console.log(
+                  `Tavily found logo URL for ${companyName}: ${result.url}`,
+                );
+                return result.url;
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.log("Tavily logo search failed:", err.message);
+    }
+  }
+
+  // Fallback to Logo.dev
   const cleanName = companyName
     .toLowerCase()
     .replace(
@@ -86,11 +152,15 @@ async function fetchCompanyLogo(companyName) {
     const url = `https://img.logo.dev/${domain}?token=${LOGO_DEV_KEY}`;
     try {
       const res = await fetch(url, { method: "HEAD" });
-      if (res.ok) return url;
+      if (res.ok) {
+        console.log(`Logo.dev found logo for ${companyName}: ${url}`);
+        return url;
+      }
     } catch {
       continue;
     }
   }
+
   return null;
 }
 

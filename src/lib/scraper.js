@@ -10,6 +10,23 @@ const SCRAPER_API_KEY =
 const isProduction =
   process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
 
+// Wake up the scraper service (fire and forget - helps with cold starts)
+async function wakeUpScraperService() {
+  if (!SCRAPER_SERVICE_URL) return;
+  const baseUrl = SCRAPER_SERVICE_URL.replace(/\/+$/, "");
+  try {
+    // Fire and forget - don't await
+    fetch(`${baseUrl}/health`, { method: "GET" }).catch(() => {});
+  } catch {
+    // Ignore errors - this is just a warm-up
+  }
+}
+
+// Try to wake up scraper on module load
+if (SCRAPER_SERVICE_URL) {
+  wakeUpScraperService();
+}
+
 /**
  * Check if location is "Remote"
  */
@@ -768,6 +785,10 @@ export async function scrapeJobsByQuery(
       const baseUrl = SCRAPER_SERVICE_URL.replace(/\/+$/, ""); // Remove trailing slashes
       console.log(`[External Service] Calling ${baseUrl}/scrape...`);
       try {
+        // Create abort controller with 45 second timeout (Vercel has 60s limit)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 45000);
+
         const response = await fetch(`${baseUrl}/scrape`, {
           method: "POST",
           headers: {
@@ -775,7 +796,10 @@ export async function scrapeJobsByQuery(
             "x-api-key": SCRAPER_API_KEY,
           },
           body: JSON.stringify({ query, location }),
+          signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         const responseText = await response.text();
 
@@ -799,7 +823,11 @@ export async function scrapeJobsByQuery(
           );
         }
       } catch (err) {
-        console.error("External scraper error:", err.message);
+        if (err.name === "AbortError") {
+          console.log("External scraper timed out - falling back to APIs");
+        } else {
+          console.error("External scraper error:", err.message);
+        }
       }
     }
 
