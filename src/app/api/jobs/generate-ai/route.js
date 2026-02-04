@@ -196,7 +196,12 @@ export async function POST(request) {
   console.log("[generate-ai] Request received");
 
   try {
-    const { jobId, job, analysis: clientAnalysis, clientGenerated } = await request.json();
+    const {
+      jobId,
+      job,
+      analysis: clientAnalysis,
+      clientGenerated,
+    } = await request.json();
     console.log(`[generate-ai] Processing job: ${jobId} - ${job?.title}`);
     console.log(`[generate-ai] Client generated: ${clientGenerated}`);
 

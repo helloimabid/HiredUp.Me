@@ -171,10 +171,7 @@ export default function RootLayout({ children }) {
           strategy="beforeInteractive"
         />
         {/* Puter.js for free unlimited AI - loaded async */}
-        <Script
-          src="https://js.puter.com/v2/"
-          strategy="lazyOnload"
-        />
+        <Script src="https://js.puter.com/v2/" strategy="lazyOnload" />
       </head>
       <body
         className={`${inter.variable} ${notoBengali.variable} font-sans bg-gray-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 antialiased transition-colors duration-200`}

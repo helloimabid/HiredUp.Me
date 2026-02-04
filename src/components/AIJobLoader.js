@@ -23,7 +23,7 @@ export default function AIJobLoader({ job, onComplete, onError }) {
   };
 
   // Wait for Puter.js to load (it's loaded async)
-  const waitForPuter = (timeout = 10000) => {
+  const waitForPuter = (timeout = 15000) => {
     return new Promise((resolve, reject) => {
       const start = Date.now();
       const check = () => {
@@ -43,12 +43,12 @@ export default function AIJobLoader({ job, onComplete, onError }) {
   const callPuterAI = async (prompt) => {
     const puter = await waitForPuter();
     console.log("[Puter] Calling AI with model: gpt-4.1-nano...");
-    
-    const response = await puter.ai.chat(prompt, { 
-      model: "gpt-4.1-nano",  // Fast free model
-      temperature: 0.7 
+
+    const response = await puter.ai.chat(prompt, {
+      model: "gpt-4.1-nano", // Fast free model
+      temperature: 0.7,
     });
-    
+
     // Handle response - can be string or object
     if (typeof response === "string") {
       return response;
@@ -62,6 +62,35 @@ export default function AIJobLoader({ job, onComplete, onError }) {
     return JSON.stringify(response);
   };
 
+  // Optionally fetch more info from Tavily if job has a source URL
+  const fetchTavilyInfo = async () => {
+    // Check if job has a source URL or apply URL we can extract more info from
+    const sourceUrl = job.apply_url || job.sourceUrl || job.url;
+    if (!sourceUrl || !sourceUrl.startsWith("http")) {
+      return null;
+    }
+
+    try {
+      console.log("[AIJobLoader] Fetching extra info from:", sourceUrl);
+      const response = await fetch("/api/jobs/extract-info", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: sourceUrl }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.content;
+      }
+    } catch (err) {
+      console.log(
+        "[AIJobLoader] Tavily extract failed (continuing without):",
+        err.message,
+      );
+    }
+    return null;
+  };
+
   const startGeneration = async () => {
     if (generationStartedRef.current) return;
     generationStartedRef.current = true;
@@ -69,16 +98,32 @@ export default function AIJobLoader({ job, onComplete, onError }) {
     try {
       updateProgress(1, "Preparing job data...", 10);
 
-      updateProgress(2, "Loading AI service...", 20);
+      // Step 1: Try to fetch extra info from source URL via Tavily
+      updateProgress(2, "Fetching job details...", 20);
+      let extraContent = "";
+      try {
+        const tavilyInfo = await fetchTavilyInfo();
+        if (tavilyInfo) {
+          extraContent = `\n\nADDITIONAL INFO FROM SOURCE:\n${tavilyInfo.substring(0, 3000)}`;
+          console.log(
+            "[AIJobLoader] Got extra content from Tavily, length:",
+            tavilyInfo.length,
+          );
+        }
+      } catch (e) {
+        console.log("[AIJobLoader] Skipping Tavily (optional):", e.message);
+      }
 
-      // Build the AI prompt
+      updateProgress(3, "Loading AI service...", 30);
+
+      // Build the AI prompt with any extra content
       const prompt = `You are creating professional content for a job posting page. Analyze this job thoroughly.
 
 JOB DETAILS:
 - Title: ${job.title}
 - Company: ${job.company}
 - Location: ${job.location}
-${job.description ? `- Description: ${job.description.substring(0, 2000)}` : ""}
+${job.description ? `- Description: ${job.description.substring(0, 2000)}` : ""}${extraContent}
 
 Create a comprehensive JSON response with these EXACT fields:
 {
@@ -99,30 +144,39 @@ Create a comprehensive JSON response with these EXACT fields:
 
 Return ONLY valid JSON. No markdown, no explanation.`;
 
-      updateProgress(3, "AI is analyzing the job...", 40);
+      updateProgress(4, "AI is analyzing the job...", 50);
 
       // Call Puter AI directly from browser (free, unlimited!)
       console.log("[AIJobLoader] Calling Puter.js AI directly...");
       const aiResponse = await callPuterAI(prompt);
-      console.log("[AIJobLoader] AI response received, length:", aiResponse?.length);
+      console.log(
+        "[AIJobLoader] AI response received, length:",
+        aiResponse?.length,
+      );
 
-      updateProgress(4, "AI is writing content...", 60);
+      updateProgress(5, "AI is writing content...", 65);
 
       // Extract JSON from response
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        console.error("[AIJobLoader] No JSON found in AI response:", aiResponse?.substring(0, 500));
+        console.error(
+          "[AIJobLoader] No JSON found in AI response:",
+          aiResponse?.substring(0, 500),
+        );
         throw new Error("AI response was not valid JSON");
       }
 
       const analysis = JSON.parse(jsonMatch[0]);
-      console.log("[AIJobLoader] Parsed successfully, summary:", analysis.summary?.substring(0, 100));
+      console.log(
+        "[AIJobLoader] Parsed successfully, summary:",
+        analysis.summary?.substring(0, 100),
+      );
 
-      updateProgress(5, "Content generated!", 70);
+      updateProgress(6, "Content generated!", 75);
 
       // Send to server to save (logo fetch + database save)
-      updateProgress(6, "Saving to database...", 80);
-      
+      updateProgress(7, "Saving to database...", 85);
+
       const saveResponse = await fetch("/api/jobs/generate-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -146,8 +200,6 @@ Return ONLY valid JSON. No markdown, no explanation.`;
         throw new Error(result.error || "Failed to save generated content");
       }
 
-      updateProgress(7, "Saved to database!", 90);
-
       console.log("AI generation successful:", result.message);
 
       updateProgress(8, "Done! Reloading...", 100);
@@ -169,11 +221,11 @@ Return ONLY valid JSON. No markdown, no explanation.`;
 
   const steps = [
     { num: 1, label: "Preparing" },
-    { num: 2, label: "Connecting" },
-    { num: 3, label: "Analyzing" },
-    { num: 4, label: "Writing" },
-    { num: 5, label: "Logo" },
-    { num: 6, label: "Creating" },
+    { num: 2, label: "Fetching" },
+    { num: 3, label: "Loading" },
+    { num: 4, label: "Analyzing" },
+    { num: 5, label: "Writing" },
+    { num: 6, label: "Generated" },
     { num: 7, label: "Saving" },
     { num: 8, label: "Done!" },
   ];
