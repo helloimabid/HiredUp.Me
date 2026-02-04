@@ -93,7 +93,7 @@ export async function jobExists(sourceId) {
   if (!sourceId || sourceId.trim() === "") {
     return false;
   }
-  
+
   try {
     const response = await databases.listDocuments(
       DATABASE_ID,
@@ -246,13 +246,15 @@ export async function createJob(jobData) {
     if (!jobData.apply_url || jobData.apply_url.trim() === "") {
       throw new Error("apply_url is required");
     }
-    
+
     // Generate a temporary ID for slug generation
     const tempId = ID.unique();
     const slug = generateJobSlug(jobData.title, jobData.company, tempId);
 
     // Ensure source_id is not empty
-    const sourceId = jobData.source_id || `${jobData.title}-${jobData.company}-${Date.now()}`.substring(0, 100);
+    const sourceId =
+      jobData.source_id ||
+      `${jobData.title}-${jobData.company}-${Date.now()}`.substring(0, 100);
 
     const document = await databases.createDocument(
       DATABASE_ID,

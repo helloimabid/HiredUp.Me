@@ -6,25 +6,30 @@ const PUTER_AUTH_TOKEN = process.env.PUTER_AUTH_TOKEN;
 const PUTER_AI_MODEL = "tngtech/deepseek-r1t2-chimera:free";
 
 // Logo.dev configuration
-const LOGO_DEV_KEY = process.env.LOGO_DEV_PUBLISHABLE_KEY || "pk_XCMtoIJ7RMy7XgG2Ruf6UA";
+const LOGO_DEV_KEY =
+  process.env.LOGO_DEV_PUBLISHABLE_KEY || "pk_XCMtoIJ7RMy7XgG2Ruf6UA";
 
 // Initialize Appwrite
 const client = new Client()
   .setEndpoint(
     process.env.APPWRITE_ENDPOINT ||
-    process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT ||
-    "https://sgp.cloud.appwrite.io/v1"
+      process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT ||
+      "https://sgp.cloud.appwrite.io/v1",
   )
   .setProject(
     process.env.APPWRITE_PROJECT_ID ||
-    process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID ||
-    "hiredupme"
+      process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID ||
+      "hiredupme",
   )
   .setKey(process.env.APPWRITE_API_KEY);
 
 const databases = new Databases(client);
-const DATABASE_ID = process.env.DATABASE_ID || process.env.APPWRITE_DATABASE_ID || "hiredup";
-const JOBS_COLLECTION_ID = process.env.JOBS_COLLECTION_ID || process.env.APPWRITE_JOBS_COLLECTION_ID || "jobs";
+const DATABASE_ID =
+  process.env.DATABASE_ID || process.env.APPWRITE_DATABASE_ID || "hiredup";
+const JOBS_COLLECTION_ID =
+  process.env.JOBS_COLLECTION_ID ||
+  process.env.APPWRITE_JOBS_COLLECTION_ID ||
+  "jobs";
 
 // Call Puter AI API directly
 async function callPuterAI(prompt) {
@@ -36,7 +41,7 @@ async function callPuterAI(prompt) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${PUTER_AUTH_TOKEN}`,
+      Authorization: `Bearer ${PUTER_AUTH_TOKEN}`,
     },
     body: JSON.stringify({
       model: PUTER_AI_MODEL,
@@ -50,14 +55,21 @@ async function callPuterAI(prompt) {
   }
 
   const data = await response.json();
-  return data.message?.content || data.choices?.[0]?.message?.content || JSON.stringify(data);
+  return (
+    data.message?.content ||
+    data.choices?.[0]?.message?.content ||
+    JSON.stringify(data)
+  );
 }
 
 // Fetch company logo using Logo.dev
 async function fetchCompanyLogo(companyName) {
   const cleanName = companyName
     .toLowerCase()
-    .replace(/\s+(ltd|limited|inc|corp|corporation|llc|pvt|private|co|company)\.?$/i, "")
+    .replace(
+      /\s+(ltd|limited|inc|corp|corporation|llc|pvt|private|co|company)\.?$/i,
+      "",
+    )
     .trim()
     .replace(/\s+/g, "");
 
@@ -88,7 +100,7 @@ export async function POST(request) {
     if (!jobId || !job) {
       return NextResponse.json(
         { error: "Missing jobId or job data" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -121,7 +133,7 @@ Create a comprehensive JSON response with these EXACT fields:
 Return ONLY valid JSON. No markdown, no explanation.`;
 
     const aiResponse = await callPuterAI(prompt);
-    
+
     // Extract JSON from response
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -167,11 +179,13 @@ Return ONLY valid JSON. No markdown, no explanation.`;
                 : "On-site",
         },
       ],
-      highlights: analysis.highlights || [
-        analysis.summary?.substring(0, 100),
-        "Opportunity at " + job.company,
-        job.location,
-      ].filter(Boolean),
+      highlights:
+        analysis.highlights ||
+        [
+          analysis.summary?.substring(0, 100),
+          "Opportunity at " + job.company,
+          job.location,
+        ].filter(Boolean),
       sections: [
         {
           id: "about",
@@ -228,7 +242,10 @@ Return ONLY valid JSON. No markdown, no explanation.`;
 
     // Step 4: Save to database
     await databases.updateDocument(DATABASE_ID, JOBS_COLLECTION_ID, jobId, {
-      description: (analysis.about || analysis.summary || "").substring(0, 5000),
+      description: (analysis.about || analysis.summary || "").substring(
+        0,
+        5000,
+      ),
       enhanced_json: JSON.stringify(enhanced).substring(0, 50000),
     });
 
@@ -237,12 +254,11 @@ Return ONLY valid JSON. No markdown, no explanation.`;
       enhanced,
       message: "Job enhanced with AI successfully",
     });
-
   } catch (error) {
     console.error("AI generation error:", error);
     return NextResponse.json(
       { error: error.message || "AI generation failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

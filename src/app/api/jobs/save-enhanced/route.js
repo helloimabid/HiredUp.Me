@@ -4,21 +4,25 @@ import { Client, Databases } from "node-appwrite";
 // Initialize Appwrite (use NEXT_PUBLIC_ vars as fallback)
 const client = new Client()
   .setEndpoint(
-    process.env.APPWRITE_ENDPOINT || 
-    process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 
-    "https://sgp.cloud.appwrite.io/v1",
+    process.env.APPWRITE_ENDPOINT ||
+      process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT ||
+      "https://sgp.cloud.appwrite.io/v1",
   )
   .setProject(
-    process.env.APPWRITE_PROJECT_ID || 
-    process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 
-    "hiredupme"
+    process.env.APPWRITE_PROJECT_ID ||
+      process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID ||
+      "hiredupme",
   )
   .setKey(process.env.APPWRITE_API_KEY);
 
 const databases = new Databases(client);
 
-const DATABASE_ID = process.env.DATABASE_ID || process.env.APPWRITE_DATABASE_ID || "hiredup";
-const JOBS_COLLECTION_ID = process.env.JOBS_COLLECTION_ID || process.env.APPWRITE_JOBS_COLLECTION_ID || "jobs";
+const DATABASE_ID =
+  process.env.DATABASE_ID || process.env.APPWRITE_DATABASE_ID || "hiredup";
+const JOBS_COLLECTION_ID =
+  process.env.JOBS_COLLECTION_ID ||
+  process.env.APPWRITE_JOBS_COLLECTION_ID ||
+  "jobs";
 
 export async function POST(request) {
   try {

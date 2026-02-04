@@ -874,10 +874,12 @@ export async function scrapeJobsByQuery(
     .filter((job) => {
       // Skip jobs without required fields
       if (!job.title || !job.apply_url || job.apply_url.trim() === "") {
-        console.log(`Skipping job without apply_url: ${job.title || "Unknown"}`);
+        console.log(
+          `Skipping job without apply_url: ${job.title || "Unknown"}`,
+        );
         return false;
       }
-      
+
       const key = `${job.title}-${job.company}`
         .toLowerCase()
         .replace(/\s+/g, "");

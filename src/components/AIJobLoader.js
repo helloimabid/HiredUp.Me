@@ -69,7 +69,6 @@ export default function AIJobLoader({ job, onComplete, onError }) {
       setTimeout(() => {
         window.location.reload();
       }, 800);
-
     } catch (error) {
       console.error("AI generation error:", error);
       setStatus("error");
