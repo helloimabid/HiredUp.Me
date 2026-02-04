@@ -35,24 +35,51 @@ const JOBS_COLLECTION_ID =
   process.env.APPWRITE_JOBS_COLLECTION_ID ||
   "jobs";
 
-// Initialize Puter.js for AI (unlimited usage)
-let puter = null;
-async function initPuter() {
-  if (puter) return puter;
-  try {
-    const { init } = await import("@heyputer/puter.js/src/init.cjs");
-    const authToken = process.env.PUTER_AUTH_TOKEN;
-    if (!authToken) {
-      console.log("[Puter] No auth token found, will fall back to OpenRouter");
-      return null;
-    }
-    puter = init(authToken);
-    console.log("[Puter] Initialized successfully");
-    return puter;
-  } catch (err) {
-    console.error("[Puter] Failed to initialize:", err.message);
-    return null;
+// Call Puter AI via HTTP API (no SDK needed, works in any environment)
+async function callPuterAI(prompt, authToken) {
+  const response = await fetch("https://api.puter.com/drivers/call", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify({
+      interface: "puter-chat-completion",
+      driver: "claude",
+      method: "complete",
+      args: {
+        messages: [{ role: "user", content: prompt }],
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Puter API error: ${response.status} - ${error}`);
   }
+
+  const data = await response.json();
+  console.log("[Puter] Raw response:", JSON.stringify(data).substring(0, 500));
+
+  // Handle different response formats
+  if (data?.result?.message?.content) {
+    return data.result.message.content;
+  }
+  if (data?.result?.content) {
+    return data.result.content;
+  }
+  if (data?.message?.content) {
+    return data.message.content;
+  }
+  if (typeof data?.result === "string") {
+    return data.result;
+  }
+  if (typeof data === "string") {
+    return data;
+  }
+
+  // Return stringified response as fallback
+  return JSON.stringify(data);
 }
 
 // Call AI using Puter.js (unlimited, no rate limits) with OpenRouter fallback
@@ -62,20 +89,13 @@ async function callAI(prompt) {
   const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
 
   try {
-    // Try Puter.js first (unlimited)
-    const puterClient = await initPuter();
-    if (puterClient) {
-      console.log("[AI] Using Puter.js for generation...");
+    // Try Puter API first (unlimited)
+    const puterToken = process.env.PUTER_AUTH_TOKEN;
+    if (puterToken) {
+      console.log("[AI] Using Puter API for generation...");
       try {
-        const response = await puterClient.ai.chat(prompt);
+        const content = await callPuterAI(prompt, puterToken);
         clearTimeout(timeoutId);
-        // Puter returns the message directly or as an object
-        const content =
-          typeof response === "string"
-            ? response
-            : response?.message?.content ||
-              response?.content ||
-              JSON.stringify(response);
         console.log("[AI] Puter response received, length:", content?.length);
         return content;
       } catch (puterErr) {
@@ -106,7 +126,7 @@ async function callAI(prompt) {
           "X-Title": "HiredUp.me Job Board",
         },
         body: JSON.stringify({
-          model: "tngtech/deepseek-r1t2-chimera:free",
+          model: "google/gemma-3-12b-it:free",
           messages: [{ role: "user", content: prompt }],
           temperature: 0.7,
           max_tokens: 2000,
