@@ -88,36 +88,14 @@ export async function POST(request) {
 
       console.log(`Job search requested: "${query}" in "${location}"`);
 
-      try {
-        const result = await scrapeJobsByQuery(query, location, save);
+      const result = await scrapeJobsByQuery(query, location, save);
 
-        // Increment search usage after successful search
-        if (userId) {
-          await incrementSearchUsage(userId);
-        }
-
-        return NextResponse.json(result);
-      } catch (scrapeError) {
-        // Handle timeout specifically with a user-friendly message
-        if (
-          scrapeError.isTimeout ||
-          scrapeError.message === "SCRAPER_TIMEOUT"
-        ) {
-          console.log("[API] Scraper timed out, returning friendly message");
-          return NextResponse.json({
-            timeout: true,
-            message:
-              "Our job search service is warming up! Please refresh the page or come back in 1-2 minutes to see your search results on the Jobs page.",
-            suggestion:
-              "While waiting, you can browse existing jobs on the Jobs page.",
-            query,
-            location,
-            jobs: [],
-            saved: 0,
-          });
-        }
-        throw scrapeError; // Re-throw other errors
+      // Increment search usage after successful search
+      if (userId) {
+        await incrementSearchUsage(userId);
       }
+
+      return NextResponse.json(result);
     }
 
     // Legacy URL-based scrape

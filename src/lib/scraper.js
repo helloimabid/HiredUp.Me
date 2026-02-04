@@ -836,10 +836,8 @@ export async function scrapeJobsByQuery(
       await wakeUpScraperService(10000);
 
       try {
-        // Create abort controller with 30 second timeout for the actual scrape request
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
+        // No timeout - let the request run as long as needed
+        // Vercel's maxDuration (60s) will handle the ultimate timeout if needed
         const response = await fetch(`${baseUrl}/scrape`, {
           method: "POST",
           headers: {
@@ -847,10 +845,7 @@ export async function scrapeJobsByQuery(
             "x-api-key": SCRAPER_API_KEY,
           },
           body: JSON.stringify({ query, location }),
-          signal: controller.signal,
         });
-
-        clearTimeout(timeoutId);
 
         const responseText = await response.text();
 
@@ -874,17 +869,8 @@ export async function scrapeJobsByQuery(
           );
         }
       } catch (err) {
-        if (err.name === "AbortError") {
-          console.log(
-            "External scraper timed out - will return timeout message",
-          );
-          // Throw a specific timeout error that the API route can catch
-          const timeoutError = new Error("SCRAPER_TIMEOUT");
-          timeoutError.isTimeout = true;
-          throw timeoutError;
-        } else {
-          console.error("External scraper error:", err.message);
-        }
+        // Log the error but continue to fallback methods
+        console.error("External scraper error:", err.message);
       }
     }
 

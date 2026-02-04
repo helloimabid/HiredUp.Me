@@ -831,46 +831,55 @@ function SearchContent() {
             <div className="max-w-5xl mx-auto px-4">
               {/* Timeout Message */}
               {results.timeout && (
-                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-6 mb-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0">
+                <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-2xl p-8 mb-6">
+                  <div className="text-center max-w-lg mx-auto">
+                    <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-800/50 rounded-full flex items-center justify-center mx-auto mb-5">
                       <iconify-icon
-                        icon="solar:clock-circle-linear"
-                        className="text-amber-500 text-3xl"
+                        icon="solar:rocket-2-linear"
+                        className="text-indigo-600 dark:text-indigo-400 text-3xl"
                       ></iconify-icon>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-amber-800 dark:text-amber-200 text-lg mb-2">
-                        Search is Processing...
-                      </h3>
-                      <p className="text-amber-700 dark:text-amber-300 mb-3">
-                        {results.message}
-                      </p>
-                      <p className="text-amber-600 dark:text-amber-400 text-sm mb-4">
-                        {results.suggestion}
-                      </p>
-                      <div className="flex flex-wrap gap-3">
-                        <button
-                          onClick={() => window.location.reload()}
-                          className="px-4 py-2 bg-amber-100 dark:bg-amber-800 text-amber-800 dark:text-amber-100 rounded-lg text-sm font-medium hover:bg-amber-200 dark:hover:bg-amber-700 transition-colors flex items-center gap-2"
-                        >
-                          <iconify-icon
-                            icon="solar:refresh-linear"
-                            width="16"
-                          ></iconify-icon>
-                          Refresh Page
-                        </button>
-                        <Link
-                          href="/jobs"
-                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2"
-                        >
-                          <iconify-icon
-                            icon="solar:document-text-linear"
-                            width="16"
-                          ></iconify-icon>
-                          Browse Jobs Page
-                        </Link>
+                    <h3 className="font-semibold text-slate-900 dark:text-white text-xl mb-3">
+                      Your Search is Running! 🚀
+                    </h3>
+                    <p className="text-slate-600 dark:text-slate-300 mb-2">
+                      We&apos;re scanning 50+ job boards for &quot;<span className="font-medium text-indigo-600 dark:text-indigo-400">{results.query || query}</span>&quot;
+                    </p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
+                      This takes a bit longer than usual. Your results will appear on the <strong>Jobs page</strong> within 1-2 minutes.
+                    </p>
+                    
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 mb-6">
+                      <div className="flex items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span>Search in progress... Come back in a minute!</span>
                       </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row justify-center gap-3">
+                      <Link
+                        href="/jobs"
+                        className="px-6 py-3 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <iconify-icon
+                          icon="solar:document-text-linear"
+                          width="18"
+                        ></iconify-icon>
+                        Go to Jobs Page
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setResults(null);
+                          setQuery("");
+                        }}
+                        className="px-6 py-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <iconify-icon
+                          icon="solar:magnifer-linear"
+                          width="18"
+                        ></iconify-icon>
+                        New Search
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -885,14 +894,14 @@ function SearchContent() {
                         ? `Found ${results.totalExtracted} jobs`
                         : "No results"}
                     </h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {/* <p className="text-sm text-slate-500 dark:text-slate-400">
                       {results.message}
                       {results.method && (
                         <span className="ml-2 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-xs">
                           via {results.method}
                         </span>
                       )}
-                    </p>
+                    </p> */}
                   </div>
                   <button
                     onClick={() => setResults(null)}
