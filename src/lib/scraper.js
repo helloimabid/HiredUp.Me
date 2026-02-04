@@ -875,7 +875,13 @@ export async function scrapeJobsByQuery(
         }
       } catch (err) {
         if (err.name === "AbortError") {
-          console.log("External scraper timed out - falling back to APIs");
+          console.log(
+            "External scraper timed out - will return timeout message",
+          );
+          // Throw a specific timeout error that the API route can catch
+          const timeoutError = new Error("SCRAPER_TIMEOUT");
+          timeoutError.isTimeout = true;
+          throw timeoutError;
         } else {
           console.error("External scraper error:", err.message);
         }

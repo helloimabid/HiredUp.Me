@@ -829,33 +829,82 @@ function SearchContent() {
         {results && (
           <section className="py-8">
             <div className="max-w-5xl mx-auto px-4">
-              {/* Results Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-                    {results.success
-                      ? `Found ${results.totalExtracted} jobs`
-                      : "No results"}
-                  </h2>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    {results.message}
-                    {results.method && (
-                      <span className="ml-2 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-xs">
-                        via {results.method}
-                      </span>
-                    )}
-                  </p>
+              {/* Timeout Message */}
+              {results.timeout && (
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-6 mb-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0">
+                      <iconify-icon
+                        icon="solar:clock-circle-linear"
+                        className="text-amber-500 text-3xl"
+                      ></iconify-icon>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-amber-800 dark:text-amber-200 text-lg mb-2">
+                        Search is Processing...
+                      </h3>
+                      <p className="text-amber-700 dark:text-amber-300 mb-3">
+                        {results.message}
+                      </p>
+                      <p className="text-amber-600 dark:text-amber-400 text-sm mb-4">
+                        {results.suggestion}
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          onClick={() => window.location.reload()}
+                          className="px-4 py-2 bg-amber-100 dark:bg-amber-800 text-amber-800 dark:text-amber-100 rounded-lg text-sm font-medium hover:bg-amber-200 dark:hover:bg-amber-700 transition-colors flex items-center gap-2"
+                        >
+                          <iconify-icon
+                            icon="solar:refresh-linear"
+                            width="16"
+                          ></iconify-icon>
+                          Refresh Page
+                        </button>
+                        <Link
+                          href="/jobs"
+                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                        >
+                          <iconify-icon
+                            icon="solar:document-text-linear"
+                            width="16"
+                          ></iconify-icon>
+                          Browse Jobs Page
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <button
-                  onClick={() => setResults(null)}
-                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
-                >
-                  New Search
-                </button>
-              </div>
+              )}
+
+              {/* Results Header */}
+              {!results.timeout && (
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                      {results.success
+                        ? `Found ${results.totalExtracted} jobs`
+                        : "No results"}
+                    </h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {results.message}
+                      {results.method && (
+                        <span className="ml-2 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-xs">
+                          via {results.method}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setResults(null)}
+                    className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+                  >
+                    New Search
+                  </button>
+                </div>
+              )}
 
               {/* Job Cards */}
-              {results.jobs && results.jobs.length > 0 ? (
+              {!results.timeout && results.jobs && results.jobs.length > 0 ? (
                 <div className="space-y-4">
                   {results.jobs.map((job, index) => (
                     <div
@@ -899,7 +948,7 @@ function SearchContent() {
                     </div>
                   ))}
                 </div>
-              ) : (
+              ) : !results.timeout ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                   <iconify-icon
                     icon="solar:folder-open-linear"
@@ -909,7 +958,7 @@ function SearchContent() {
                     No jobs found. Try a different search term.
                   </p>
                 </div>
-              )}
+              ) : null}
 
               {/* View All Link */}
               {results.savedCount > 0 && (
