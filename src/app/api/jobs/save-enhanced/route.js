@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Client, Databases } from "node-appwrite";
+import { stringifyEnhancedForStorage } from "@/lib/enhanced-storage";
 
 // Initialize Appwrite (use NEXT_PUBLIC_ vars as fallback)
 const client = new Client()
@@ -38,7 +39,7 @@ export async function POST(request) {
     // Update the job document with enhanced content
     await databases.updateDocument(DATABASE_ID, JOBS_COLLECTION_ID, jobId, {
       description: (description || "").substring(0, 5000),
-      enhanced_json: JSON.stringify(enhanced).substring(0, 50000),
+      enhanced_json: stringifyEnhancedForStorage(enhanced, 50000),
     });
 
     return NextResponse.json({

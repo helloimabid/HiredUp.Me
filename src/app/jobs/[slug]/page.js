@@ -68,11 +68,47 @@ function getCompanyLogoColor(company) {
 
 // Parse enhanced JSON content
 function parseEnhancedContent(job) {
-  if (!job.enhanced_json) return null;
+  if (!job?.enhanced_json) {
+    return {
+      header: {
+        title: job?.title,
+        company: job?.company,
+        location: job?.location,
+      },
+      apply_info: {
+        url: job?.apply_url,
+      },
+      needsAI: true,
+      aiEnhanced: false,
+    };
+  }
   try {
-    return JSON.parse(job.enhanced_json);
+    const parsed = JSON.parse(job.enhanced_json);
+    // If it parses but doesn't include flags, default to "needsAI".
+    if (parsed && typeof parsed === "object") {
+      return {
+        needsAI: true,
+        aiEnhanced: false,
+        ...parsed,
+      };
+    }
+    return {
+      needsAI: true,
+      aiEnhanced: false,
+    };
   } catch {
-    return null;
+    return {
+      header: {
+        title: job?.title,
+        company: job?.company,
+        location: job?.location,
+      },
+      apply_info: {
+        url: job?.apply_url,
+      },
+      needsAI: true,
+      aiEnhanced: false,
+    };
   }
 }
 

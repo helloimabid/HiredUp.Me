@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { Client, Databases } from "node-appwrite";
+import { stringifyEnhancedForStorage } from "@/lib/enhanced-storage";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Shorter timeout since AI is now done client-side
 export const maxDuration = 30;
@@ -35,12 +37,82 @@ const JOBS_COLLECTION_ID =
   process.env.APPWRITE_JOBS_COLLECTION_ID ||
   "jobs";
 
-// Server-side AI fallback using OpenRouter (only used if client-side Puter fails)
+function withTimeout(promise, timeoutMs) {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error("AI_TIMEOUT")), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+}
+
+async function callGemini(prompt) {
+  const apiKey =
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_AI_API_KEY;
+  if (!apiKey) {
+    throw new Error("No Google Generative AI API key configured");
+  }
+
+  const modelName =
+    process.env.GOOGLE_GEMINI_MODEL ||
+    process.env.GEMINI_MODEL ||
+    "gemini-1.5-flash";
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: modelName });
+
+  // Prefer JSON mode when supported; fall back to plain prompt.
+  const attempt = async () => {
+    try {
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 2048,
+          responseMimeType: "application/json",
+        },
+      });
+      const response = await result.response;
+      return response.text();
+    } catch {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    }
+  };
+
+  return withTimeout(attempt(), 25000);
+}
+
+// Server-side AI fallback (only used if client-side Puter fails)
 async function callAI(prompt) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
 
   try {
+    const hasGoogleKey = Boolean(
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+        process.env.GEMINI_API_KEY ||
+        process.env.GOOGLE_AI_API_KEY,
+    );
+
+    if (hasGoogleKey) {
+      try {
+        console.log("[AI] Using Google Gemini for generation...");
+        const text = await callGemini(prompt);
+        clearTimeout(timeoutId);
+        return text;
+      } catch (googleErr) {
+        console.warn(
+          "[AI] Gemini generation failed, falling back to OpenRouter:",
+          googleErr?.message || googleErr,
+        );
+      }
+    }
+
     console.log("[AI] Using OpenRouter for generation...");
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
@@ -80,6 +152,11 @@ async function callAI(prompt) {
   } catch (err) {
     clearTimeout(timeoutId);
     if (err.name === "AbortError") {
+      const timeoutError = new Error("AI_TIMEOUT");
+      timeoutError.isTimeout = true;
+      throw timeoutError;
+    }
+    if (err?.message === "AI_TIMEOUT") {
       const timeoutError = new Error("AI_TIMEOUT");
       timeoutError.isTimeout = true;
       throw timeoutError;
@@ -403,7 +480,7 @@ Return ONLY valid JSON. No markdown, no explanation.`;
           0,
           5000,
         ),
-        enhanced_json: JSON.stringify(enhanced).substring(0, 50000),
+        enhanced_json: stringifyEnhancedForStorage(enhanced, 50000),
       });
       console.log("[generate-ai] Database update successful!");
 
