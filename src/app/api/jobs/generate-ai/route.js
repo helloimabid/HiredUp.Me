@@ -95,8 +95,8 @@ async function callAI(prompt) {
   try {
     const hasGoogleKey = Boolean(
       process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
-        process.env.GEMINI_API_KEY ||
-        process.env.GOOGLE_AI_API_KEY,
+      process.env.GEMINI_API_KEY ||
+      process.env.GOOGLE_AI_API_KEY,
     );
 
     if (hasGoogleKey) {
