@@ -939,14 +939,22 @@ export async function scrapeJobsByQuery(
     jobs = generateFallbackJobs(query, location);
   }
 
-  // Deduplicate jobs and filter out invalid ones
+  // Deduplicate jobs and normalize URL field
   const seen = new Set();
   jobs = jobs
+    .map((job) => {
+      // Normalize URL field - jobs may have url, sourceUrl, or apply_url
+      const jobUrl = job.apply_url || job.sourceUrl || job.url;
+      return {
+        ...job,
+        apply_url: jobUrl,
+      };
+    })
     .filter((job) => {
       // Skip jobs without required fields
       if (!job.title || !job.apply_url || job.apply_url.trim() === "") {
         console.log(
-          `Skipping job without apply_url: ${job.title || "Unknown"}`,
+          `Skipping job without URL: ${job.title || "Unknown"}`,
         );
         return false;
       }

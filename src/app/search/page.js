@@ -843,16 +843,24 @@ function SearchContent() {
                       Your Search is Running! 🚀
                     </h3>
                     <p className="text-slate-600 dark:text-slate-300 mb-2">
-                      We&apos;re scanning 50+ job boards for &quot;<span className="font-medium text-indigo-600 dark:text-indigo-400">{results.query || query}</span>&quot;
+                      We&apos;re scanning 50+ job boards for &quot;
+                      <span className="font-medium text-indigo-600 dark:text-indigo-400">
+                        {results.query || query}
+                      </span>
+                      &quot;
                     </p>
                     <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
-                      This takes a bit longer than usual. Your results will appear on the <strong>Jobs page</strong> within 1-2 minutes.
+                      This takes a bit longer than usual. Your results will
+                      appear on the <strong>Jobs page</strong> within 1-2
+                      minutes.
                     </p>
-                    
+
                     <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 mb-6">
                       <div className="flex items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-400">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span>Search in progress... Come back in a minute!</span>
+                        <span>
+                          Search in progress... Come back in a minute!
+                        </span>
                       </div>
                     </div>
 
