@@ -259,6 +259,29 @@ function SearchContent() {
   // Track if a search is in progress to prevent double submissions
   const searchInProgressRef = useRef(false);
 
+  const showSearchOngoingMessage = (searchQuery, searchLocation) => {
+    setError("");
+    setResults({
+      timeout: true,
+      query: searchQuery,
+      location: searchLocation,
+    });
+  };
+
+  const isTimeoutLikeResponse = (response, responseText) => {
+    const status = response?.status;
+    if ([408, 502, 503, 504, 520, 521, 522, 523, 524].includes(status)) {
+      return true;
+    }
+    const text = (responseText || "").toLowerCase();
+    return (
+      text.includes("timed out") ||
+      text.includes("timeout") ||
+      text.includes("gateway time-out") ||
+      text.includes("upstream") && text.includes("timeout")
+    );
+  };
+
   // Check search usage on mount
   useEffect(() => {
     async function checkUsage() {
@@ -375,9 +398,14 @@ function SearchContent() {
     setResults(null);
 
     try {
+      const controller = new AbortController();
+      // If scraping takes too long, show an "ongoing" message instead of a generic error.
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
+
       const response = await fetch("/api/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           query: searchQuery,
           location: searchLocation,
@@ -385,6 +413,8 @@ function SearchContent() {
           userId: user?.$id,
         }),
       });
+
+      clearTimeout(timeoutId);
 
       // Get response text first to handle non-JSON responses
       const responseText = await response.text();
@@ -397,12 +427,20 @@ function SearchContent() {
           "Failed to parse response:",
           responseText.substring(0, 200),
         );
-        throw new Error(
-          "Server returned an invalid response. Please try again.",
-        );
+        // If the platform/proxy returns HTML on timeout (common), treat it as an ongoing search.
+        if (isTimeoutLikeResponse(response, responseText)) {
+          showSearchOngoingMessage(searchQuery, searchLocation);
+          return;
+        }
+
+        throw new Error("Server returned an invalid response. Please try again.");
       }
 
       if (!response.ok) {
+        if (isTimeoutLikeResponse(response, responseText)) {
+          showSearchOngoingMessage(searchQuery, searchLocation);
+          return;
+        }
         throw new Error(data.error || "Search failed");
       }
 
@@ -422,7 +460,12 @@ function SearchContent() {
         });
       }
     } catch (err) {
-      setError(err.message || "Failed to search for jobs");
+      const msg = err?.message || "";
+      if (err?.name === "AbortError" || /timed out|timeout/i.test(msg)) {
+        showSearchOngoingMessage(searchQuery, searchLocation);
+      } else {
+        setError(msg || "Failed to search for jobs");
+      }
     } finally {
       setLoading(false);
       searchInProgressRef.current = false;
@@ -840,26 +883,26 @@ function SearchContent() {
                       ></iconify-icon>
                     </div>
                     <h3 className="font-semibold text-slate-900 dark:text-white text-xl mb-3">
-                      Your Search is Running! 🚀
+                      Search is ongoing
                     </h3>
                     <p className="text-slate-600 dark:text-slate-300 mb-2">
-                      We&apos;re scanning 50+ job boards for &quot;
+                      We&apos;re still searching for &quot;
                       <span className="font-medium text-indigo-600 dark:text-indigo-400">
                         {results.query || query}
                       </span>
                       &quot;
                     </p>
                     <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
-                      This takes a bit longer than usual. Your results will
-                      appear on the <strong>Jobs page</strong> within 1-2
-                      minutes.
+                      This is taking longer than usual. Please check back later
+                      (your results will appear on the <strong>Jobs page</strong>
+                      once ready).
                     </p>
 
                     <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 mb-6">
                       <div className="flex items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-400">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                         <span>
-                          Search in progress... Come back in a minute!
+                          Search in progress... Please check back later.
                         </span>
                       </div>
                     </div>
