@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+// Logo.dev publishable key (safe for client-side use)
+const LOGO_DEV_KEY = "pk_XCMtoIJ7RMy7XgG2Ruf6UA";
+
 // Helper: Get company logo color based on first letter
 function getCompanyLogoColor(company) {
   const colors = [
@@ -15,6 +18,16 @@ function getCompanyLogoColor(company) {
   ];
   const index = (company || "A").charCodeAt(0) % colors.length;
   return colors[index];
+}
+
+/**
+ * Generate a Logo.dev URL from a company name.
+ */
+function getLogoDev(company) {
+  if (!company) return null;
+  const clean = company
+  if (!clean || clean.length < 2) return null;
+  return `https://img.logo.dev/name/${clean}?token=${LOGO_DEV_KEY}&size=128`;
 }
 
 export default function CompanyLogo({
@@ -36,8 +49,11 @@ export default function CompanyLogo({
   const initial = (company || "?").charAt(0).toUpperCase();
   const sizeClass = sizeClasses[size] || sizeClasses.md;
 
+  // Determine the logo URL: explicit > Logo.dev auto-generated
+  const effectiveLogoUrl = logoUrl || getLogoDev(company);
+
   // If no logo URL or image errored, show fallback
-  if (!logoUrl || imageError) {
+  if (!effectiveLogoUrl || imageError) {
     return (
       <div
         className={`${sizeClass} ${logoColor} rounded-xl flex items-center justify-center text-white font-bold shadow-lg flex-shrink-0 ${className}`}
@@ -60,7 +76,7 @@ export default function CompanyLogo({
         </div>
       )}
       <img
-        src={logoUrl}
+        src={effectiveLogoUrl}
         alt={`${company} logo`}
         className={`w-full h-full object-contain p-2 transition-opacity duration-200 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
         onLoad={() => setImageLoaded(true)}

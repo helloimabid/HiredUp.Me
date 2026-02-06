@@ -1,8 +1,8 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getJobBySlug, getJobs } from "@/lib/appwrite";
+import { notFound, redirect } from "next/navigation";
+import { getJobBySlugOrId, getJobs } from "@/lib/appwrite";
 import SaveJobButton from "@/components/SaveJobButton";
 import ApplyButton from "@/components/ApplyButton";
 import CompanyLogo from "@/components/CompanyLogo";
@@ -115,7 +115,7 @@ function parseEnhancedContent(job) {
 // Generate SEO metadata
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const job = await getJobBySlug(slug);
+  const job = await getJobBySlugOrId(slug);
 
   if (!job) {
     return {
@@ -151,7 +151,7 @@ export async function generateMetadata({ params }) {
       title: `${title} at ${company} - Now Hiring!`,
       description: metaDescription,
       type: "website",
-      url: `https://hiredup.me/jobs/${slug}`,
+      url: `https://hiredup.me/jobs/${job.slug || slug}`,
       siteName: "HiredUp.me",
       images: [
         {
@@ -168,7 +168,7 @@ export async function generateMetadata({ params }) {
       description: metaDescription,
       images: [jobImage],
     },
-    alternates: { canonical: `https://hiredup.me/jobs/${slug}` },
+    alternates: { canonical: `https://hiredup.me/jobs/${job.slug || slug}` },
     robots: { index: true, follow: true },
   };
 }
@@ -377,10 +377,14 @@ function RenderSection({ section }) {
 
 export default async function JobDetailPage({ params }) {
   const { slug } = await params;
-  const job = await getJobBySlug(slug);
+  const job = await getJobBySlugOrId(slug);
 
   if (!job) {
     notFound();
+  }
+
+  if (job.slug && job.slug !== slug) {
+    redirect(`/jobs/${job.slug}`);
   }
 
   // Parse AI-generated content
@@ -406,11 +410,22 @@ export default async function JobDetailPage({ params }) {
   const logoUrl = enhanced?.company_logo_url || null;
   const timeAgo = getTimeAgo(job.$createdAt);
 
-  // Quick info items (for overview cards)
+  // Quick info items (for overview cards) - include new fields from output.json
   const quickInfo =
     enhanced?.quick_info?.filter(
       (item) => item.value && item.value !== "null",
     ) || [];
+
+  // Add salary, experience, deadline from job fields if not in enhanced
+  if (quickInfo.length === 0) {
+    if (job.salary) quickInfo.push({ label: "Salary", value: job.salary });
+    if (job.experience)
+      quickInfo.push({ label: "Experience", value: job.experience });
+    if (job.deadline)
+      quickInfo.push({ label: "Deadline", value: job.deadline });
+    if (job.education)
+      quickInfo.push({ label: "Education", value: job.education });
+  }
 
   // Highlights
   const highlights = enhanced?.highlights || [];
@@ -448,7 +463,7 @@ export default async function JobDetailPage({ params }) {
   const needsAI = enhanced?.needsAI === true && !enhanced?.aiEnhanced;
 
   return (
-    <JobPageContent job={job} enhanced={enhanced}>
+    <JobPageContent job={job} enhanced={enhanced} autoGenerate={needsAI}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

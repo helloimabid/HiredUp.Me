@@ -1,14 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AIJobLoader from "./AIJobLoader";
 
-export default function JobPageContent({ job, enhanced, children }) {
+export default function JobPageContent({
+  job,
+  enhanced,
+  children,
+  autoGenerate = false,
+}) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showLoader, setShowLoader] = useState(false);
 
   // Check if this job needs AI enhancement
   const needsAI = enhanced?.needsAI === true && !enhanced?.aiEnhanced;
+
+  useEffect(() => {
+    if (autoGenerate && needsAI && !showLoader) {
+      setShowLoader(true);
+      setIsGenerating(true);
+    }
+  }, [autoGenerate, needsAI, showLoader]);
 
   const handleGenerateClick = () => {
     setShowLoader(true);
@@ -41,6 +53,24 @@ export default function JobPageContent({ job, enhanced, children }) {
             <p className="text-lg text-slate-600 dark:text-slate-400">
               {job.company} • {job.location}
             </p>
+            {/* Quick metadata from output.json */}
+            <div className="flex flex-wrap justify-center gap-3 mt-3">
+              {job.salary && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-sm">
+                  💰 {job.salary}
+                </span>
+              )}
+              {job.experience && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm">
+                  💼 {job.experience}
+                </span>
+              )}
+              {job.deadline && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-sm">
+                  ⏰ {job.deadline}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-2xl p-8 text-center border border-purple-100 dark:border-purple-800">

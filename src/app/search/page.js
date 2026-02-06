@@ -278,7 +278,7 @@ function SearchContent() {
       text.includes("timed out") ||
       text.includes("timeout") ||
       text.includes("gateway time-out") ||
-      text.includes("upstream") && text.includes("timeout")
+      (text.includes("upstream") && text.includes("timeout"))
     );
   };
 
@@ -433,7 +433,9 @@ function SearchContent() {
           return;
         }
 
-        throw new Error("Server returned an invalid response. Please try again.");
+        throw new Error(
+          "Server returned an invalid response. Please try again.",
+        );
       }
 
       if (!response.ok) {
@@ -894,7 +896,8 @@ function SearchContent() {
                     </p>
                     <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
                       This is taking longer than usual. Please check back later
-                      (your results will appear on the <strong>Jobs page</strong>
+                      (your results will appear on the{" "}
+                      <strong>Jobs page</strong>
                       once ready).
                     </p>
 

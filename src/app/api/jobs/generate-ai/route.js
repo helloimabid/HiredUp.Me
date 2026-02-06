@@ -47,6 +47,18 @@ function withTimeout(promise, timeoutMs) {
   });
 }
 
+function generateJobSlug(title, company, id) {
+  const text = `${title}-at-${company}`;
+  const slug = text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .substring(0, 80);
+  const shortId = String(id || "").substring(0, 6);
+  return shortId ? `${slug}-${shortId}` : slug;
+}
+
 async function callGemini(prompt) {
   const apiKey =
     process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
@@ -299,13 +311,28 @@ export async function POST(request) {
     } else {
       // Fallback: Generate AI content server-side (OpenRouter)
       console.log("[generate-ai] Step 1: Calling server-side AI (fallback)...");
+
+      // Build extra metadata fields
+      const extraFields = [];
+      if (job.salary) extraFields.push(`Salary: ${job.salary}`);
+      if (job.experience) extraFields.push(`Experience: ${job.experience}`);
+      if (job.education) extraFields.push(`Education: ${job.education}`);
+      if (job.deadline) extraFields.push(`Deadline: ${job.deadline}`);
+      const extraFieldsText =
+        extraFields.length > 0
+          ? `\n\nADDITIONAL METADATA:\n${extraFields.join("\n")}`
+          : "";
+
       const prompt = `You are creating professional content for a job posting page. Analyze this job thoroughly.
 
 JOB DETAILS:
 - Title: ${job.title}
 - Company: ${job.company}
 - Location: ${job.location}
-${job.description ? `- Description: ${job.description.substring(0, 2000)}` : ""}
+${extraFieldsText}
+
+RAW JOB POSTING CONTENT:
+${job.description ? job.description.substring(0, 4000) : "No description available"}
 
 Create a comprehensive JSON response with these EXACT fields:
 {
@@ -459,6 +486,7 @@ Return ONLY valid JSON. No markdown, no explanation.`;
 
     // First, get the job's slug for cache revalidation
     let jobSlug = null;
+    let shouldUpdateSlug = false;
     try {
       const existingJob = await databases.getDocument(
         DATABASE_ID,
@@ -466,22 +494,44 @@ Return ONLY valid JSON. No markdown, no explanation.`;
         jobId,
       );
       jobSlug = existingJob.slug;
+      if (!jobSlug) {
+        jobSlug = generateJobSlug(
+          existingJob.title || job.title,
+          existingJob.company || job.company,
+          jobId,
+        );
+        shouldUpdateSlug = true;
+      }
       console.log(`[generate-ai] Found job slug: ${jobSlug}`);
     } catch (fetchError) {
       console.warn(
         "[generate-ai] Could not fetch job slug:",
         fetchError.message,
       );
+      if (!jobSlug && job?.title && job?.company) {
+        jobSlug = generateJobSlug(job.title, job.company, jobId);
+        shouldUpdateSlug = true;
+      }
     }
 
     try {
-      await databases.updateDocument(DATABASE_ID, JOBS_COLLECTION_ID, jobId, {
+      const updatePayload = {
         description: (analysis.about || analysis.summary || "").substring(
           0,
           5000,
         ),
         enhanced_json: stringifyEnhancedForStorage(enhanced, 50000),
-      });
+      };
+      if (shouldUpdateSlug && jobSlug) {
+        updatePayload.slug = jobSlug;
+      }
+
+      await databases.updateDocument(
+        DATABASE_ID,
+        JOBS_COLLECTION_ID,
+        jobId,
+        updatePayload,
+      );
       console.log("[generate-ai] Database update successful!");
 
       // Revalidate the job page cache so the new content shows immediately

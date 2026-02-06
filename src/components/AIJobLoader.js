@@ -2,6 +2,58 @@
 
 import { useState, useEffect, useRef } from "react";
 
+// Step definitions with icons matching the reference design
+const STEPS = [
+  {
+    num: 1,
+    label: "Preparing",
+    icon: "solar:file-text-linear",
+    doneIcon: "solar:check-circle-linear",
+  },
+  {
+    num: 2,
+    label: "Fetching",
+    icon: "solar:download-minimalistic-linear",
+    doneIcon: "solar:check-circle-linear",
+  },
+  {
+    num: 3,
+    label: "Loading",
+    icon: "solar:cloud-download-linear",
+    doneIcon: "solar:check-circle-linear",
+  },
+  {
+    num: 4,
+    label: "Analyzing",
+    icon: "solar:refresh-circle-linear",
+    doneIcon: "solar:check-circle-linear",
+  },
+  {
+    num: 5,
+    label: "Writing",
+    icon: "solar:pen-new-square-linear",
+    doneIcon: "solar:check-circle-linear",
+  },
+  {
+    num: 6,
+    label: "Generated",
+    icon: "solar:file-check-linear",
+    doneIcon: "solar:check-circle-linear",
+  },
+  {
+    num: 7,
+    label: "Saving",
+    icon: "solar:diskette-linear",
+    doneIcon: "solar:check-circle-linear",
+  },
+  {
+    num: 8,
+    label: "Done",
+    icon: "solar:flag-2-linear",
+    doneIcon: "solar:check-circle-linear",
+  },
+];
+
 export default function AIJobLoader({ job, onComplete, onError }) {
   const [status, setStatus] = useState("initializing");
   const [progress, setProgress] = useState(0);
@@ -45,50 +97,14 @@ export default function AIJobLoader({ job, onComplete, onError }) {
     console.log("[Puter] Calling AI with model: gpt-4.1-nano...");
 
     const response = await puter.ai.chat(prompt, {
-      model: "gpt-4.1-nano", // Fast free model
+      model: "gpt-4.1-nano",
       temperature: 0.7,
     });
 
-    // Handle response - can be string or object
-    if (typeof response === "string") {
-      return response;
-    }
-    if (response?.message?.content) {
-      return response.message.content;
-    }
-    if (response?.content) {
-      return response.content;
-    }
+    if (typeof response === "string") return response;
+    if (response?.message?.content) return response.message.content;
+    if (response?.content) return response.content;
     return JSON.stringify(response);
-  };
-
-  // Optionally fetch more info from Tavily if job has a source URL
-  const fetchTavilyInfo = async () => {
-    // Check if job has a source URL or apply URL we can extract more info from
-    const sourceUrl = job.apply_url || job.sourceUrl || job.url;
-    if (!sourceUrl || !sourceUrl.startsWith("http")) {
-      return null;
-    }
-
-    try {
-      console.log("[AIJobLoader] Fetching extra info from:", sourceUrl);
-      const response = await fetch("/api/jobs/extract-info", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: sourceUrl }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        return data.content;
-      }
-    } catch (err) {
-      console.log(
-        "[AIJobLoader] Tavily extract failed (continuing without):",
-        err.message,
-      );
-    }
-    return null;
   };
 
   const startGeneration = async () => {
@@ -98,32 +114,31 @@ export default function AIJobLoader({ job, onComplete, onError }) {
     try {
       updateProgress(1, "Preparing job data...", 10);
 
-      // Step 1: Try to fetch extra info from source URL via Tavily
-      updateProgress(2, "Fetching job details...", 20);
-      let extraContent = "";
-      try {
-        const tavilyInfo = await fetchTavilyInfo();
-        if (tavilyInfo) {
-          extraContent = `\n\nADDITIONAL INFO FROM SOURCE:\n${tavilyInfo.substring(0, 3000)}`;
-          console.log(
-            "[AIJobLoader] Got extra content from Tavily, length:",
-            tavilyInfo.length,
-          );
-        }
-      } catch (e) {
-        console.log("[AIJobLoader] Skipping Tavily (optional):", e.message);
-      }
+      updateProgress(2, "Analyzing job details...", 20);
+
+      const rawDescription = job.description || "";
+      const extraFields = [];
+      if (job.salary) extraFields.push(`Salary: ${job.salary}`);
+      if (job.experience) extraFields.push(`Experience: ${job.experience}`);
+      if (job.education) extraFields.push(`Education: ${job.education}`);
+      if (job.deadline) extraFields.push(`Deadline: ${job.deadline}`);
+      const extraFieldsText =
+        extraFields.length > 0
+          ? `\n\nADDITIONAL METADATA:\n${extraFields.join("\n")}`
+          : "";
 
       updateProgress(3, "Loading AI service...", 30);
 
-      // Build the AI prompt with any extra content
       const prompt = `You are creating professional content for a job posting page. Analyze this job thoroughly.
 
 JOB DETAILS:
 - Title: ${job.title}
 - Company: ${job.company}
 - Location: ${job.location}
-${job.description ? `- Description: ${job.description.substring(0, 2000)}` : ""}${extraContent}
+${extraFieldsText}
+
+RAW JOB POSTING CONTENT:
+${rawDescription.substring(0, 4000)}
 
 Create a comprehensive JSON response with these EXACT fields:
 {
@@ -146,7 +161,6 @@ Return ONLY valid JSON. No markdown, no explanation.`;
 
       updateProgress(4, "AI is analyzing the job...", 50);
 
-      // Call Puter AI directly from browser (free, unlimited!)
       console.log("[AIJobLoader] Calling Puter.js AI directly...");
       const aiResponse = await callPuterAI(prompt);
       console.log(
@@ -156,25 +170,14 @@ Return ONLY valid JSON. No markdown, no explanation.`;
 
       updateProgress(5, "AI is writing content...", 65);
 
-      // Extract JSON from response
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        console.error(
-          "[AIJobLoader] No JSON found in AI response:",
-          aiResponse?.substring(0, 500),
-        );
         throw new Error("AI response was not valid JSON");
       }
 
       const analysis = JSON.parse(jsonMatch[0]);
-      console.log(
-        "[AIJobLoader] Parsed successfully, summary:",
-        analysis.summary?.substring(0, 100),
-      );
 
       updateProgress(6, "Content generated!", 75);
-
-      // Send to server to save (logo fetch + database save)
       updateProgress(7, "Saving to database...", 85);
 
       const saveResponse = await fetch("/api/jobs/generate-ai", {
@@ -187,25 +190,25 @@ Return ONLY valid JSON. No markdown, no explanation.`;
             company: job.company,
             location: job.location,
             description: job.description || "",
+            salary: job.salary || "",
+            experience: job.experience || "",
+            education: job.education || "",
+            deadline: job.deadline || "",
           },
-          analysis, // Send the AI analysis to server for saving
-          clientGenerated: true, // Flag that AI was done client-side
+          analysis,
+          clientGenerated: true,
         }),
       });
 
       const result = await saveResponse.json();
 
       if (!saveResponse.ok) {
-        console.error("Save API returned error:", result);
         throw new Error(result.error || "Failed to save generated content");
       }
 
-      console.log("AI generation successful:", result.message);
-
-      updateProgress(8, "Done! Reloading...", 100);
+      updateProgress(8, "Done! Redirecting...", 100);
       setStatus("complete");
 
-      // Reload page after short delay with cache bust
       setTimeout(() => {
         const url = new URL(window.location.href);
         url.searchParams.set("_t", Date.now());
@@ -219,203 +222,239 @@ Return ONLY valid JSON. No markdown, no explanation.`;
     }
   };
 
-  const steps = [
-    { num: 1, label: "Preparing" },
-    { num: 2, label: "Fetching" },
-    { num: 3, label: "Loading" },
-    { num: 4, label: "Analyzing" },
-    { num: 5, label: "Writing" },
-    { num: 6, label: "Generated" },
-    { num: 7, label: "Saving" },
-    { num: 8, label: "Done!" },
-  ];
-
+  // ============ RENDER ============
   return (
-    <div className="min-h-[60vh] flex items-center justify-center">
-      <div className="max-w-md w-full mx-4">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 text-center">
-          {/* AI Icon Animation */}
-          <div className="mb-6">
-            {status === "error" ? (
-              <div className="w-20 h-20 mx-auto bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-10 h-10 text-red-600 dark:text-red-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-              </div>
-            ) : status === "timeout" ? (
-              <div className="w-20 h-20 mx-auto bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-10 h-10 text-amber-600 dark:text-amber-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-            ) : status === "complete" ? (
-              <div className="w-20 h-20 mx-auto bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-10 h-10 text-green-600 dark:text-green-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-            ) : (
-              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center animate-pulse">
-                <svg
-                  className="w-10 h-10 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                  />
-                </svg>
-              </div>
-            )}
+    <div className="min-h-screen bg-slate-950 text-slate-300 flex flex-col">
+      {/* Subtle background glow */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
+
+      <main className="flex-grow flex items-center justify-center p-4 py-16 relative z-10">
+        <div className="w-full max-w-2xl">
+          {/* Context Pill */}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-800 bg-slate-900/50 backdrop-blur-sm">
+              <iconify-icon
+                icon="solar:magic-stick-3-linear"
+                class="text-indigo-400"
+                width="16"
+              ></iconify-icon>
+              <span className="text-xs font-medium text-slate-400">
+                {status === "error"
+                  ? "Generation failed"
+                  : status === "complete"
+                    ? "Generation complete"
+                    : "AI generating job page"}
+              </span>
+            </div>
           </div>
 
-          {/* Title */}
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-            {status === "error"
-              ? "Generation Failed"
-              : status === "timeout"
-                ? "Taking Longer Than Expected"
-                : status === "complete"
-                  ? "Page Generated!"
-                  : "AI Generating Job Page"}
-          </h2>
-
-          {/* Message */}
-          <p className="text-gray-600 dark:text-gray-400 mb-6">{message}</p>
-
-          {/* Progress Steps */}
-          {status !== "error" && status !== "timeout" && (
-            <div className="mb-6">
-              <div className="flex justify-between mb-2">
-                {steps.map((s) => (
-                  <div
-                    key={s.num}
-                    className={`flex flex-col items-center ${
-                      step >= s.num
-                        ? "text-blue-600 dark:text-blue-400"
-                        : "text-gray-300 dark:text-gray-600"
-                    }`}
-                  >
-                    <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mb-1 ${
-                        step > s.num
-                          ? "bg-green-500 text-white"
-                          : step === s.num
-                            ? "bg-blue-600 text-white animate-pulse"
-                            : "bg-gray-200 dark:bg-gray-700"
-                      }`}
-                    >
-                      {step > s.num ? "✓" : s.num}
-                    </div>
-                    <span className="text-[10px] hidden sm:block">
-                      {s.label}
-                    </span>
-                  </div>
-                ))}
+          {/* Main Card */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+            {/* Card Header */}
+            <div className="p-8 pb-6 text-center border-b border-slate-800/50">
+              {/* Icon */}
+              <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 flex items-center justify-center mb-6 relative">
+                <div className="absolute inset-0 bg-indigo-500/20 blur-xl opacity-50" />
+                {status === "error" ? (
+                  <iconify-icon
+                    icon="solar:danger-triangle-linear"
+                    class="text-red-400 relative z-10"
+                    width="32"
+                  ></iconify-icon>
+                ) : status === "complete" ? (
+                  <iconify-icon
+                    icon="solar:check-circle-linear"
+                    class="text-emerald-400 relative z-10"
+                    width="32"
+                  ></iconify-icon>
+                ) : (
+                  <iconify-icon
+                    icon="solar:magic-stick-3-linear"
+                    class="text-indigo-400 relative z-10 animate-pulse"
+                    width="32"
+                  ></iconify-icon>
+                )}
               </div>
 
-              {/* Progress Bar */}
-              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                {progress}% complete
+              {/* Title */}
+              <h1 className="text-2xl md:text-3xl font-semibold text-white tracking-tight mb-2">
+                {status === "error"
+                  ? "Generation Failed"
+                  : status === "complete"
+                    ? "Page Generated!"
+                    : "AI Generating Job Page"}
+              </h1>
+
+              {/* Subtitle */}
+              <p className="text-slate-400 text-sm md:text-base max-w-md mx-auto">
+                {status === "error" ? (
+                  <span>{message}</span>
+                ) : status === "complete" ? (
+                  <span>Your job page is ready. Redirecting now...</span>
+                ) : (
+                  <>
+                    Analysing job details for{" "}
+                    <span className="text-slate-200 font-medium">
+                      {job.title}
+                    </span>{" "}
+                    to create an optimized listing.
+                  </>
+                )}
               </p>
             </div>
-          )}
 
-          {/* Timeout Buttons */}
-          {status === "timeout" && (
-            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4">
-              <button
-                onClick={() => window.location.reload()}
-                className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            {/* Progress Section */}
+            {status !== "error" && (
+              <div className="p-8 bg-slate-900/50">
+                {/* Progress Bar */}
+                <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mb-8 relative">
+                  <div
+                    className="absolute top-0 left-0 h-full bg-indigo-500 rounded-full transition-all duration-700 ease-out"
+                    style={{ width: `${progress}%` }}
                   />
-                </svg>
-                Try Again
-              </button>
-              <button
-                onClick={() => window.history.back()}
-                className="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-xl font-semibold transition-colors"
-              >
-                Go Back
-              </button>
+                  {status !== "complete" && (
+                    <div
+                      className="absolute top-0 left-0 h-full w-full rounded-full"
+                      style={{
+                        background:
+                          "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)",
+                        backgroundSize: "200% 100%",
+                        animation: "shimmer 2s infinite",
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* Steps Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4">
+                  {STEPS.map((s) => {
+                    const isDone = step > s.num;
+                    const isActive = step === s.num;
+                    const isPending = step < s.num;
+
+                    return (
+                      <div
+                        key={s.num}
+                        className={`flex items-center gap-3 ${isPending ? "opacity-40" : ""}`}
+                      >
+                        {isDone ? (
+                          <div className="w-6 h-6 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                            <iconify-icon
+                              icon="solar:check-circle-linear"
+                              width="14"
+                            ></iconify-icon>
+                          </div>
+                        ) : isActive ? (
+                          <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-white relative">
+                            <span className="absolute -inset-1 rounded-full border border-indigo-500/30 animate-ping" />
+                            <iconify-icon
+                              icon="solar:refresh-circle-linear"
+                              width="14"
+                              class="animate-spin"
+                            ></iconify-icon>
+                          </div>
+                        ) : (
+                          <div className="w-6 h-6 rounded-full border border-slate-700 bg-slate-800 flex items-center justify-center text-slate-500">
+                            <iconify-icon
+                              icon={s.icon}
+                              width="12"
+                            ></iconify-icon>
+                          </div>
+                        )}
+                        <span
+                          className={`text-xs font-medium ${
+                            isDone
+                              ? "text-emerald-400"
+                              : isActive
+                                ? "text-white"
+                                : "text-slate-500"
+                          }`}
+                        >
+                          {s.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Error content */}
+            {status === "error" && (
+              <div className="p-8 bg-slate-900/50 text-center">
+                <p className="text-sm text-slate-400 mb-6">
+                  Something went wrong while generating the page. You can try
+                  again or go back.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold rounded-lg transition-colors inline-flex items-center justify-center gap-2"
+                  >
+                    <iconify-icon
+                      icon="solar:refresh-circle-linear"
+                      width="16"
+                    ></iconify-icon>
+                    Try Again
+                  </button>
+                  <button
+                    onClick={() => window.history.back()}
+                    className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold rounded-lg transition-colors border border-slate-700"
+                  >
+                    Go Back
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Card Footer */}
+            <div className="bg-slate-950/50 p-4 border-t border-slate-800 flex items-center justify-between">
+              <div className="text-xs text-slate-600 flex items-center gap-1.5">
+                <iconify-icon
+                  icon="solar:briefcase-linear"
+                  width="14"
+                ></iconify-icon>
+                <span>{job.company}</span>
+                <span className="text-slate-700">•</span>
+                <span>{job.location}</span>
+              </div>
+              {status !== "complete" && status !== "error" && (
+                <button
+                  onClick={() => window.history.back()}
+                  className="text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5"
+                >
+                  <iconify-icon
+                    icon="solar:close-circle-linear"
+                    width="14"
+                  ></iconify-icon>
+                  Cancel
+                </button>
+              )}
             </div>
-          )}
-
-          {/* Error Retry Button */}
-          {status === "error" && (
-            <button
-              onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors"
-            >
-              Try Again
-            </button>
-          )}
-
-          {/* Job Info */}
-          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Generating page for:
-            </p>
-            <p className="font-semibold text-gray-900 dark:text-white">
-              {job.title}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {job.company} • {job.location}
-            </p>
           </div>
+
+          {/* Bottom text */}
+          <p className="mt-6 text-center text-xs text-slate-600">
+            {status === "error"
+              ? "If the problem persists, the AI service may be temporarily unavailable."
+              : status === "complete"
+                ? "Redirecting to your generated job page..."
+                : "This process usually takes about 10–15 seconds."}
+          </p>
         </div>
-      </div>
+      </main>
+
+      {/* Shimmer keyframe (injected via style tag) */}
+      <style jsx>{`
+        @keyframes shimmer {
+          0% {
+            background-position: 200% 0;
+          }
+          100% {
+            background-position: -200% 0;
+          }
+        }
+      `}</style>
     </div>
   );
 }

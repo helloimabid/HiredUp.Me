@@ -11,13 +11,15 @@ export default function SearchBar() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Navigate to search page with the query
+    // Navigate to jobs page with the query
     if (keyword.trim()) {
-      router.push(
-        `/search?q=${encodeURIComponent(keyword)}&loc=${encodeURIComponent(location || "Remote")}`,
-      );
+      const params = new URLSearchParams();
+      params.set("q", keyword);
+      if (location) params.set("location", location);
+      if (jobType) params.set("type", jobType);
+      router.push(`/jobs?${params.toString()}`);
     } else {
-      router.push("/search");
+      router.push("/jobs");
     }
   };
 

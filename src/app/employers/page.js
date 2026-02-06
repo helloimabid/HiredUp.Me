@@ -1,23 +1,14 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Link from "next/link";
 
 export const metadata = {
-  title: "For Employers - Hire Top Talent in Bangladesh | HiredUp.me",
+  title: "Employers - Coming Soon | HiredUp.me",
   description:
-    "Hire the best talent in Bangladesh. Post jobs, access 50,000+ verified candidates, use AI matching. Start free - find developers, designers, marketers & more!",
-  keywords: [
-    "hire employees Bangladesh",
-    "recruit developers Dhaka",
-    "post job Bangladesh",
-    "hiring platform",
-    "talent acquisition",
-    "recruitment Bangladesh",
-    "employer solutions",
-  ],
+    "Employer tools are coming soon. Post jobs and hire faster with HiredUp.me.",
   openGraph: {
-    title: "Hire Top Talent in Bangladesh | HiredUp.me",
-    description:
-      "Build your dream team with verified candidates from Bangladesh",
+    title: "Employers - Coming Soon",
+    description: "Employer tools and hiring workflows — coming soon",
     url: "https://hiredup.me/employers",
   },
   alternates: {
@@ -29,314 +20,54 @@ export default function EmployersPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50">
-        {/* Hero */}
-        <section className="bg-gradient-to-br from-slate-900 to-slate-800 text-white py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl lg:text-5xl font-semibold mb-6">
-              Find Top Talent
-            </h1>
-            <p className="text-xl text-slate-300 max-w-2xl mx-auto mb-8">
-              Access a pool of verified professionals in Bangladesh and
-              worldwide. Build your dream team today.
-            </p>
-            <a
+      <main className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center py-20">
+          {/* Icon */}
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center mb-8">
+            <iconify-icon
+              icon="solar:briefcase-linear"
+              class="text-indigo-500 dark:text-indigo-400"
+              width="40"
+            ></iconify-icon>
+          </div>
+
+          {/* Heading */}
+          <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-white tracking-tight mb-3">
+            Employers
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base mb-8 max-w-sm mx-auto">
+            We're building employer tools to help you post jobs, manage applicants, and hire faster. Stay tuned!
+          </p>
+
+          {/* Coming Soon Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 mb-8">
+            <iconify-icon
+              icon="solar:clock-circle-linear"
+              class="text-amber-500"
+              width="16"
+            ></iconify-icon>
+            <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
+              Coming Soon
+            </span>
+          </div>
+
+          {/* CTA */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
               href="/post-job"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-900 dark:bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors"
             >
+              <iconify-icon icon="solar:case-minimalistic-linear" width="16"></iconify-icon>
               Post a Job
-              <iconify-icon
-                icon="solar:arrow-right-linear"
-                width="20"
-              ></iconify-icon>
-            </a>
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700"
+            >
+              Go Home
+            </Link>
           </div>
-        </section>
-
-        {/* Stats */}
-        <section className="py-16 bg-white border-b border-slate-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              <div>
-                <div className="text-4xl font-bold text-slate-900 mb-2">
-                  50K+
-                </div>
-                <div className="text-sm text-slate-500">Active Job Seekers</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-slate-900 mb-2">
-                  1.2K+
-                </div>
-                <div className="text-sm text-slate-500">Companies</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-slate-900 mb-2">
-                  10K+
-                </div>
-                <div className="text-sm text-slate-500">Jobs Posted</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-slate-900 mb-2">
-                  85%
-                </div>
-                <div className="text-sm text-slate-500">Hire Success Rate</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features */}
-        <section className="py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-semibold text-slate-900 text-center mb-12">
-              Why Companies Choose Us
-            </h2>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 mb-6">
-                  <iconify-icon
-                    icon="solar:users-group-rounded-linear"
-                    width="24"
-                  ></iconify-icon>
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">
-                  Verified Talent Pool
-                </h3>
-                <p className="text-slate-500 text-sm leading-relaxed">
-                  Access pre-verified candidates with confirmed skills and
-                  experience. No more guessing.
-                </p>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600 mb-6">
-                  <iconify-icon
-                    icon="solar:target-linear"
-                    width="24"
-                  ></iconify-icon>
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">
-                  Smart Matching
-                </h3>
-                <p className="text-slate-500 text-sm leading-relaxed">
-                  Our AI matches your job requirements with the best candidates
-                  automatically.
-                </p>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 mb-6">
-                  <iconify-icon
-                    icon="solar:clock-circle-linear"
-                    width="24"
-                  ></iconify-icon>
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">
-                  Quick Hiring
-                </h3>
-                <p className="text-slate-500 text-sm leading-relaxed">
-                  Reduce time-to-hire by 60% with our streamlined recruitment
-                  process.
-                </p>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600 mb-6">
-                  <iconify-icon
-                    icon="solar:hand-money-linear"
-                    width="24"
-                  ></iconify-icon>
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">
-                  Cost Effective
-                </h3>
-                <p className="text-slate-500 text-sm leading-relaxed">
-                  Flexible pricing plans that scale with your hiring needs. Pay
-                  only for what you use.
-                </p>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center text-teal-600 mb-6">
-                  <iconify-icon
-                    icon="solar:chart-square-linear"
-                    width="24"
-                  ></iconify-icon>
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">
-                  Analytics Dashboard
-                </h3>
-                <p className="text-slate-500 text-sm leading-relaxed">
-                  Track applications, measure engagement, and optimize your job
-                  postings.
-                </p>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center text-pink-600 mb-6">
-                  <iconify-icon
-                    icon="solar:shield-check-linear"
-                    width="24"
-                  ></iconify-icon>
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">
-                  Secure Platform
-                </h3>
-                <p className="text-slate-500 text-sm leading-relaxed">
-                  Enterprise-grade security to protect your company and
-                  candidate data.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Pricing Preview */}
-        <section className="py-20 bg-white border-t border-slate-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-semibold text-slate-900 text-center mb-4">
-              Simple, Transparent Pricing
-            </h2>
-            <p className="text-slate-500 text-center mb-12">
-              Start free, upgrade when you need more
-            </p>
-
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200">
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                  Starter
-                </h3>
-                <div className="text-3xl font-bold text-slate-900 mb-4">
-                  Free
-                </div>
-                <ul className="space-y-3 text-sm text-slate-600 mb-8">
-                  <li className="flex items-center gap-2">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500"
-                    ></iconify-icon>
-                    1 active job posting
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500"
-                    ></iconify-icon>
-                    Basic candidate search
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500"
-                    ></iconify-icon>
-                    Email support
-                  </li>
-                </ul>
-                <a
-                  href="/signup"
-                  className="block text-center px-6 py-3 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-white transition-colors"
-                >
-                  Get Started
-                </a>
-              </div>
-
-              <div className="bg-indigo-600 p-8 rounded-2xl border border-indigo-500 text-white relative">
-                <span className="absolute top-0 right-6 -translate-y-1/2 px-3 py-1 bg-yellow-400 text-yellow-900 text-xs font-semibold rounded-full">
-                  Popular
-                </span>
-                <h3 className="text-lg font-semibold mb-2">Professional</h3>
-                <div className="text-3xl font-bold mb-4">
-                  $99
-                  <span className="text-lg font-normal text-indigo-200">
-                    /mo
-                  </span>
-                </div>
-                <ul className="space-y-3 text-sm text-indigo-100 mb-8">
-                  <li className="flex items-center gap-2">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-indigo-300"
-                    ></iconify-icon>
-                    10 active job postings
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-indigo-300"
-                    ></iconify-icon>
-                    Advanced talent search
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-indigo-300"
-                    ></iconify-icon>
-                    Analytics dashboard
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-indigo-300"
-                    ></iconify-icon>
-                    Priority support
-                  </li>
-                </ul>
-                <a
-                  href="/signup"
-                  className="block text-center px-6 py-3 bg-white text-indigo-600 rounded-lg font-medium hover:bg-indigo-50 transition-colors"
-                >
-                  Start Trial
-                </a>
-              </div>
-
-              <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200">
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                  Enterprise
-                </h3>
-                <div className="text-3xl font-bold text-slate-900 mb-4">
-                  Custom
-                </div>
-                <ul className="space-y-3 text-sm text-slate-600 mb-8">
-                  <li className="flex items-center gap-2">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500"
-                    ></iconify-icon>
-                    Unlimited job postings
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500"
-                    ></iconify-icon>
-                    Dedicated account manager
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500"
-                    ></iconify-icon>
-                    Custom integrations
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <iconify-icon
-                      icon="solar:check-circle-linear"
-                      class="text-green-500"
-                    ></iconify-icon>
-                    SLA guarantee
-                  </li>
-                </ul>
-                <a
-                  href="/contact"
-                  className="block text-center px-6 py-3 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-white transition-colors"
-                >
-                  Contact Sales
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
+        </div>
       </main>
       <Footer />
     </>

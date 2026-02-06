@@ -110,7 +110,7 @@ export default async function Home() {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: "https://hiredup.me/search?q={search_term_string}",
+        urlTemplate: "https://hiredup.me/jobs?q={search_term_string}",
       },
       "query-input": "required name=search_term_string",
     },

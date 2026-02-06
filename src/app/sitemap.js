@@ -26,12 +26,6 @@ export default async function sitemap() {
       priority: 0.9,
     },
     {
-      url: `${BASE_URL}/search`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
-    {
       url: `${BASE_URL}/companies`,
       lastModified: new Date(),
       changeFrequency: "daily",

@@ -59,19 +59,13 @@ export default function Header() {
           <nav className="hidden md:flex space-x-8 text-sm font-medium text-slate-500 dark:text-slate-400">
             <Link
               href="/jobs"
-              className="hover:text-slate-900 dark:hover:text-white transition-colors"
-            >
-              Browse Jobs
-            </Link>
-            <Link
-              href="/search"
               className="hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1"
             >
               <iconify-icon
-                icon="solar:magnifer-linear"
+                icon="solar:case-minimalistic-linear"
                 width="16"
               ></iconify-icon>
-              Search Jobs
+              Jobs
             </Link>
             <Link
               href="/employers"
@@ -231,20 +225,13 @@ export default function Header() {
             <Link
               href="/jobs"
               onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2"
-            >
-              Browse Jobs
-            </Link>
-            <Link
-              href="/search"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2 flex items-center gap-2"
+              className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2"
             >
               <iconify-icon
-                icon="solar:magnifer-linear"
+                icon="solar:case-minimalistic-linear"
                 width="16"
               ></iconify-icon>
-              Search Jobs
+              Jobs
             </Link>
             <Link
               href="/employers"

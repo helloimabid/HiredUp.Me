@@ -142,6 +142,15 @@ export async function getJobBySlug(slug) {
 }
 
 /**
+ * Fetch a single job by slug, with ID fallback
+ */
+export async function getJobBySlugOrId(slugOrId) {
+  const bySlug = await getJobBySlug(slugOrId);
+  if (bySlug) return bySlug;
+  return await getJobById(slugOrId);
+}
+
+/**
  * Search jobs in database by query and location
  * Supports both English and Bangla text searches
  */
@@ -239,6 +248,7 @@ export function generateJobSlug(title, company, id) {
 
 /**
  * Create a new job document with auto-generated slug
+ * Supports new output.json fields: salary, experience, education, deadline
  */
 export async function createJob(jobData) {
   try {
@@ -256,25 +266,51 @@ export async function createJob(jobData) {
       jobData.source_id ||
       `${jobData.title}-${jobData.company}-${Date.now()}`.substring(0, 100);
 
+    const docData = {
+      title: jobData.title || "Untitled Job",
+      company: jobData.company || "Unknown Company",
+      location: jobData.location || "Not specified",
+      apply_url: jobData.apply_url,
+      description: jobData.description || "",
+      source_id: sourceId,
+      slug: slug,
+    };
+
+    // Add optional fields from output.json format
+    if (jobData.salary) docData.salary = jobData.salary;
+    if (jobData.experience) docData.experience = jobData.experience;
+    if (jobData.education) docData.education = jobData.education;
+    if (jobData.deadline) docData.deadline = jobData.deadline;
+
     const document = await databases.createDocument(
       DATABASE_ID,
       JOBS_COLLECTION_ID,
       tempId,
-      {
-        title: jobData.title || "Untitled Job",
-        company: jobData.company || "Unknown Company",
-        location: jobData.location || "Not specified",
-        apply_url: jobData.apply_url,
-        description: jobData.description || "",
-        source_id: sourceId,
-        slug: slug,
-      },
+      docData,
     );
     return document;
   } catch (error) {
     console.error("Error creating job:", error);
     throw error;
   }
+}
+
+/**
+ * Create a job from the output.json scraper format
+ */
+export async function createJobFromOutput(outputJob) {
+  return createJob({
+    title: outputJob.job_title,
+    company: outputJob.company_name,
+    location: outputJob.location,
+    apply_url: outputJob.url,
+    description: (outputJob.job_description || "").substring(0, 5000),
+    source_id: outputJob.url,
+    salary: outputJob.salary || "",
+    experience: outputJob.experience || "",
+    education: outputJob.education || "",
+    deadline: outputJob.deadline || "",
+  });
 }
 
 // ============ PROFILE FUNCTIONS ============

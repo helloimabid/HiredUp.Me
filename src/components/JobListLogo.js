@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+// Logo.dev publishable key (safe for client-side use)
+const LOGO_DEV_KEY = "pk_XCMtoIJ7RMy7XgG2Ruf6UA";
+
 // Color palette for company initials
 const companyColors = [
   "bg-green-600",
@@ -24,6 +27,18 @@ function getCompanyColor(company) {
   return companyColors[index];
 }
 
+/**
+ * Generate a Logo.dev URL from a company name.
+ * Tries common domain patterns: company.com, company.com.bd, etc.
+ */
+function getLogoDev(company) {
+  if (!company) return null;
+  const clean = company
+  if (!clean || clean.length < 2) return null;
+  // Return the .com variant — Logo.dev will 404 if not found, which we handle with onError
+  return `https://img.logo.dev/name/${clean}?token=${LOGO_DEV_KEY}&size=64`;
+}
+
 export default function JobListLogo({ company, logoUrl }) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -31,8 +46,11 @@ export default function JobListLogo({ company, logoUrl }) {
   const initial = (company || "?").charAt(0).toUpperCase();
   const bgColor = getCompanyColor(company);
 
+  // Determine the logo URL: explicit > Logo.dev auto-generated
+  const effectiveLogoUrl = logoUrl || getLogoDev(company);
+
   // Show fallback if no logo URL or image failed to load
-  if (!logoUrl || imageError) {
+  if (!effectiveLogoUrl || imageError) {
     return (
       <div
         className={`w-10 h-10 rounded-lg ${bgColor} text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0`}
@@ -53,7 +71,7 @@ export default function JobListLogo({ company, logoUrl }) {
         </div>
       )}
       <img
-        src={logoUrl}
+        src={effectiveLogoUrl}
         alt={`${company} logo`}
         className={`w-full h-full object-contain p-1.5 transition-opacity duration-200 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
         onLoad={() => setImageLoaded(true)}
