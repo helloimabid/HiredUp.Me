@@ -198,7 +198,20 @@ export default function Footer() {
           <div className="text-xs text-slate-400 dark:text-slate-500 flex flex-col sm:flex-row items-center gap-2">
             <span>
               © {currentYear} HiredUp.me. All rights reserved. Made with ❤️ in
-              Bangladesh by <span><a href="https://sadmanabid.vercel.app" target="_blank" rel="noopener noreferrer">Sadman Abid</a></span>.
+              Bangladesh by{" "}
+              <span>
+                <a
+                  href="https://sadmanabid.vercel.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Sadman Abid
+                </a>
+              </span>
+              .
+            </span>
+            <span className="text-slate-400/90 dark:text-slate-500/90">
+              Jobs are aggregated from company sites and other trusted sources.
             </span>
           </div>
           <div

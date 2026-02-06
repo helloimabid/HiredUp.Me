@@ -38,6 +38,14 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 glass-nav w-full">
+      <div className="bg-indigo-50/80 dark:bg-indigo-900/30 border-b border-indigo-100 dark:border-indigo-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="py-2 text-xs sm:text-sm text-indigo-900/80 dark:text-indigo-100/80 text-center">
+            Tired of searching across multiple sites? HiredUp.me brings job
+            posts from company sites and other trusted sources into one place.
+          </p>
+        </div>
+      </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
