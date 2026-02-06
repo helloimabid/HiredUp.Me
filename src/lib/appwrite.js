@@ -1,4 +1,5 @@
 import { Client, Databases, ID, Query } from "node-appwrite";
+import { unstable_cache } from "next/cache";
 
 // Server-side Appwrite client
 const client = new Client()
@@ -86,7 +87,8 @@ export async function getAllJobs() {
 }
 
 /**
- * Fetch a paginated page of jobs with optional search and location filters
+ * Fetch a paginated page of jobs with optional search and location filters.
+ * Uses fulltext search indexes across multiple fields with relevance scoring.
  */
 export async function getJobsPage({
   page = 1,
@@ -96,29 +98,147 @@ export async function getJobsPage({
   typeFilter = "",
 } = {}) {
   try {
+    const normalizedSearch = (searchQuery || "").trim();
+    const locationQuery = (locationFilter || typeFilter || "").trim();
+
+    if (normalizedSearch) {
+      // ─── Multi-field parallel fulltext search ───
+      // Search title, company, description, and location simultaneously
+      // Each Appwrite fulltext query only supports one field at a time,
+      // so we fire them all in parallel and merge + deduplicate.
+      const searchFields = ["title", "company", "description"];
+      const batchSize = 200; // fetch more per field to widen the net
+
+      const searchPromises = searchFields.map((field) =>
+        databases
+          .listDocuments(DATABASE_ID, JOBS_COLLECTION_ID, [
+            Query.search(field, normalizedSearch),
+            Query.limit(batchSize),
+          ])
+          .then((res) => ({ field, documents: res.documents }))
+          .catch(() => ({ field, documents: [] })),
+      );
+
+      // Also search location field if user typed a location
+      if (locationQuery) {
+        searchPromises.push(
+          databases
+            .listDocuments(DATABASE_ID, JOBS_COLLECTION_ID, [
+              Query.search("location", locationQuery),
+              Query.limit(batchSize),
+            ])
+            .then((res) => ({
+              field: "location",
+              documents: res.documents,
+            }))
+            .catch(() => ({ field: "location", documents: [] })),
+        );
+      }
+
+      const searchResults = await Promise.all(searchPromises);
+
+      // ─── Merge & deduplicate ───
+      const docMap = new Map(); // $id -> { doc, matchedFields: Set }
+      for (const { field, documents } of searchResults) {
+        for (const doc of documents) {
+          if (docMap.has(doc.$id)) {
+            docMap.get(doc.$id).matchedFields.add(field);
+          } else {
+            docMap.set(doc.$id, { doc, matchedFields: new Set([field]) });
+          }
+        }
+      }
+
+      // ─── Relevance scoring ───
+      const searchLower = normalizedSearch.toLowerCase();
+      const searchTerms = searchLower
+        .split(/[\s,]+/)
+        .filter((t) => t.length > 1);
+
+      const scored = [...docMap.values()].map(({ doc, matchedFields }) => {
+        let score = 0;
+
+        const titleLower = (doc.title || "").toLowerCase();
+        const companyLower = (doc.company || "").toLowerCase();
+        const descLower = (doc.description || "").toLowerCase();
+        const locLower = (doc.location || "").toLowerCase();
+
+        // Exact phrase match bonuses (highest value)
+        if (titleLower.includes(searchLower)) score += 100;
+        if (companyLower.includes(searchLower)) score += 60;
+        if (descLower.includes(searchLower)) score += 20;
+
+        // Field match bonuses — title matches matter most
+        if (matchedFields.has("title")) score += 50;
+        if (matchedFields.has("company")) score += 30;
+        if (matchedFields.has("description")) score += 10;
+        if (matchedFields.has("location")) score += 5;
+
+        // Multi-field match bonus (matches across fields = more relevant)
+        if (matchedFields.size >= 3) score += 25;
+        else if (matchedFields.size >= 2) score += 10;
+
+        // Individual term match counting (rewards more matching terms)
+        for (const term of searchTerms) {
+          if (titleLower.includes(term)) score += 15;
+          if (companyLower.includes(term)) score += 8;
+          if (descLower.includes(term)) score += 3;
+        }
+
+        // Title starts-with bonus (e.g. "Software" matching "Software Engineer")
+        if (titleLower.startsWith(searchLower)) score += 30;
+
+        // Recency bonus — newer jobs get a small boost
+        const ageMs = Date.now() - new Date(doc.$createdAt).getTime();
+        const ageDays = ageMs / (1000 * 60 * 60 * 24);
+        if (ageDays < 1) score += 10;
+        else if (ageDays < 3) score += 7;
+        else if (ageDays < 7) score += 4;
+        else if (ageDays < 14) score += 2;
+
+        return { doc, score };
+      });
+
+      // ─── Location sub-filter ───
+      let filtered = scored;
+      if (locationQuery) {
+        const locLower = locationQuery.toLowerCase();
+        const locTerms = locLower.split(/[\s,]+/).filter((t) => t.length > 1);
+        filtered = scored.filter(({ doc }) => {
+          const jobLoc = (doc.location || "").toLowerCase();
+          return locTerms.some((term) => jobLoc.includes(term));
+        });
+        // If location filtering removes everything, fall back to all results
+        if (filtered.length === 0) filtered = scored;
+      }
+
+      // Sort by relevance score (descending), then by date as tiebreaker
+      filtered.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return new Date(b.doc.$createdAt) - new Date(a.doc.$createdAt);
+      });
+
+      const total = filtered.length;
+      const start = (page - 1) * perPage;
+      return {
+        documents: filtered.slice(start, start + perPage).map((r) => r.doc),
+        total,
+      };
+    }
+
+    // ─── No search — simple paginated listing ───
     const queries = [
       Query.orderDesc("$createdAt"),
       Query.limit(perPage),
       Query.offset(Math.max(0, (page - 1) * perPage)),
     ];
 
-    const normalizedSearch = (searchQuery || "").trim();
-    const locationQuery = (locationFilter || typeFilter || "").trim();
-
-    if (normalizedSearch) {
-      queries.push(
-        Query.or([
-          Query.search("title", normalizedSearch),
-          Query.search("company", normalizedSearch),
-          Query.search("description", normalizedSearch),
-          Query.search("salary", normalizedSearch),
-          Query.search("experience", normalizedSearch),
-        ]),
-      );
-    }
-
     if (locationQuery) {
-      queries.push(Query.search("location", locationQuery));
+      try {
+        queries.push(Query.search("location", locationQuery));
+      } catch {
+        // fallback: no location fulltext index
+      }
     }
 
     const response = await databases.listDocuments(
@@ -136,6 +256,50 @@ export async function getJobsPage({
     return { documents: [], total: 0 };
   }
 }
+
+/**
+ * Get the exact total number of documents in the jobs collection.
+ * Appwrite caps the `total` field at 5000 for performance, so we use
+ * cursor pagination with minimal payload ($id only) to count accurately.
+ * Result is cached for 60s via Next.js unstable_cache to avoid repeated slow counts.
+ */
+export const getExactJobCount = unstable_cache(
+  async () => {
+    try {
+      let count = 0;
+      let lastId = null;
+      const batchSize = 100;
+
+      while (true) {
+        const queries = [Query.limit(batchSize), Query.select(["$id"])];
+        if (lastId) {
+          queries.push(Query.cursorAfter(lastId));
+        }
+
+        const response = await databases.listDocuments(
+          DATABASE_ID,
+          JOBS_COLLECTION_ID,
+          queries,
+        );
+
+        count += response.documents.length;
+
+        if (response.documents.length < batchSize) {
+          break;
+        }
+
+        lastId = response.documents[response.documents.length - 1].$id;
+      }
+
+      return count;
+    } catch (error) {
+      console.error("Error counting jobs:", error);
+      return 0;
+    }
+  },
+  ["exact-job-count"],
+  { revalidate: 60 },
+);
 
 /**
  * Check if a job already exists by source_id

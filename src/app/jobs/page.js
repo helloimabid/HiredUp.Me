@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getJobsPage } from "@/lib/appwrite";
+import { getJobsPage, getExactJobCount } from "@/lib/appwrite";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { Suspense } from "react";
@@ -9,11 +9,56 @@ import SearchBar from "@/components/SearchBar";
 
 export const revalidate = 60;
 
+// ============ COUNTRY / LOCALE HELPERS ============
+const COUNTRY_LOCALE_MAP = {
+  BD: { locale: "en_BD", name: "Bangladesh" },
+  US: { locale: "en_US", name: "United States" },
+  GB: { locale: "en_GB", name: "United Kingdom" },
+  CA: { locale: "en_CA", name: "Canada" },
+  AU: { locale: "en_AU", name: "Australia" },
+  IN: { locale: "en_IN", name: "India" },
+  DE: { locale: "de_DE", name: "Germany" },
+  FR: { locale: "fr_FR", name: "France" },
+  SG: { locale: "en_SG", name: "Singapore" },
+  AE: { locale: "en_AE", name: "United Arab Emirates" },
+  MY: { locale: "en_MY", name: "Malaysia" },
+  PK: { locale: "en_PK", name: "Pakistan" },
+  NL: { locale: "nl_NL", name: "Netherlands" },
+  SE: { locale: "sv_SE", name: "Sweden" },
+  IE: { locale: "en_IE", name: "Ireland" },
+  NZ: { locale: "en_NZ", name: "New Zealand" },
+  ZA: { locale: "en_ZA", name: "South Africa" },
+  PH: { locale: "en_PH", name: "Philippines" },
+};
+
+function getLocaleForCountry(countryCode) {
+  return COUNTRY_LOCALE_MAP[countryCode]?.locale || "en_GB";
+}
+
+function getCountryName(countryCode) {
+  return COUNTRY_LOCALE_MAP[countryCode]?.name || "";
+}
+
+// ============ IP-API GEO LOOKUP ============
+async function getUserCountry(ip) {
+  try {
+    const res = await fetch(
+      `http://ip-api.com/json/${ip}?fields=status,countryCode`,
+      { next: { revalidate: 3600 } },
+    );
+    if (!res.ok) return "";
+    const data = await res.json();
+    return data.status === "success" ? data.countryCode : "";
+  } catch {
+    return "";
+  }
+}
+
 // ============ CAREERJET API HELPER ============
 const CAREERJET_API_KEY = process.env.CAREERJET_API_KEY;
 const CAREERJET_ENDPOINT = "https://search.api.careerjet.net/v4/query";
 
-async function fetchCareerJetJobs(keywords, location = "") {
+async function fetchCareerJetJobs(keywords, location = "", countryCode = "") {
   if (!CAREERJET_API_KEY || !keywords) return [];
 
   try {
@@ -22,8 +67,12 @@ async function fetchCareerJetJobs(keywords, location = "") {
     const userIp = forwarded?.split(",")[0]?.trim() || "127.0.0.1";
     const userAgent = headersList.get("user-agent") || "Mozilla/5.0 HiredUp.me";
 
+    // Use user's country as default location if none specified
+    const searchLocation = location || getCountryName(countryCode);
+    const localeCode = getLocaleForCountry(countryCode);
+
     const params = new URLSearchParams({
-      locale_code: "en_GB",
+      locale_code: localeCode,
       keywords,
       sort: "relevance",
       page: "1",
@@ -32,7 +81,7 @@ async function fetchCareerJetJobs(keywords, location = "") {
       user_ip: userIp,
       user_agent: userAgent,
     });
-    if (location) params.set("location", location);
+    if (searchLocation) params.set("location", searchLocation);
 
     const credentials = Buffer.from(`${CAREERJET_API_KEY}:`).toString("base64");
 
@@ -41,6 +90,7 @@ async function fetchCareerJetJobs(keywords, location = "") {
       headers: {
         Authorization: `Basic ${credentials}`,
         Accept: "application/json",
+        Referer: "https://hiredup.me",
       },
       next: { revalidate: 300 },
     });
@@ -50,10 +100,10 @@ async function fetchCareerJetJobs(keywords, location = "") {
     const data = await response.json();
     if (data.type !== "JOBS" || !data.jobs) return [];
 
-    return data.jobs.map((cj) => ({
-      $id: `cj_${Buffer.from(cj.url || "")
+    return data.jobs.map((cj, index) => ({
+      $id: `cj_${index}_${Buffer.from(cj.url || "")
         .toString("base64url")
-        .substring(0, 20)}`,
+        .substring(0, 36)}`,
       title: cj.title || "Untitled",
       company: cj.company || "Unknown Company",
       location: cj.locations || "",
@@ -147,26 +197,60 @@ function formatDeadline(deadline) {
 
 export default async function JobsPage({ searchParams }) {
   const params = await searchParams;
-  const suspenseKey = `${params?.q || ""}-${params?.page || "1"}-${params?.type || ""}-${params?.location || ""}`;
+  const perPage = parseInt(params?.perPage || "25", 10);
+  const validPerPage = [25, 50, 75, 100].includes(perPage) ? perPage : 25;
+  const suspenseKey = `${params?.q || ""}-${params?.page || "1"}-${params?.type || ""}-${params?.location || ""}-${validPerPage}`;
 
   return (
     <>
       <Header />
-      <main className="min-h-screen pb-20 pt-8 bg-white dark:bg-slate-900">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header Section */}
-          <div className="mb-8">
-            <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white mb-1">
+      <main className="min-h-screen pb-20 pt-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Search Header */}
+          <div className="flex flex-col items-center mb-12">
+            <h1 className="text-2xl font-medium tracking-tight text-slate-900 mb-8 dark:text-white ">
               Browse Jobs
             </h1>
-          </div>
 
-          {/* Search Bar */}
-          <SearchBar />
+            {/* Search Box */}
+            <SearchBar
+              wrapperClassName="w-full max-w-4xl"
+              className="bg-white dark:bg-slate-800 rounded-2xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] dark:shadow-slate-900/60 border border-slate-100 dark:border-slate-700 p-2"
+            />
+
+            {/* Popular Tags - hardcoded to match reference for now
+            <div className="mt-4 flex flex-wrap justify-center items-center gap-x-3 gap-y-2 text-xs text-slate-500">
+              <span className="text-slate-400 font-medium">Popular:</span>
+              <Link
+                href="/jobs?q=UI+Design"
+                className="hover:text-blue-600 transition-colors hover:underline decoration-slate-200 underline-offset-2"
+              >
+                UI Design
+              </Link>
+              <Link
+                href="/jobs?q=React+Developer"
+                className="hover:text-blue-600 transition-colors hover:underline decoration-slate-200 underline-offset-2"
+              >
+                React Developer
+              </Link>
+              <Link
+                href="/jobs?q=Content+Writing"
+                className="hover:text-blue-600 transition-colors hover:underline decoration-slate-200 underline-offset-2"
+              >
+                Content Writing
+              </Link>
+              <Link
+                href="/jobs?q=SEO+Specialist"
+                className="hover:text-blue-600 transition-colors hover:underline decoration-slate-200 underline-offset-2"
+              >
+                SEO Specialist
+              </Link>
+            </div> */}
+          </div>
 
           {/* Job List — wrapped in Suspense so skeleton shows on every param change */}
           <Suspense key={suspenseKey} fallback={<JobListSkeleton />}>
-            <JobResults params={params} />
+            <JobResults params={params} perPage={validPerPage} />
           </Suspense>
         </div>
       </main>
@@ -178,28 +262,29 @@ export default async function JobsPage({ searchParams }) {
 // ============ LOADING SKELETON ============
 function JobListSkeleton() {
   return (
-    <div className="mt-2">
-      <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-        {/* List header skeleton */}
-        <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-2 border-b border-slate-200 dark:border-slate-700">
-          <div className="h-3 w-40 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
-        </div>
-        {/* Job item skeletons */}
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+      {/* Toolbar skeleton */}
+      <div className="flex flex-col sm:flex-row justify-between items-center px-5 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50 gap-4">
+        <div className="h-3 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+        <div className="h-3 w-48 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+      </div>
+
+      {/* List items */}
+      <div className="divide-y divide-slate-100 dark:divide-slate-700">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div
-            key={i}
-            className="flex items-start gap-4 p-4 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 last:border-b-0"
-          >
-            <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse shrink-0" />
-            <div className="flex-1 min-w-0 space-y-2">
-              <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+          <div key={i} className="p-5 flex gap-5 items-start">
+            <div className="w-12 h-12 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse shrink-0" />
+            <div className="flex-1 min-w-0 pt-0.5 space-y-3">
+              <div className="flex justify-between">
+                <div className="h-4 w-1/3 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                <div className="h-3 w-12 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+              </div>
               <div className="h-3 w-1/2 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
-              <div className="flex gap-3">
-                <div className="h-3 w-20 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
-                <div className="h-3 w-16 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+              <div className="flex gap-2">
+                <div className="h-5 w-16 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                <div className="h-5 w-16 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
               </div>
             </div>
-            <div className="h-3 w-10 bg-slate-100 dark:bg-slate-800 rounded animate-pulse shrink-0" />
           </div>
         ))}
       </div>
@@ -207,15 +292,59 @@ function JobListSkeleton() {
   );
 }
 
+// ============ PER-PAGE SELECTOR (client component) ============
+function PerPageSelector({ current, params }) {
+  const options = [25, 50, 75, 100];
+  return (
+    <div className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+      <span>Show:</span>
+      <div className="flex bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded p-[2px] shadow-sm">
+        {options.map((n) => {
+          const qp = new URLSearchParams();
+          if (params?.q) qp.set("q", params.q);
+          if (params?.type) qp.set("type", params.type);
+          if (params?.location) qp.set("location", params.location);
+          qp.set("perPage", String(n));
+          const isActive = current === n;
+          return (
+            <Link
+              key={n}
+              href={`/jobs?${qp.toString()}`}
+              className={`px-2 py-0.5 rounded transition-colors ${
+                isActive
+                  ? "bg-slate-900 dark:bg-indigo-600 text-white shadow-sm"
+                  : "text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300"
+              }`}
+            >
+              {n}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ============ ASYNC JOB RESULTS COMPONENT ============
-async function JobResults({ params }) {
+async function JobResults({ params, perPage = 25 }) {
   const typeFilter = params?.type || "";
   const searchQuery = params?.q || "";
   const locationFilter = params?.location || "";
   const page = parseInt(params?.page || "1", 10);
-  const perPage = 25;
 
-  const { documents: appwriteJobs, total: appwriteTotal } = await getJobsPage({
+  // Detect user's country via ip-api.com (primary), headers as fallback
+  const headersList = await headers();
+  const forwarded = headersList.get("x-forwarded-for");
+  const userIp = forwarded?.split(",")[0]?.trim() || "";
+  const ipApiCountry = userIp ? await getUserCountry(userIp) : "";
+  const userCountry =
+    ipApiCountry ||
+    headersList.get("x-vercel-ip-country") ||
+    headersList.get("cf-ipcountry") ||
+    "";
+
+  // Fetch Appwrite jobs, cached exact count, and (optionally) CareerJet in parallel
+  const jobsPagePromise = getJobsPage({
     page,
     perPage,
     searchQuery,
@@ -223,34 +352,43 @@ async function JobResults({ params }) {
     typeFilter,
   });
 
-  // Fetch CareerJet results when user is searching
-  let careerjetJobs = [];
-  if (searchQuery) {
-    try {
-      careerjetJobs = await fetchCareerJetJobs(
+  // Exact count is cached (60s) so it's fast on subsequent loads
+  const exactCountPromise =
+    !searchQuery && !locationFilter && !typeFilter
+      ? getExactJobCount()
+      : Promise.resolve(null);
+
+  const careerjetPromise = searchQuery
+    ? fetchCareerJetJobs(
         searchQuery,
         locationFilter || typeFilter,
-      );
-    } catch {
-      // silently fail
-    }
-  }
+        userCountry,
+      ).catch(() => [])
+    : Promise.resolve([]);
 
-  const totalJobs = appwriteTotal + careerjetJobs.length;
-  const totalPages = Math.ceil(totalJobs / perPage);
-  const appwritePages = Math.ceil(appwriteTotal / perPage);
+  const [
+    { documents: appwriteJobs, total: appwriteTotal },
+    exactCount,
+    careerjetJobs,
+  ] = await Promise.all([jobsPagePromise, exactCountPromise, careerjetPromise]);
+
+  // Use exact count when available, otherwise fall back to Appwrite's capped total
+  const realAppwriteTotal = exactCount ?? appwriteTotal;
+  const totalPages = Math.ceil(realAppwriteTotal / perPage);
+  // Only count CareerJet in displayed total on page 1 where they actually appear
+  const careerjetOnPage = searchQuery && page === 1 ? careerjetJobs.length : 0;
+  const totalJobs = realAppwriteTotal + careerjetOnPage;
 
   let paginatedJobs = appwriteJobs.map((j) => ({ ...j, source: "appwrite" }));
 
-  // Append CareerJet results after all Appwrite results (same ordering as before)
-  if (page > appwritePages && careerjetJobs.length > 0) {
-    const cjStart = (page - appwritePages - 1) * perPage;
-    paginatedJobs = careerjetJobs.slice(cjStart, cjStart + perPage);
+  // When searching, show CareerJet results on page 1 after Appwrite results
+  if (searchQuery && careerjetJobs.length > 0 && page === 1) {
+    paginatedJobs = [...paginatedJobs, ...careerjetJobs];
   }
 
   if (paginatedJobs.length === 0) {
     return (
-      <div className="text-center py-20">
+      <div className="text-center py-20 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
         <iconify-icon
           icon="solar:magnifer-linear"
           class="text-slate-300 dark:text-slate-600 text-6xl mb-4"
@@ -273,183 +411,189 @@ async function JobResults({ params }) {
 
   return (
     <>
-      <div className="mt-2 space-y-px bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
-        {/* List Header */}
-        <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-2 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-          <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
-            Showing {paginatedJobs.length} of {totalJobs} jobs
-            {searchQuery && careerjetJobs.length > 0 && (
-              <span className="text-indigo-500 dark:text-indigo-400 ml-1">
-                ({careerjetJobs.length} from CareerJet)
-              </span>
-            )}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+        {/* List Header / Toolbar */}
+        <div className="flex flex-col sm:flex-row justify-between items-center px-5 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50 gap-4">
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 tracking-wide uppercase">
+            Showing {paginatedJobs.length} of {totalJobs} Jobs
           </span>
-          {(typeFilter || searchQuery) && (
+          <div className="flex items-center gap-5">
+            <PerPageSelector current={perPage} params={params} />
+            <div className="h-3 w-px bg-slate-200 dark:bg-slate-700"></div>
             <Link
               href="/jobs"
-              className="text-[10px] text-slate-500 hover:text-slate-900 dark:hover:text-white font-medium"
+              className="text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 flex items-center gap-1 transition-colors group"
             >
               Clear filters
+              <iconify-icon
+                icon="lucide:x"
+                width="10"
+                class="group-hover:text-red-500"
+              ></iconify-icon>
             </Link>
-          )}
+          </div>
         </div>
 
         {/* Job Items */}
-        {paginatedJobs.map((job) => {
-          const isCareerJet = job.source === "careerjet";
-          const href = isCareerJet
-            ? job.apply_url
-            : job.slug
-              ? `/jobs/${job.slug}`
-              : `/jobs/${job.$id}`;
-          const logoUrl = isCareerJet ? null : getLogoUrl(job);
-          const deadline = formatDeadline(job.deadline);
+        <div className="divide-y divide-slate-100 dark:divide-slate-700">
+          {paginatedJobs.map((job) => {
+            const isCareerJet = job.source === "careerjet";
+            const href = isCareerJet
+              ? `/jobs/${job.$id}?${new URLSearchParams({
+                  title: job.title,
+                  company: job.company,
+                  location: job.location,
+                  description: job.description,
+                  salary: job.salary,
+                  apply_url: job.apply_url,
+                  source_site: job.source_site,
+                  date: job.$createdAt,
+                }).toString()}`
+              : job.slug
+                ? `/jobs/${job.slug}`
+                : `/jobs/${job.$id}`;
+            const logoUrl = isCareerJet ? null : getLogoUrl(job);
+            const deadline = formatDeadline(job.deadline);
 
-          const linkProps = isCareerJet
-            ? { target: "_blank", rel: "noopener noreferrer" }
-            : {};
+            return (
+              <a
+                key={job.$id}
+                href={href}
+                className="group relative p-5 hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition-all duration-200 cursor-pointer flex gap-5 items-start"
+              >
+                {/* Company Logo */}
+                <JobListLogo
+                  company={job.company}
+                  logoUrl={logoUrl}
+                  className="w-12 h-12 rounded-lg"
+                />
 
-          return (
-            <a
-              key={job.$id}
-              href={href}
-              {...linkProps}
-              className="group relative flex items-start gap-4 p-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-            >
-              {/* Company Logo */}
-              <JobListLogo company={job.company} logoUrl={logoUrl} />
-
-              {/* Job Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h3 className="text-sm font-medium text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                    {job.title}
-                  </h3>
-                  {isCareerJet && (
-                    <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800 flex items-center gap-0.5">
-                      <iconify-icon
-                        icon="solar:global-linear"
-                        width="10"
-                      ></iconify-icon>
-                      CareerJet
+                {/* Job Info */}
+                <div className="flex-1 min-w-0 pt-0.5">
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="text-[15px] font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1 pr-4">
+                      {job.title}
+                    </h3>
+                    <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                      {formatTimeAgo(job.$createdAt)}
                     </span>
-                  )}
-                  {job.location?.toLowerCase().includes("remote") && (
-                    <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800">
-                      Remote
+                  </div>
+
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-2.5 flex items-center gap-1.5">
+                    <span className="font-medium text-slate-700 dark:text-slate-300">
+                      {job.company || "Company"}
                     </span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5">
-                  <span>{job.company || "Company"}</span>
-                  <span className="text-slate-300 dark:text-slate-600">•</span>
-                  <span>{job.location || "Location not specified"}</span>
-                  {isCareerJet && job.source_site && (
-                    <>
-                      <span className="text-slate-300 dark:text-slate-600">
-                        •
+                    <span className="text-slate-300 dark:text-slate-600">
+                      •
+                    </span>
+                    <span>{job.location || "Location not specified"}</span>
+                  </p>
+
+                  {/* Tags */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Location Tag */}
+                    {job.location?.toLowerCase().includes("remote") && (
+                      <span className="px-2 py-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold border border-emerald-100 dark:border-emerald-800">
+                        Remote
                       </span>
-                      <span className="text-slate-400 dark:text-slate-500">
-                        {job.source_site}
+                    )}
+
+                    {/* Salary Tag */}
+                    {job.salary && (
+                      <span className="px-2 py-1 rounded bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-medium border border-slate-100 dark:border-slate-700 flex items-center gap-1">
+                        <iconify-icon
+                          icon="solar:wallet-linear"
+                          width="10"
+                        ></iconify-icon>
+                        {job.salary}
                       </span>
-                    </>
-                  )}
-                </p>
+                    )}
 
-                {/* Extra info row: salary, experience, deadline */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
-                  {job.salary && (
-                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
-                      <iconify-icon
-                        icon="solar:wallet-linear"
-                        width="12"
-                      ></iconify-icon>
-                      {job.salary}
-                    </span>
-                  )}
-                  {job.experience && (
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                      <iconify-icon
-                        icon="solar:case-minimalistic-linear"
-                        width="12"
-                      ></iconify-icon>
-                      {job.experience}
-                    </span>
-                  )}
-                  {deadline && (
-                    <span className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                      <iconify-icon
-                        icon="solar:clock-circle-linear"
-                        width="12"
-                      ></iconify-icon>
-                      Deadline: {deadline}
-                    </span>
-                  )}
-                  {isCareerJet && (
-                    <span className="text-[11px] text-indigo-500 dark:text-indigo-400 flex items-center gap-1">
-                      <iconify-icon
-                        icon="solar:square-top-down-linear"
-                        width="12"
-                      ></iconify-icon>
-                      External
-                    </span>
-                  )}
+                    {/* Experience Tag */}
+                    {job.experience && (
+                      <span className="px-2 py-1 rounded bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-medium border border-slate-100 dark:border-slate-700 flex items-center gap-1">
+                        <iconify-icon
+                          icon="solar:case-minimalistic-linear"
+                          width="10"
+                        ></iconify-icon>
+                        {job.experience}
+                      </span>
+                    )}
+
+                    {/* Deadline Tag */}
+                    {deadline && (
+                      <span className="px-2 py-1 rounded bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-medium border border-amber-100 dark:border-amber-800 flex items-center gap-1">
+                        <iconify-icon
+                          icon="solar:clock-circle-linear"
+                          width="10"
+                        ></iconify-icon>
+                        {deadline}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-
-              {/* Time Ago / External icon */}
-              <div className="text-xs text-slate-400 whitespace-nowrap tabular-nums shrink-0 mt-0.5 flex items-center gap-1">
-                {isCareerJet ? (
-                  <iconify-icon
-                    icon="solar:square-top-down-linear"
-                    class="text-slate-400"
-                    width="14"
-                  ></iconify-icon>
-                ) : (
-                  formatTimeAgo(job.$createdAt)
-                )}
-              </div>
-            </a>
-          );
-        })}
+              </a>
+            );
+          })}
+        </div>
       </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-6">
+        <div className="mt-8 flex items-center justify-center gap-2">
           {page > 1 ? (
             <Link
-              href={`/jobs?page=${page - 1}${typeFilter ? `&type=${typeFilter}` : ""}${searchQuery ? `&q=${searchQuery}` : ""}`}
-              className="h-9 px-4 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium transition-colors inline-flex items-center"
+              href={`/jobs?page=${page - 1}${
+                typeFilter ? `&type=${typeFilter}` : ""
+              }${searchQuery ? `&q=${searchQuery}` : ""}${
+                locationFilter ? `&location=${locationFilter}` : ""
+              }${perPage !== 25 ? `&perPage=${perPage}` : ""}`}
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-white transition-all text-xs"
             >
-              Previous
+              <iconify-icon
+                icon="lucide:chevron-left"
+                width="14"
+              ></iconify-icon>
             </Link>
           ) : (
             <button
               disabled
-              className="h-9 px-4 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 text-xs font-medium opacity-50 cursor-not-allowed"
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-300 dark:text-slate-600 cursor-not-allowed text-xs"
             >
-              Previous
+              <iconify-icon
+                icon="lucide:chevron-left"
+                width="14"
+              ></iconify-icon>
             </button>
           )}
 
-          <div className="hidden sm:flex text-xs text-slate-500 dark:text-slate-400 font-medium">
+          <div className="px-4 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300 shadow-sm">
             Page {page} of {totalPages}
           </div>
 
           {page < totalPages ? (
             <Link
-              href={`/jobs?page=${page + 1}${typeFilter ? `&type=${typeFilter}` : ""}${searchQuery ? `&q=${searchQuery}` : ""}`}
-              className="h-9 px-4 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium transition-colors inline-flex items-center"
+              href={`/jobs?page=${page + 1}${
+                typeFilter ? `&type=${typeFilter}` : ""
+              }${searchQuery ? `&q=${searchQuery}` : ""}${
+                locationFilter ? `&location=${locationFilter}` : ""
+              }${perPage !== 25 ? `&perPage=${perPage}` : ""}`}
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-white transition-all text-xs"
             >
-              Next
+              <iconify-icon
+                icon="lucide:chevron-right"
+                width="14"
+              ></iconify-icon>
             </Link>
           ) : (
             <button
               disabled
-              className="h-9 px-4 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 text-xs font-medium opacity-50 cursor-not-allowed"
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-300 dark:text-slate-600 cursor-not-allowed text-xs"
             >
-              Next
+              <iconify-icon
+                icon="lucide:chevron-right"
+                width="14"
+              ></iconify-icon>
             </button>
           )}
         </div>

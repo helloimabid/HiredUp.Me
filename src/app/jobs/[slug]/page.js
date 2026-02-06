@@ -112,12 +112,60 @@ function parseEnhancedContent(job) {
   }
 }
 
+// Helper: Clean HTML tags from CareerJet descriptions
+function cleanHtml(text) {
+  if (!text) return "";
+  return text
+    .replace(/<\/?b>/gi, "")
+    .replace(/<\/?i>/gi, "")
+    .replace(/<\/?strong>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+}
+
+// Build a fake job object from CareerJet query params
+function buildCareerJetJob(params) {
+  if (!params?.title || !params?.company || !params?.apply_url) return null;
+  return {
+    $id: "careerjet-external",
+    title: params.title,
+    company: params.company,
+    location: params.location || "",
+    description: cleanHtml(params.description || ""),
+    salary: params.salary || "",
+    apply_url: params.apply_url,
+    source_site: params.source_site || "",
+    $createdAt: params.date || new Date().toISOString(),
+    _isCareerJet: true,
+  };
+}
+
 // Generate SEO metadata
-export async function generateMetadata({ params }) {
+export async function generateMetadata({ params, searchParams }) {
   const { slug } = await params;
   const job = await getJobBySlugOrId(slug);
 
   if (!job) {
+    // Fallback: CareerJet job from query params
+    const sp = await searchParams;
+    const cjJob = buildCareerJetJob(sp);
+    if (cjJob) {
+      return {
+        title: `${cjJob.title} at ${cjJob.company} | HiredUp.me`,
+        description: `${cjJob.title} position at ${cjJob.company}${cjJob.location ? ` in ${cjJob.location}` : ""}. Apply now on HiredUp.me!`,
+        openGraph: {
+          title: `${cjJob.title} at ${cjJob.company} - Now Hiring!`,
+          description: `${cjJob.title} position at ${cjJob.company}${cjJob.location ? ` in ${cjJob.location}` : ""}. Apply now!`,
+        },
+        robots: { index: false, follow: false },
+      };
+    }
     return {
       title: "Job Not Found | HiredUp.me",
       description: "This job posting is no longer available.",
@@ -375,19 +423,23 @@ function RenderSection({ section }) {
 
 // ============ MAIN PAGE COMPONENT ============
 
-export default async function JobDetailPage({ params }) {
+export default async function JobDetailPage({ params, searchParams }) {
   const { slug } = await params;
-  const job = await getJobBySlugOrId(slug);
+  let job = await getJobBySlugOrId(slug);
 
+  // If no Appwrite job found, try CareerJet query params
+  const sp = await searchParams;
+  const isCareerJet = !job && buildCareerJetJob(sp);
   if (!job) {
-    notFound();
+    job = buildCareerJetJob(sp);
+    if (!job) notFound();
   }
 
-  if (job.slug && job.slug !== slug) {
+  if (!isCareerJet && job.slug && job.slug !== slug) {
     redirect(`/jobs/${job.slug}`);
   }
 
-  // Parse AI-generated content
+  // Parse AI-generated content (CareerJet jobs also go through the same flow)
   const enhanced = parseEnhancedContent(job);
   const isEnhanced = Boolean(enhanced);
 
@@ -459,8 +511,9 @@ export default async function JobDetailPage({ params }) {
     directApply: true,
   };
 
-  // Check if this job needs AI enhancement
-  const needsAI = enhanced?.needsAI === true && !enhanced?.aiEnhanced;
+  // Check if this job needs AI enhancement (CareerJet jobs always need it)
+  const needsAI =
+    isCareerJet || (enhanced?.needsAI === true && !enhanced?.aiEnhanced);
 
   return (
     <JobPageContent job={job} enhanced={enhanced} autoGenerate={needsAI}>
@@ -563,13 +616,21 @@ export default async function JobDetailPage({ params }) {
                       AI Enhanced
                     </span>
                   )}
+                  {isCareerJet && job.source_site && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[10px] font-semibold uppercase tracking-wide">
+                      <iconify-icon icon="solar:global-linear"></iconify-icon>
+                      via {job.source_site}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex items-center gap-3 mt-4 md:mt-0 w-full md:w-auto">
-              <SaveJobButton jobId={job.$id} variant="outline" />
+              {!isCareerJet && (
+                <SaveJobButton jobId={job.$id} variant="outline" />
+              )}
               <ApplyButton applyUrl={job.apply_url} />
             </div>
           </div>

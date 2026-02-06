@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function SearchBar() {
+export default function SearchBar({ className, wrapperClassName }) {
   const router = useRouter();
   const [keyword, setKeyword] = useState("");
   const [location, setLocation] = useState("");
@@ -24,8 +24,18 @@ export default function SearchBar() {
   };
 
   return (
-    <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl shadow-slate-200/60 dark:shadow-slate-900/60 border border-slate-200 dark:border-slate-700 p-2 lg:p-3">
+    <section
+      className={
+        wrapperClassName ||
+        "max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20"
+      }
+    >
+      <div
+        className={
+          className ||
+          "bg-white dark:bg-slate-800 rounded-xl shadow-xl shadow-slate-200/60 dark:shadow-slate-900/60 border border-slate-200 dark:border-slate-700 p-2 lg:p-3"
+        }
+      >
         <form
           onSubmit={handleSearch}
           className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-slate-100 dark:divide-slate-700"

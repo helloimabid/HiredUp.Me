@@ -33,13 +33,13 @@ function getCompanyColor(company) {
  */
 function getLogoDev(company) {
   if (!company) return null;
-  const clean = company
+  const clean = company;
   if (!clean || clean.length < 2) return null;
   // Return the .com variant — Logo.dev will 404 if not found, which we handle with onError
   return `https://img.logo.dev/name/${clean}?token=${LOGO_DEV_KEY}&size=64`;
 }
 
-export default function JobListLogo({ company, logoUrl }) {
+export default function JobListLogo({ company, logoUrl, className }) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -49,11 +49,13 @@ export default function JobListLogo({ company, logoUrl }) {
   // Determine the logo URL: explicit > Logo.dev auto-generated
   const effectiveLogoUrl = logoUrl || getLogoDev(company);
 
+  const containerClasses = className || "w-10 h-10 rounded-lg";
+
   // Show fallback if no logo URL or image failed to load
   if (!effectiveLogoUrl || imageError) {
     return (
       <div
-        className={`w-10 h-10 rounded-lg ${bgColor} text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0`}
+        className={`${containerClasses} ${bgColor} text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0`}
       >
         {initial}
       </div>
@@ -61,7 +63,9 @@ export default function JobListLogo({ company, logoUrl }) {
   }
 
   return (
-    <div className="w-10 h-10 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-sm flex-shrink-0 overflow-hidden relative">
+    <div
+      className={`${containerClasses} bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-sm flex-shrink-0 overflow-hidden relative`}
+    >
       {/* Fallback while loading */}
       {!imageLoaded && (
         <div
@@ -73,7 +77,7 @@ export default function JobListLogo({ company, logoUrl }) {
       <img
         src={effectiveLogoUrl}
         alt={`${company} logo`}
-        className={`w-full h-full object-contain p-1.5 transition-opacity duration-200 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+        className={`w-full h-full object-contain transition-opacity duration-200 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
         onLoad={() => setImageLoaded(true)}
         onError={() => setImageError(true)}
         loading="lazy"
