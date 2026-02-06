@@ -198,22 +198,27 @@ export default function Footer() {
           <div className="text-xs text-slate-400 dark:text-slate-500 flex flex-col sm:flex-row items-center gap-2">
             <span>
               © {currentYear} HiredUp.me. All rights reserved. Made with ❤️ in
-              Bangladesh.
+              Bangladesh by <span><a href="https://sadmanabid.vercel.app" target="_blank" rel="noopener noreferrer">Sadman Abid</a></span>.
             </span>
-            <span className="hidden sm:inline">•</span>
-            <a
-              href="https://logo.dev"
-              title="Logo API"
-              className="hover:text-indigo-500 transition-colors"
-            >
-              Logos provided by Logo.dev
-            </a>
           </div>
           <div
             className="flex gap-4 text-slate-400 dark:text-slate-500"
             aria-label="Social media links"
           >
             <a
+              href="https://www.linkedin.com/company/hiredupme"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-slate-900 dark:hover:text-white transition-colors"
+              aria-label="Follow us on LinkedIn"
+            >
+              <iconify-icon
+                icon="logos:linkedin-icon"
+                width="18"
+                style={{ filter: "grayscale(100%)" }}
+              ></iconify-icon>
+            </a>
+            {/* <a
               href="https://instagram.com/hiredup"
               target="_blank"
               rel="noopener noreferrer"
@@ -237,20 +242,7 @@ export default function Footer() {
                 width="18"
                 style={{ filter: "grayscale(100%)" }}
               ></iconify-icon>
-            </a>
-            <a
-              href="https://linkedin.com/company/hiredup"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-slate-900 dark:hover:text-white transition-colors"
-              aria-label="Follow us on LinkedIn"
-            >
-              <iconify-icon
-                icon="logos:linkedin-icon"
-                width="18"
-                style={{ filter: "grayscale(100%)" }}
-              ></iconify-icon>
-            </a>
+            </a> */}
           </div>
         </div>
       </div>

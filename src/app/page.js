@@ -203,7 +203,7 @@ export default async function Home() {
         <WhySection />
         <JobsSection jobs={jobs} showSampleData={jobs.length === 0} />
         <HowItWorks />
-        <Testimonials />
+        {/* <Testimonials /> */}
         <CTASection />
       </main>
       <Footer />

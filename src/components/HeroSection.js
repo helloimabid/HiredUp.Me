@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function HeroSection() {
   return (
     <section className="relative pt-16 pb-20 lg:pt-24 lg:pb-28 overflow-hidden">
@@ -24,17 +26,23 @@ export default function HeroSection() {
               with tools designed for modern careers.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="inline-flex justify-center items-center gap-2 px-6 py-3.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30">
+              <Link
+                href="/jobs"
+                className="inline-flex justify-center items-center gap-2 px-6 py-3.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30"
+              >
                 Find Jobs
                 <iconify-icon
                   icon="solar:arrow-right-linear"
                   width="18"
                   stroke-width="1.5"
                 ></iconify-icon>
-              </button>
-              <button className="inline-flex justify-center items-center gap-2 px-6 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all">
+              </Link>
+              <Link
+                href="/post-job"
+                className="inline-flex justify-center items-center gap-2 px-6 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all"
+              >
                 Post a Job
-              </button>
+              </Link>
             </div>
           </div>
 
