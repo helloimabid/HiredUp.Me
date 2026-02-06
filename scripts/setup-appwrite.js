@@ -131,6 +131,50 @@ async function setup() {
       }
     }
 
+    const searchIndexes = [
+      { key: "title_fulltext_idx", type: "fulltext", attributes: ["title"] },
+      {
+        key: "company_fulltext_idx",
+        type: "fulltext",
+        attributes: ["company"],
+      },
+      {
+        key: "description_fulltext_idx",
+        type: "fulltext",
+        attributes: ["description"],
+      },
+      { key: "salary_fulltext_idx", type: "fulltext", attributes: ["salary"] },
+      {
+        key: "experience_fulltext_idx",
+        type: "fulltext",
+        attributes: ["experience"],
+      },
+      {
+        key: "location_fulltext_idx",
+        type: "fulltext",
+        attributes: ["location"],
+      },
+    ];
+
+    for (const index of searchIndexes) {
+      try {
+        await databases.createIndex(
+          DATABASE_ID,
+          JOBS_COLLECTION_ID,
+          index.key,
+          index.type,
+          index.attributes,
+        );
+        console.log(`✅ Index created: ${index.key}`);
+      } catch (error) {
+        if (error.code === 409) {
+          console.log(`ℹ️  Index already exists: ${index.key}`);
+        } else {
+          console.error(`❌ Error creating index ${index.key}:`, error.message);
+        }
+      }
+    }
+
     console.log("\n🎉 Appwrite setup complete!");
     console.log("\nYour database is ready. Collection attributes:");
     console.log("  - title (string, 255, required)");

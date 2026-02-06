@@ -86,6 +86,58 @@ export async function getAllJobs() {
 }
 
 /**
+ * Fetch a paginated page of jobs with optional search and location filters
+ */
+export async function getJobsPage({
+  page = 1,
+  perPage = 25,
+  searchQuery = "",
+  locationFilter = "",
+  typeFilter = "",
+} = {}) {
+  try {
+    const queries = [
+      Query.orderDesc("$createdAt"),
+      Query.limit(perPage),
+      Query.offset(Math.max(0, (page - 1) * perPage)),
+    ];
+
+    const normalizedSearch = (searchQuery || "").trim();
+    const locationQuery = (locationFilter || typeFilter || "").trim();
+
+    if (normalizedSearch) {
+      queries.push(
+        Query.or([
+          Query.search("title", normalizedSearch),
+          Query.search("company", normalizedSearch),
+          Query.search("description", normalizedSearch),
+          Query.search("salary", normalizedSearch),
+          Query.search("experience", normalizedSearch),
+        ]),
+      );
+    }
+
+    if (locationQuery) {
+      queries.push(Query.search("location", locationQuery));
+    }
+
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      JOBS_COLLECTION_ID,
+      queries,
+    );
+
+    return {
+      documents: response.documents,
+      total: response.total,
+    };
+  } catch (error) {
+    console.error("Error fetching jobs page:", error);
+    return { documents: [], total: 0 };
+  }
+}
+
+/**
  * Check if a job already exists by source_id
  */
 export async function jobExists(sourceId) {

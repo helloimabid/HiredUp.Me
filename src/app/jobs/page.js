@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getAllJobs } from "@/lib/appwrite";
+import { getJobsPage } from "@/lib/appwrite";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { Suspense } from "react";
@@ -145,16 +145,6 @@ function formatDeadline(deadline) {
   return deadline;
 }
 
-async function fetchAllJobs() {
-  try {
-    const jobs = await getAllJobs();
-    return jobs;
-  } catch (error) {
-    console.error("Failed to fetch jobs:", error);
-    return [];
-  }
-}
-
 export default async function JobsPage({ searchParams }) {
   const params = await searchParams;
   const suspenseKey = `${params?.q || ""}-${params?.page || "1"}-${params?.type || ""}-${params?.location || ""}`;
@@ -219,33 +209,19 @@ function JobListSkeleton() {
 
 // ============ ASYNC JOB RESULTS COMPONENT ============
 async function JobResults({ params }) {
-  const jobs = await fetchAllJobs();
   const typeFilter = params?.type || "";
   const searchQuery = params?.q || "";
   const locationFilter = params?.location || "";
   const page = parseInt(params?.page || "1", 10);
   const perPage = 25;
 
-  // Filter Appwrite jobs based on query params
-  let filteredJobs = jobs.map((j) => ({ ...j, source: "appwrite" }));
-
-  if (typeFilter) {
-    filteredJobs = filteredJobs.filter((job) =>
-      job.location?.toLowerCase().includes(typeFilter.toLowerCase()),
-    );
-  }
-
-  if (searchQuery) {
-    const query = searchQuery.toLowerCase();
-    filteredJobs = filteredJobs.filter(
-      (job) =>
-        job.title?.toLowerCase().includes(query) ||
-        job.company?.toLowerCase().includes(query) ||
-        job.description?.toLowerCase().includes(query) ||
-        job.salary?.toLowerCase().includes(query) ||
-        job.experience?.toLowerCase().includes(query),
-    );
-  }
+  const { documents: appwriteJobs, total: appwriteTotal } = await getJobsPage({
+    page,
+    perPage,
+    searchQuery,
+    locationFilter,
+    typeFilter,
+  });
 
   // Fetch CareerJet results when user is searching
   let careerjetJobs = [];
@@ -260,14 +236,17 @@ async function JobResults({ params }) {
     }
   }
 
-  // Merge: Appwrite results first, then CareerJet
-  const allResults = [...filteredJobs, ...careerjetJobs];
-
-  // Pagination
-  const totalJobs = allResults.length;
+  const totalJobs = appwriteTotal + careerjetJobs.length;
   const totalPages = Math.ceil(totalJobs / perPage);
-  const startIndex = (page - 1) * perPage;
-  const paginatedJobs = allResults.slice(startIndex, startIndex + perPage);
+  const appwritePages = Math.ceil(appwriteTotal / perPage);
+
+  let paginatedJobs = appwriteJobs.map((j) => ({ ...j, source: "appwrite" }));
+
+  // Append CareerJet results after all Appwrite results (same ordering as before)
+  if (page > appwritePages && careerjetJobs.length > 0) {
+    const cjStart = (page - appwritePages - 1) * perPage;
+    paginatedJobs = careerjetJobs.slice(cjStart, cjStart + perPage);
+  }
 
   if (paginatedJobs.length === 0) {
     return (
