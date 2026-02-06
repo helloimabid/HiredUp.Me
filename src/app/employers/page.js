@@ -36,7 +36,8 @@ export default function EmployersPage() {
             Employers
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base mb-8 max-w-sm mx-auto">
-            We're building employer tools to help you post jobs, manage applicants, and hire faster. Stay tuned!
+            We're building employer tools to help you post jobs, manage
+            applicants, and hire faster. Stay tuned!
           </p>
 
           {/* Coming Soon Badge */}
@@ -57,7 +58,10 @@ export default function EmployersPage() {
               href="/post-job"
               className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-900 dark:bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors"
             >
-              <iconify-icon icon="solar:case-minimalistic-linear" width="16"></iconify-icon>
+              <iconify-icon
+                icon="solar:case-minimalistic-linear"
+                width="16"
+              ></iconify-icon>
               Post a Job
             </Link>
             <Link
