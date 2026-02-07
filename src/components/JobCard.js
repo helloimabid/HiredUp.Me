@@ -1,16 +1,5 @@
 import Link from "next/link";
-
-// Color mapping for company initials
-const colorMap = {
-  0: { bg: "bg-blue-100", text: "text-blue-600" },
-  1: { bg: "bg-orange-100", text: "text-orange-600" },
-  2: { bg: "bg-purple-100", text: "text-purple-600" },
-  3: { bg: "bg-teal-100", text: "text-teal-600" },
-  4: { bg: "bg-pink-100", text: "text-pink-600" },
-  5: { bg: "bg-yellow-100", text: "text-yellow-600" },
-  6: { bg: "bg-indigo-100", text: "text-indigo-600" },
-  7: { bg: "bg-green-100", text: "text-green-600" },
-};
+import JobListLogo from "./JobListLogo";
 
 // Job type badge colors
 const jobTypeBadge = {
@@ -30,6 +19,18 @@ function getJobType(location) {
   return "full-time";
 }
 
+function getLogoUrl(job) {
+  if (!job) return null;
+  if (job.company_logo_url) return job.company_logo_url;
+  if (!job.enhanced_json) return null;
+  try {
+    const enhanced = JSON.parse(job.enhanced_json);
+    return enhanced?.company_logo_url || null;
+  } catch {
+    return null;
+  }
+}
+
 function formatTimeAgo(dateString) {
   if (!dateString) return "Recently";
 
@@ -47,12 +48,10 @@ function formatTimeAgo(dateString) {
   return date.toLocaleDateString();
 }
 
-export default function JobCard({ job, index = 0 }) {
-  const colorIndex = index % Object.keys(colorMap).length;
-  const colors = colorMap[colorIndex];
+export default function JobCard({ job }) {
   const jobType = getJobType(job.location);
   const badge = jobTypeBadge[jobType] || jobTypeBadge["full-time"];
-  const initial = job.company?.charAt(0)?.toUpperCase() || "?";
+  const logoUrl = getLogoUrl(job);
 
   // Use slug URL if available, fallback to ID, then external URL
   const href = job.slug
@@ -70,11 +69,11 @@ export default function JobCard({ job, index = 0 }) {
       className="group block p-5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-lg hover:shadow-indigo-500/5 transition-all bg-white dark:bg-slate-800"
     >
       <div className="flex justify-between items-start mb-4">
-        <div
-          className={`w-10 h-10 rounded-lg ${colors.bg} flex items-center justify-center ${colors.text} font-bold text-sm`}
-        >
-          {initial}
-        </div>
+        <JobListLogo
+          company={job.company}
+          logoUrl={logoUrl}
+          className="w-10 h-10 rounded-lg"
+        />
         <span
           className={`px-2 py-1 rounded-md ${badge.bg} ${badge.text} text-xs font-medium capitalize dark:bg-opacity-20`}
         >
