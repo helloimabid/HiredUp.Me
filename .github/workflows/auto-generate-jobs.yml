@@ -1,0 +1,62 @@
+name: Auto-Generate Job Pages
+
+on:
+  # Run every 2 hours
+  schedule:
+    - cron: '0 */2 * * *'
+
+  # Also run after the daily scrape cron (give it 30 min to finish)
+  # The Vercel cron/fetch runs at 00:00 UTC, so this catches new jobs at 00:30
+  # schedule already covers this via the every-2-hours pattern
+
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Max jobs to process (0 = all)'
+        required: false
+        default: '0'
+      dry_run:
+        description: 'Dry run (preview only)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: my-app/package.json
+
+      - name: Install dependencies
+        working-directory: my-app
+        run: npm ci
+
+      - name: Run auto-generate script
+        working-directory: my-app
+        env:
+          NEXT_PUBLIC_APPWRITE_ENDPOINT: ${{ secrets.NEXT_PUBLIC_APPWRITE_ENDPOINT }}
+          NEXT_PUBLIC_APPWRITE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_APPWRITE_PROJECT_ID }}
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+          APPWRITE_DATABASE_ID: ${{ secrets.APPWRITE_DATABASE_ID }}
+          APPWRITE_JOBS_COLLECTION_ID: ${{ secrets.APPWRITE_JOBS_COLLECTION_ID }}
+          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}
+        run: |
+          ARGS=""
+          if [ "${{ github.event.inputs.limit }}" != "0" ] && [ -n "${{ github.event.inputs.limit }}" ]; then
+            ARGS="--limit ${{ github.event.inputs.limit }}"
+          fi
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          node scripts/auto-generate-jobs.js $ARGS
