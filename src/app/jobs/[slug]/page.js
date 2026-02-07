@@ -429,13 +429,16 @@ export default async function JobDetailPage({ params, searchParams }) {
 
   // If no Appwrite job found, try CareerJet query params
   const sp = await searchParams;
-  const isCareerJet = !job && buildCareerJetJob(sp);
+  const isFromQueryParams = !job && buildCareerJetJob(sp);
   if (!job) {
     job = buildCareerJetJob(sp);
     if (!job) notFound();
   }
 
-  if (!isCareerJet && job.slug && job.slug !== slug) {
+  // Detect CareerJet jobs: either from query params OR stored with source="careerjet"
+  const isCareerJet = Boolean(isFromQueryParams) || job.source === "careerjet";
+
+  if (!isFromQueryParams && job.slug && job.slug !== slug) {
     redirect(`/jobs/${job.slug}`);
   }
 

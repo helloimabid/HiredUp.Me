@@ -76,7 +76,7 @@ async function fetchCareerJetJobs(keywords, location = "", countryCode = "") {
       keywords,
       sort: "relevance",
       page: "1",
-      page_size: "15",
+      page_size: "99",
       fragment_size: "200",
       user_ip: userIp,
       user_agent: userAgent,
@@ -402,13 +402,14 @@ async function JobResults({ params, perPage = 25 }) {
       ? getExactJobCount()
       : Promise.resolve(null);
 
-  const careerjetPromise = searchQuery
-    ? fetchCareerJetJobs(
-        searchQuery,
-        locationFilter || typeFilter,
-        userCountry,
-      ).catch(() => [])
-    : Promise.resolve([]);
+  // Always fetch CareerJet jobs — they use a referrer program so we prioritize them.
+  // When there's a search query, use it; otherwise fetch popular default jobs.
+  const careerjetKeywords = searchQuery || "Accountant Finance Officer jobs";
+  const careerjetPromise = fetchCareerJetJobs(
+    careerjetKeywords,
+    locationFilter || typeFilter,
+    userCountry,
+  ).catch(() => []);
 
   const [
     { documents: appwriteJobs, total: appwriteTotal },
@@ -419,15 +420,40 @@ async function JobResults({ params, perPage = 25 }) {
   // Use exact count when available, otherwise fall back to Appwrite's capped total
   const realAppwriteTotal = exactCount ?? appwriteTotal;
   const totalPages = Math.ceil(realAppwriteTotal / perPage);
-  // Only count CareerJet in displayed total on page 1 where they actually appear
-  const careerjetOnPage = searchQuery && page === 1 ? careerjetJobs.length : 0;
-  const totalJobs = realAppwriteTotal + careerjetOnPage;
 
-  let paginatedJobs = appwriteJobs.map((j) => ({ ...j, source: "appwrite" }));
+  // Tag Appwrite jobs — preserve their stored source field if it exists
+  let appwriteTagged = appwriteJobs.map((j) => ({
+    ...j,
+    source: j.source || "appwrite",
+  }));
 
-  // When searching, show CareerJet results on page 1 after Appwrite results
-  if (searchQuery && careerjetJobs.length > 0 && page === 1) {
-    paginatedJobs = [...paginatedJobs, ...careerjetJobs];
+  // Deduplicate: remove Appwrite-stored CareerJet jobs that also came from live API
+  // (prevents showing the same job twice)
+  const liveCareerjetUrls = new Set(careerjetJobs.map((cj) => cj.apply_url));
+  appwriteTagged = appwriteTagged.filter(
+    (j) => !(j.source === "careerjet" && liveCareerjetUrls.has(j.apply_url)),
+  );
+
+  // Separate Appwrite jobs into CareerJet-sourced vs others
+  const appwriteCareerjet = appwriteTagged.filter(
+    (j) => j.source === "careerjet",
+  );
+  const appwriteOther = appwriteTagged.filter((j) => j.source !== "careerjet");
+
+  // Count CareerJet in displayed total on page 1 where they actually appear
+  const careerjetOnPage =
+    page === 1
+      ? careerjetJobs.length + appwriteCareerjet.length
+      : appwriteCareerjet.length;
+  const totalJobs = realAppwriteTotal + (page === 1 ? careerjetJobs.length : 0);
+
+  let paginatedJobs;
+  if (page === 1) {
+    // Priority order: Live CareerJet → Appwrite CareerJet → Other Appwrite
+    paginatedJobs = [...careerjetJobs, ...appwriteCareerjet, ...appwriteOther];
+  } else {
+    // On other pages, Appwrite CareerJet jobs still appear first
+    paginatedJobs = [...appwriteCareerjet, ...appwriteOther];
   }
 
   if (paginatedJobs.length === 0) {
@@ -482,21 +508,25 @@ async function JobResults({ params, perPage = 25 }) {
         <div className="divide-y divide-slate-100 dark:divide-slate-700">
           {paginatedJobs.map((job) => {
             const isCareerJet = job.source === "careerjet";
-            const href = isCareerJet
-              ? `/jobs/${job.$id}?${new URLSearchParams({
-                  title: job.title,
-                  company: job.company,
-                  location: job.location,
-                  description: job.description,
-                  salary: job.salary,
-                  apply_url: job.apply_url,
-                  source_site: job.source_site,
-                  date: job.$createdAt,
-                }).toString()}`
+            // Appwrite-stored CareerJet jobs have a slug; live API ones use query params
+            const isLiveCareerJet = isCareerJet && !job.slug;
+            const href = isLiveCareerJet
+              ? job.apply_url
+                ? `/jobs/${job.$id}?${new URLSearchParams({
+                    title: job.title,
+                    company: job.company,
+                    location: job.location,
+                    description: job.description || "",
+                    salary: job.salary || "",
+                    apply_url: job.apply_url,
+                    source_site: job.source_site || "",
+                    date: job.$createdAt,
+                  }).toString()}`
+                : `/jobs/${job.$id}`
               : job.slug
                 ? `/jobs/${job.slug}`
                 : `/jobs/${job.$id}`;
-            const logoUrl = isCareerJet ? null : getLogoUrl(job);
+            const logoUrl = isLiveCareerJet ? null : getLogoUrl(job);
             const deadline = formatDeadline(job.deadline);
 
             return (
