@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import emailjs from "@emailjs/browser";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -9,11 +10,49 @@ export default function ContactPage() {
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("general");
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null); // 'success' or 'error'
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    // Initialize EmailJS with your public key
+    emailjs.init(process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY);
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement form submission
-    console.log({ name, email, subject, message });
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    // Template parameters matching your EmailJS template
+    const templateParams = {
+      from_name: name,
+      from_email: email,
+      subject: subject,
+      message: message,
+      to_name: "HiredUp Team", // Optional: customize recipient name
+    };
+
+    try {
+      const response = await emailjs.send(
+        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID,
+        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID,
+        templateParams
+      );
+
+      console.log("Email sent successfully:", response);
+      setSubmitStatus("success");
+      
+      // Clear form after successful submission
+      setName("");
+      setEmail("");
+      setSubject("general");
+      setMessage("");
+    } catch (error) {
+      console.error("Failed to send email:", error);
+      setSubmitStatus("error");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -32,6 +71,36 @@ export default function ContactPage() {
               </p>
 
               <div className="bg-white rounded-2xl border border-slate-200 p-8">
+                {/* Success Message */}
+                {submitStatus === "success" && (
+                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                        <iconify-icon icon="solar:check-circle-bold" width="20"></iconify-icon>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-green-900">Message sent successfully!</p>
+                        <p className="text-sm text-green-700">We&apos;ll get back to you within 24 hours.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error Message */}
+                {submitStatus === "error" && (
+                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                        <iconify-icon icon="solar:close-circle-bold" width="20"></iconify-icon>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-red-900">Failed to send message</p>
+                        <p className="text-sm text-red-700">Please try again or email us directly.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid sm:grid-cols-2 gap-5">
                     <div>
@@ -45,6 +114,7 @@ export default function ContactPage() {
                         placeholder="Your name"
                         className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         required
+                        disabled={isSubmitting}
                       />
                     </div>
                     <div>
@@ -58,6 +128,7 @@ export default function ContactPage() {
                         placeholder="you@example.com"
                         className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         required
+                        disabled={isSubmitting}
                       />
                     </div>
                   </div>
@@ -70,6 +141,7 @@ export default function ContactPage() {
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
                       className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      disabled={isSubmitting}
                     >
                       <option value="general">General Inquiry</option>
                       <option value="support">Technical Support</option>
@@ -90,14 +162,23 @@ export default function ContactPage() {
                       rows={5}
                       className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
                       required
+                      disabled={isSubmitting}
                     ></textarea>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                    disabled={isSubmitting}
+                    className="w-full py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Send Message
+                    {isSubmitting ? (
+                      <>
+                        <iconify-icon icon="svg-spinners:3-dots-fade" width="20"></iconify-icon>
+                        Sending...
+                      </>
+                    ) : (
+                      "Send Message"
+                    )}
                   </button>
                 </form>
               </div>

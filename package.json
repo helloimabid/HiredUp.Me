@@ -15,6 +15,7 @@
     "auto-generate:limit": "node scripts/auto-generate-jobs.js --limit 10"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@google/generative-ai": "^0.24.1",
     "@heyputer/puter.js": "^2.2.8",
     "@vercel/analytics": "^1.6.1",
