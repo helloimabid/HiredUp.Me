@@ -35,7 +35,7 @@ const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "hiredup";
 const JOBS_COLLECTION_ID = process.env.APPWRITE_JOBS_COLLECTION_ID || "jobs";
 
 const GOOGLE_API_KEY =
-  process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
 // Gemma 3 models — much higher free-tier limits (30 RPM, 14.4K RPD each)
 const GEMINI_MODELS = [
