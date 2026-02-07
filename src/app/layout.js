@@ -170,6 +170,11 @@ export default function RootLayout({ children }) {
           src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"
           strategy="beforeInteractive"
         />
+        <Script
+          src="https://analytics.ahrefs.com/analytics.js"
+          data-key="awTHRkJul0u+fPWr+7hTPQ"
+          strategy="afterInteractive"
+        />
         {/* Puter.js for free unlimited AI - loaded async */}
         <Script src="https://js.puter.com/v2/" strategy="lazyOnload" />
       </head>
