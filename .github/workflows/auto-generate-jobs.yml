@@ -35,12 +35,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: my-app/package.json
 
       - name: Install dependencies
         working-directory: my-app
-        run: npm ci
+        run: npm install
 
       - name: Run auto-generate script
         working-directory: my-app
