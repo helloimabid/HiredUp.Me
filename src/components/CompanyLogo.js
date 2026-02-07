@@ -78,7 +78,7 @@ export default function CompanyLogo({
       <img
         src={effectiveLogoUrl}
         alt={`${company} logo`}
-        className={`w-full h-full object-contain p-2 transition-opacity duration-200 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+        className={`w-full h-full object-contain transition-opacity duration-200 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
         onLoad={() => setImageLoaded(true)}
         onError={() => setImageError(true)}
         loading="lazy"
