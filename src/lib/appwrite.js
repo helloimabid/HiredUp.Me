@@ -328,7 +328,7 @@ export const getExactJobCount = unstable_cache(
     }
   },
   ["exact-job-count"],
-  { revalidate: 300 },
+  { revalidate: 86400 }, // 24 hours - counting is expensive, so we cache long-term
 );
 
 /**

@@ -7,7 +7,7 @@ import JobsSection from "@/components/JobsSection";
 import HowItWorks from "@/components/HowItWorks";
 import Testimonials from "@/components/Testimonials";
 import CTASection from "@/components/CTASection";
-import { getJobs } from "@/lib/appwrite";
+import { getJobs, getExactJobCount } from "@/lib/appwrite";
 
 // Revalidate the page every 60 seconds
 export const revalidate = 60;
@@ -69,7 +69,7 @@ async function fetchJobs() {
 }
 
 export default async function Home() {
-  const jobs = await fetchJobs();
+  const [jobs, jobCount] = await Promise.all([fetchJobs(), getExactJobCount()]);
 
   // JSON-LD Structured Data for Organization
   const organizationSchema = {
@@ -198,7 +198,7 @@ export default async function Home() {
       />
       <Header />
       <main>
-        <HeroSection />
+        <HeroSection jobCount={jobCount} />
         <SearchBar />
         <WhySection />
         <JobsSection jobs={jobs} showSampleData={jobs.length === 0} />

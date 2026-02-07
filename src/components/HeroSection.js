@@ -1,6 +1,15 @@
 import Link from "next/link";
 
-export default function HeroSection() {
+function formatJobCount(count) {
+  if (!count || count === 0) return "1,000+";
+  if (count >= 1000) {
+    const k = (count / 1000).toFixed(1).replace(/\.0$/, "");
+    return `${k}k+`;
+  }
+  return `${count.toLocaleString()}+`;
+}
+
+export default function HeroSection({ jobCount = 0 }) {
   return (
     <section className="relative pt-16 pb-20 lg:pt-24 lg:pb-28 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -92,7 +101,7 @@ export default function HeroSection() {
                     Bangladesh
                   </div>
                   <div className="text-slate-400 dark:text-slate-500">
-                    1.2k+ Active Jobs
+                    {formatJobCount(jobCount)} Active Jobs
                   </div>
                 </div>
               </div>
