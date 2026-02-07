@@ -36,12 +36,12 @@ export default function ContactPage() {
       const response = await emailjs.send(
         process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID,
         process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID,
-        templateParams
+        templateParams,
       );
 
       console.log("Email sent successfully:", response);
       setSubmitStatus("success");
-      
+
       // Clear form after successful submission
       setName("");
       setEmail("");
@@ -58,29 +58,36 @@ export default function ContactPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50 py-12">
+      <main className="min-h-screen bg-gray-50 dark:bg-slate-900 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Contact Form */}
             <div>
-              <h1 className="text-3xl font-semibold text-slate-900 mb-2">
+              <h1 className="text-3xl font-semibold text-slate-900 dark:text-white mb-2">
                 Get in Touch
               </h1>
-              <p className="text-slate-500 mb-8">
+              <p className="text-slate-500 dark:text-slate-400 mb-8">
                 Have a question or feedback? We&apos;d love to hear from you.
               </p>
 
-              <div className="bg-white rounded-2xl border border-slate-200 p-8">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8">
                 {/* Success Message */}
                 {submitStatus === "success" && (
-                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="mb-6 p-4 bg-green-50 dark:bg-emerald-900/20 border border-green-200 dark:border-emerald-800 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-                        <iconify-icon icon="solar:check-circle-bold" width="20"></iconify-icon>
+                      <div className="w-8 h-8 bg-green-100 dark:bg-emerald-900/40 text-green-600 dark:text-emerald-300 rounded-full flex items-center justify-center">
+                        <iconify-icon
+                          icon="solar:check-circle-bold"
+                          width="20"
+                        ></iconify-icon>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-green-900">Message sent successfully!</p>
-                        <p className="text-sm text-green-700">We&apos;ll get back to you within 24 hours.</p>
+                        <p className="text-sm font-medium text-green-900 dark:text-emerald-200">
+                          Message sent successfully!
+                        </p>
+                        <p className="text-sm text-green-700 dark:text-emerald-300">
+                          We&apos;ll get back to you within 24 hours.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -88,14 +95,21 @@ export default function ContactPage() {
 
                 {/* Error Message */}
                 {submitStatus === "error" && (
-                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
-                        <iconify-icon icon="solar:close-circle-bold" width="20"></iconify-icon>
+                      <div className="w-8 h-8 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 rounded-full flex items-center justify-center">
+                        <iconify-icon
+                          icon="solar:close-circle-bold"
+                          width="20"
+                        ></iconify-icon>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-red-900">Failed to send message</p>
-                        <p className="text-sm text-red-700">Please try again or email us directly.</p>
+                        <p className="text-sm font-medium text-red-900 dark:text-red-200">
+                          Failed to send message
+                        </p>
+                        <p className="text-sm text-red-700 dark:text-red-300">
+                          Please try again or email us directly.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -104,7 +118,7 @@ export default function ContactPage() {
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid sm:grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                         Name
                       </label>
                       <input
@@ -112,13 +126,13 @@ export default function ContactPage() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Your name"
-                        className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         required
                         disabled={isSubmitting}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                         Email
                       </label>
                       <input
@@ -126,7 +140,7 @@ export default function ContactPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@example.com"
-                        className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         required
                         disabled={isSubmitting}
                       />
@@ -134,13 +148,13 @@ export default function ContactPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                       Subject
                     </label>
                     <select
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       disabled={isSubmitting}
                     >
                       <option value="general">General Inquiry</option>
@@ -152,7 +166,7 @@ export default function ContactPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                       Message
                     </label>
                     <textarea
@@ -160,7 +174,7 @@ export default function ContactPage() {
                       onChange={(e) => setMessage(e.target.value)}
                       placeholder="How can we help you?"
                       rows={5}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
                       required
                       disabled={isSubmitting}
                     ></textarea>
@@ -169,11 +183,14 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-indigo-600 dark:bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 dark:hover:bg-indigo-700 transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isSubmitting ? (
                       <>
-                        <iconify-icon icon="svg-spinners:3-dots-fade" width="20"></iconify-icon>
+                        <iconify-icon
+                          icon="svg-spinners:3-dots-fade"
+                          width="20"
+                        ></iconify-icon>
                         Sending...
                       </>
                     ) : (
@@ -188,57 +205,69 @@ export default function ContactPage() {
             <div className="lg:pt-16">
               <div className="space-y-8">
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900 mb-4">
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                     Contact Information
                   </h2>
                   <div className="space-y-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center">
+                      <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-lg flex items-center justify-center">
                         <iconify-icon
                           icon="solar:letter-linear"
                           width="20"
                         ></iconify-icon>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-500">Email</p>
-                        <p className="text-slate-900">support@hiredup.me</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          Email
+                        </p>
+                        <p className="text-slate-900 dark:text-white">
+                          support@hiredup.me
+                        </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center">
+                    {/* <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-lg flex items-center justify-center">
                         <iconify-icon
                           icon="solar:phone-linear"
                           width="20"
                         ></iconify-icon>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-500">Phone</p>
-                        <p className="text-slate-900">+880 1XXX-XXXXXX</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          Phone
+                        </p>
+                        <p className="text-slate-900 dark:text-white">
+                          +880 1XXX-XXXXXX
+                        </p>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center">
+                    </div> */}
+                    {/* <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-lg flex items-center justify-center">
                         <iconify-icon
                           icon="solar:map-point-linear"
                           width="20"
                         ></iconify-icon>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-500">Location</p>
-                        <p className="text-slate-900">Dhaka, Bangladesh</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          Location
+                        </p>
+                        <p className="text-slate-900 dark:text-white">
+                          Dhaka, Bangladesh
+                        </p>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
 
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900 mb-4">
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                     Follow Us
                   </h2>
                   <div className="flex gap-3">
-                    <a
+                    {/* <a
                       href="#"
-                      className="w-10 h-10 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
+                      className="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg flex items-center justify-center hover:bg-indigo-100 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors"
                     >
                       <iconify-icon
                         icon="ri:facebook-fill"
@@ -247,16 +276,16 @@ export default function ContactPage() {
                     </a>
                     <a
                       href="#"
-                      className="w-10 h-10 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
+                      className="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg flex items-center justify-center hover:bg-indigo-100 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors"
                     >
                       <iconify-icon
                         icon="ri:twitter-x-fill"
                         width="20"
                       ></iconify-icon>
-                    </a>
+                    </a> */}
                     <a
-                      href="#"
-                      className="w-10 h-10 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
+                      href="https://www.linkedin.com/company/hiredupme"
+                      className="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg flex items-center justify-center hover:bg-indigo-100 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors"
                     >
                       <iconify-icon
                         icon="ri:linkedin-fill"
@@ -266,17 +295,17 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                <div className="bg-indigo-50 rounded-xl p-6">
-                  <h3 className="font-semibold text-indigo-900 mb-2">
+                <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-6">
+                  <h3 className="font-semibold text-indigo-900 dark:text-indigo-200 mb-2">
                     Looking for support?
                   </h3>
-                  <p className="text-sm text-indigo-700 mb-4">
+                  <p className="text-sm text-indigo-700 dark:text-indigo-300 mb-4">
                     Check out our help center for quick answers to common
                     questions.
                   </p>
                   <a
                     href="/resources"
-                    className="inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 dark:hover:text-indigo-200"
                   >
                     Visit Help Center
                     <iconify-icon
