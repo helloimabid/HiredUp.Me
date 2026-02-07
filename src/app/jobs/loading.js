@@ -89,14 +89,18 @@ export default function JobsLoading() {
       </div>
 
       {/* Loading progress animation */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         @keyframes loading-progress {
           0% { width: 0%; opacity: 1; }
           50% { width: 70%; opacity: 1; }
           80% { width: 90%; opacity: 0.7; }
           100% { width: 100%; opacity: 0; }
         }
-      `}</style>
+      `,
+        }}
+      />
     </div>
   );
 }

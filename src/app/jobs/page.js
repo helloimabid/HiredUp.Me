@@ -281,14 +281,18 @@ function JobListSkeleton() {
             style={{ backgroundSize: "200% 100%" }}
           />
         </div>
-        <style dangerouslySetInnerHTML={{ __html: `
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
           @keyframes loading-bar {
             0% { width: 0%; opacity: 1; }
             50% { width: 70%; opacity: 1; }
             80% { width: 90%; opacity: 0.7; }
             100% { width: 100%; opacity: 0; }
           }
-        ` }} />
+        `,
+          }}
+        />
       </div>
 
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
