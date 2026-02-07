@@ -55,4 +55,4 @@ jobs:
           if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
             ARGS="$ARGS --dry-run"
           fi
-          node scripts/auto-generate-jobs.js $ARGS
+          node auto-generate-jobs.js $ARGS
