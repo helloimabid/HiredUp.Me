@@ -9,7 +9,10 @@
     "lint": "eslint",
     "setup-db": "node scripts/setup-collections.js",
     "generate-jobs": "node scripts/generate-all-jobs.js",
-    "generate-jobs:unenhanced": "node scripts/generate-all-jobs.js --only-unenhanced"
+    "generate-jobs:unenhanced": "node scripts/generate-all-jobs.js --only-unenhanced",
+    "auto-generate": "node scripts/auto-generate-jobs.js",
+    "auto-generate:dry": "node scripts/auto-generate-jobs.js --dry-run",
+    "auto-generate:limit": "node scripts/auto-generate-jobs.js --limit 10"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
