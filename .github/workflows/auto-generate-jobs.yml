@@ -1,9 +1,9 @@
 name: Auto-Generate Job Pages
 
 on:
-  # Run every 2 hours
+  # Run every 4 hours
   schedule:
-    - cron: '0 */2 * * *'
+    - cron: '0 */4 * * *'
 
   # Also run after the daily scrape cron (give it 30 min to finish)
   # The Vercel cron/fetch runs at 00:00 UTC, so this catches new jobs at 00:30
@@ -25,7 +25,7 @@ on:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 200
 
     steps:
       - name: Checkout repository

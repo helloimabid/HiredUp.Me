@@ -68,11 +68,19 @@ if (forcedModel && modelsToUse.length === 0) {
 // Track usage per model with sliding window for RPM limiting
 const modelUsage = {};
 modelsToUse.forEach((m) => {
+<<<<<<< HEAD
   modelUsage[m.name] = {
     used: 0,
     rpd: m.rpd,
     rpm: m.rpm,
     requestTimes: [], // Track timestamps for sliding window RPM check
+=======
+  modelUsage[m.name] = { 
+    used: 0, 
+    rpd: m.rpd, 
+    rpm: m.rpm,
+    requestTimes: [] // Track timestamps for sliding window RPM check
+>>>>>>> bc3b03d722bc38c23a6cd19f909c4ab3aa3d083b
   };
 });
 
@@ -126,15 +134,23 @@ async function waitForRateLimit(modelConfig) {
   const usage = modelUsage[modelConfig.name];
   const now = Date.now();
   const oneMinuteAgo = now - 60000;
+<<<<<<< HEAD
 
   // Remove requests older than 1 minute
   usage.requestTimes = usage.requestTimes.filter((t) => t > oneMinuteAgo);
 
+=======
+  
+  // Remove requests older than 1 minute
+  usage.requestTimes = usage.requestTimes.filter(t => t > oneMinuteAgo);
+  
+>>>>>>> bc3b03d722bc38c23a6cd19f909c4ab3aa3d083b
   // If we haven't hit the RPM limit, we can proceed immediately
   if (usage.requestTimes.length < modelConfig.rpm) {
     usage.requestTimes.push(now);
     return 0;
   }
+<<<<<<< HEAD
 
   // We've hit the limit - calculate how long to wait
   const oldestRequestInWindow = usage.requestTimes[0];
@@ -151,6 +167,22 @@ async function waitForRateLimit(modelConfig) {
   usage.requestTimes = usage.requestTimes.filter((t) => t > Date.now() - 60000);
   usage.requestTimes.push(Date.now());
 
+=======
+  
+  // We've hit the limit - calculate how long to wait
+  const oldestRequestInWindow = usage.requestTimes[0];
+  const timeToWait = oldestRequestInWindow + 60000 - now;
+  
+  if (timeToWait > 0) {
+    console.log(`         ⏳ Rate limit: waiting ${(timeToWait / 1000).toFixed(1)}s...`);
+    await sleep(timeToWait + 100); // Add small buffer
+  }
+  
+  // Clean up old timestamps and add new one
+  usage.requestTimes = usage.requestTimes.filter(t => t > Date.now() - 60000);
+  usage.requestTimes.push(Date.now());
+  
+>>>>>>> bc3b03d722bc38c23a6cd19f909c4ab3aa3d083b
   return timeToWait > 0 ? timeToWait : 0;
 }
 
