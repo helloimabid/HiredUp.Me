@@ -66,10 +66,15 @@ if (forcedModel && modelsToUse.length === 0) {
   process.exit(1);
 }
 
-// Track usage per model (resets each run — for RPD tracking across runs, use a file/db)
+// Track usage per model with sliding window for RPM limiting
 const modelUsage = {};
 modelsToUse.forEach((m) => {
-  modelUsage[m.name] = { used: 0, rpd: m.rpd, rpm: m.rpm };
+  modelUsage[m.name] = { 
+    used: 0, 
+    rpd: m.rpd, 
+    rpm: m.rpm,
+    requestTimes: [] // Track timestamps for sliding window RPM check
+  };
 });
 
 // ============ INIT ============
@@ -115,11 +120,37 @@ function pickModel() {
 }
 
 /**
- * Delay to respect RPM. E.g., 10 RPM → 6s between calls, 5 RPM → 12s.
+ * Intelligent rate limiting using sliding window.
+ * Only delays if we've hit the RPM limit in the last minute.
  */
-function getDelayForModel(modelConfig) {
-  // Add 1s buffer to be safe
-  return Math.ceil(60000 / modelConfig.rpm) + 1000;
+async function waitForRateLimit(modelConfig) {
+  const usage = modelUsage[modelConfig.name];
+  const now = Date.now();
+  const oneMinuteAgo = now - 60000;
+  
+  // Remove requests older than 1 minute
+  usage.requestTimes = usage.requestTimes.filter(t => t > oneMinuteAgo);
+  
+  // If we haven't hit the RPM limit, we can proceed immediately
+  if (usage.requestTimes.length < modelConfig.rpm) {
+    usage.requestTimes.push(now);
+    return 0;
+  }
+  
+  // We've hit the limit - calculate how long to wait
+  const oldestRequestInWindow = usage.requestTimes[0];
+  const timeToWait = oldestRequestInWindow + 60000 - now;
+  
+  if (timeToWait > 0) {
+    console.log(`         ⏳ Rate limit: waiting ${(timeToWait / 1000).toFixed(1)}s...`);
+    await sleep(timeToWait + 100); // Add small buffer
+  }
+  
+  // Clean up old timestamps and add new one
+  usage.requestTimes = usage.requestTimes.filter(t => t > Date.now() - 60000);
+  usage.requestTimes.push(Date.now());
+  
+  return timeToWait > 0 ? timeToWait : 0;
 }
 
 /**
@@ -363,6 +394,9 @@ Create a comprehensive JSON response with these EXACT fields:
 
 Return ONLY valid JSON. No markdown, no explanation.`;
 
+  // Wait for rate limit before making request
+  await waitForRateLimit(modelConfig);
+
   // Call Gemini
   const aiResponse = await callGemini(prompt, modelConfig.name);
 
@@ -595,15 +629,6 @@ async function main() {
         console.log(`         ❌ Failed: ${error.message}`);
         modelUsage[modelConfig.name].used++;
       }
-    }
-
-    // Rate limit delay — wait between requests
-    if (i < toProcess.length - 1 && getRemainingBudget() > 0) {
-      const delay = getDelayForModel(modelConfig);
-      console.log(
-        `         ⏳ Waiting ${(delay / 1000).toFixed(1)}s (RPM limit)...`,
-      );
-      await sleep(delay);
     }
 
     console.log("");
