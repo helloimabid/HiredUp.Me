@@ -8,8 +8,8 @@ import ApplyButton from "@/components/ApplyButton";
 import CompanyLogo from "@/components/CompanyLogo";
 import JobPageContent from "@/components/JobPageContent";
 
-// Revalidate every 60 seconds (reduced from 5 minutes for faster updates after AI generation)
-export const revalidate = 60;
+// Revalidate every 5 minutes (data layer has its own 300s cache)
+export const revalidate = 300;
 
 // Generate static params for popular jobs
 export async function generateStaticParams() {

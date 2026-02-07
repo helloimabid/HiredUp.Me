@@ -28,21 +28,25 @@ export const FREE_SEARCH_LIMIT = 10;
 export const PREMIUM_SEARCH_LIMIT = 100; // Premium users get 100 searches per day
 
 /**
- * Fetch all jobs from Appwrite
+ * Fetch all jobs from Appwrite (cached for 120s)
  */
-export async function getJobs(limit = 20) {
-  try {
-    const response = await databases.listDocuments(
-      DATABASE_ID,
-      JOBS_COLLECTION_ID,
-      [Query.orderDesc("$createdAt"), Query.limit(limit)],
-    );
-    return response.documents;
-  } catch (error) {
-    console.error("Error fetching jobs:", error);
-    return [];
-  }
-}
+export const getJobs = unstable_cache(
+  async (limit = 20) => {
+    try {
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        JOBS_COLLECTION_ID,
+        [Query.orderDesc("$createdAt"), Query.limit(limit)],
+      );
+      return response.documents;
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+      return [];
+    }
+  },
+  ["jobs-list"],
+  { revalidate: 120 },
+);
 
 /**
  * Fetch ALL jobs from Appwrite using pagination
@@ -89,8 +93,34 @@ export async function getAllJobs() {
 /**
  * Fetch a paginated page of jobs with optional search and location filters.
  * Uses fulltext search indexes across multiple fields with relevance scoring.
+ * Results cached for 120s by Next.js unstable_cache.
  */
 export async function getJobsPage({
+  page = 1,
+  perPage = 25,
+  searchQuery = "",
+  locationFilter = "",
+  typeFilter = "",
+} = {}) {
+  // Build a cache key from the params
+  const cacheKey = `jobs-page-${page}-${perPage}-${searchQuery}-${locationFilter}-${typeFilter}`;
+  const cachedFn = unstable_cache(
+    async () => {
+      return _getJobsPageInternal({
+        page,
+        perPage,
+        searchQuery,
+        locationFilter,
+        typeFilter,
+      });
+    },
+    [cacheKey],
+    { revalidate: 120 },
+  );
+  return cachedFn();
+}
+
+async function _getJobsPageInternal({
   page = 1,
   perPage = 25,
   searchQuery = "",
@@ -298,7 +328,7 @@ export const getExactJobCount = unstable_cache(
     }
   },
   ["exact-job-count"],
-  { revalidate: 60 },
+  { revalidate: 300 },
 );
 
 /**
@@ -324,37 +354,51 @@ export async function jobExists(sourceId) {
 }
 
 /**
- * Fetch a single job by ID
+ * Fetch a single job by ID (cached for 300s)
  */
 export async function getJobById(jobId) {
-  try {
-    const document = await databases.getDocument(
-      DATABASE_ID,
-      JOBS_COLLECTION_ID,
-      jobId,
-    );
-    return document;
-  } catch (error) {
-    console.error("Error fetching job by ID:", error);
-    return null;
-  }
+  const cachedFn = unstable_cache(
+    async () => {
+      try {
+        const document = await databases.getDocument(
+          DATABASE_ID,
+          JOBS_COLLECTION_ID,
+          jobId,
+        );
+        return document;
+      } catch (error) {
+        console.error("Error fetching job by ID:", error);
+        return null;
+      }
+    },
+    [`job-id-${jobId}`],
+    { revalidate: 300 },
+  );
+  return cachedFn();
 }
 
 /**
- * Fetch a single job by slug
+ * Fetch a single job by slug (cached for 300s)
  */
 export async function getJobBySlug(slug) {
-  try {
-    const response = await databases.listDocuments(
-      DATABASE_ID,
-      JOBS_COLLECTION_ID,
-      [Query.equal("slug", slug), Query.limit(1)],
-    );
-    return response.documents[0] || null;
-  } catch (error) {
-    console.error("Error fetching job by slug:", error);
-    return null;
-  }
+  const cachedFn = unstable_cache(
+    async () => {
+      try {
+        const response = await databases.listDocuments(
+          DATABASE_ID,
+          JOBS_COLLECTION_ID,
+          [Query.equal("slug", slug), Query.limit(1)],
+        );
+        return response.documents[0] || null;
+      } catch (error) {
+        console.error("Error fetching job by slug:", error);
+        return null;
+      }
+    },
+    [`job-slug-${slug}`],
+    { revalidate: 300 },
+  );
+  return cachedFn();
 }
 
 /**

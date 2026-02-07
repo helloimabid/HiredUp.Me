@@ -323,6 +323,14 @@ export async function POST(request) {
           ? `\n\nADDITIONAL METADATA:\n${extraFields.join("\n")}`
           : "";
 
+      const hasSalaryInfo = !!(
+        job.salary ||
+        (job.description &&
+          /(?:salary|compensation|pay|BDT|৳|tk\.?\s*\d|\d+\s*[-–]\s*\d+\s*(?:BDT|tk|taka|per\s*month))/i.test(
+            job.description,
+          ))
+      );
+
       const prompt = `You are creating professional content for a job posting page. Analyze this job thoroughly.
 
 JOB DETAILS:
@@ -334,6 +342,10 @@ ${extraFieldsText}
 RAW JOB POSTING CONTENT:
 ${job.description ? job.description.substring(0, 4000) : "No description available"}
 
+IMPORTANT RULES:
+- For "salaryRange": ONLY include a salary if the job posting EXPLICITLY mentions a salary, pay, or compensation amount. If no salary is mentioned anywhere in the job details above, you MUST return "Not specified" — do NOT guess or fabricate a salary range.
+- For "benefits": ONLY include benefits that are explicitly mentioned or strongly implied by the job posting. Do NOT invent benefits.
+
 Create a comprehensive JSON response with these EXACT fields:
 {
   "summary": "Write a compelling 2-3 sentence summary of this opportunity",
@@ -342,10 +354,10 @@ Create a comprehensive JSON response with these EXACT fields:
   "requirements": ["Write 5-6 specific qualifications and requirements"],
   "skills": ["List 6-8 relevant technical and soft skills"],
   "experienceLevel": "entry or mid or senior",
-  "salaryRange": "Realistic salary range (use BDT for Bangladesh jobs)",
+  "salaryRange": "${hasSalaryInfo ? "Extract the exact salary from the posting (use BDT for Bangladesh jobs)" : "Not specified"}",
   "industry": "Specific industry category",
   "workType": "remote or hybrid or onsite",
-  "benefits": ["List 4-5 typical benefits for this role"],
+  "benefits": ["ONLY list benefits explicitly mentioned in the posting, or return empty array"],
   "whyApply": "Write 2-3 compelling reasons why someone should apply",
   "applicationTips": "Write 2-3 specific tips for applying to this role",
   "highlights": ["3-4 key highlights or selling points of this job"]
@@ -405,7 +417,13 @@ Return ONLY valid JSON. No markdown, no explanation.`;
       },
       quick_info: [
         { label: "Experience", value: analysis.experienceLevel || "Mid-level" },
-        { label: "Salary", value: analysis.salaryRange || "Competitive" },
+        {
+          label: "Salary",
+          value:
+            analysis.salaryRange && analysis.salaryRange !== "Not specified"
+              ? analysis.salaryRange
+              : job.salary || "Not specified",
+        },
         { label: "Industry", value: analysis.industry || "General" },
         {
           label: "Work Type",

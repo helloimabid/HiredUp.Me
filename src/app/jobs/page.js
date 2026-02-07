@@ -7,7 +7,7 @@ import { Suspense } from "react";
 import JobListLogo from "@/components/JobListLogo";
 import SearchBar from "@/components/SearchBar";
 
-export const revalidate = 60;
+export const revalidate = 120;
 
 // ============ COUNTRY / LOCALE HELPERS ============
 const COUNTRY_LOCALE_MAP = {
@@ -262,33 +262,85 @@ export default async function JobsPage({ searchParams }) {
 // ============ LOADING SKELETON ============
 function JobListSkeleton() {
   return (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
-      {/* Toolbar skeleton */}
-      <div className="flex flex-col sm:flex-row justify-between items-center px-5 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50 gap-4">
-        <div className="h-3 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
-        <div className="h-3 w-48 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+    <>
+      {/* Progress indicator */}
+      <div className="mb-5">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className="relative w-4 h-4">
+              <div className="absolute inset-0 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+            </div>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              Loading jobs...
+            </span>
+          </div>
+        </div>
+        <div className="w-full h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-indigo-500 via-blue-500 to-indigo-500 rounded-full animate-[loading-bar_2.5s_ease-in-out_infinite]"
+            style={{ backgroundSize: "200% 100%" }}
+          />
+        </div>
+        <style jsx>{`
+          @keyframes loading-bar {
+            0% {
+              width: 0%;
+              opacity: 1;
+            }
+            50% {
+              width: 70%;
+              opacity: 1;
+            }
+            80% {
+              width: 90%;
+              opacity: 0.7;
+            }
+            100% {
+              width: 100%;
+              opacity: 0;
+            }
+          }
+        `}</style>
       </div>
 
-      {/* List items */}
-      <div className="divide-y divide-slate-100 dark:divide-slate-700">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="p-5 flex gap-5 items-start">
-            <div className="w-12 h-12 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse shrink-0" />
-            <div className="flex-1 min-w-0 pt-0.5 space-y-3">
-              <div className="flex justify-between">
-                <div className="h-4 w-1/3 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
-                <div className="h-3 w-12 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
-              </div>
-              <div className="h-3 w-1/2 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
-              <div className="flex gap-2">
-                <div className="h-5 w-16 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
-                <div className="h-5 w-16 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+        {/* Toolbar skeleton */}
+        <div className="flex flex-col sm:flex-row justify-between items-center px-5 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50 gap-4">
+          <div className="h-3 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+          <div className="h-3 w-48 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+        </div>
+
+        {/* List items with staggered animation */}
+        <div className="divide-y divide-slate-100 dark:divide-slate-700">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              className="p-5 flex gap-5 items-start animate-pulse"
+              style={{ animationDelay: `${i * 80}ms` }}
+            >
+              <div className="w-12 h-12 rounded-lg bg-slate-200 dark:bg-slate-700 shrink-0" />
+              <div className="flex-1 min-w-0 pt-0.5 space-y-3">
+                <div className="flex justify-between">
+                  <div
+                    className="h-4 bg-slate-200 dark:bg-slate-700 rounded"
+                    style={{ width: `${45 + (i % 3) * 15}%` }}
+                  />
+                  <div className="h-3 w-12 bg-slate-100 dark:bg-slate-800 rounded" />
+                </div>
+                <div
+                  className="h-3 bg-slate-100 dark:bg-slate-800 rounded"
+                  style={{ width: `${30 + (i % 4) * 10}%` }}
+                />
+                <div className="flex gap-2">
+                  <div className="h-5 w-16 bg-slate-100 dark:bg-slate-800 rounded" />
+                  <div className="h-5 w-16 bg-slate-100 dark:bg-slate-800 rounded" />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
