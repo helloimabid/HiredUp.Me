@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { fetchJobBatch } from "@/app/actions"; // Import the action we just created
-import JobListLogo from "@/components/JobListLogo"; // Keep your existing logo component
+import { useState, useTransition, useEffect } from "react";
+import { fetchJobBatch } from "@/app/actions";
+import JobListLogo from "@/components/JobListLogo";
 import Link from "next/link";
 
 export default function JobFeed({ initialJobs, searchParams }) {
@@ -10,6 +10,14 @@ export default function JobFeed({ initialJobs, searchParams }) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isPending, startTransition] = useTransition();
+
+  // 👇 THIS FIXES THE ISSUE
+  // When the server sends new jobs (after a search), reset the state immediately.
+  useEffect(() => {
+    setJobs(initialJobs);
+    setPage(1);
+    setHasMore(true);
+  }, [initialJobs]); // Dependency: runs whenever initialJobs changes
 
   const loadMore = () => {
     startTransition(async () => {
@@ -55,9 +63,7 @@ export default function JobFeed({ initialJobs, searchParams }) {
   );
 }
 
-// Simple JobCard component extracted from your page.js
 function JobCard({ job }) {
-  // Helpers from your original code
   const isCareerJet = job.source === "careerjet";
   const isLiveCareerJet = isCareerJet && !job.slug;
   const href = isLiveCareerJet ? job.apply_url : `/jobs/${job.slug || job.$id}`;
