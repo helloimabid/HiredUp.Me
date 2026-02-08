@@ -293,42 +293,26 @@ async function _getJobsPageInternal({
  * cursor pagination with minimal payload ($id only) to count accurately.
  * Result is cached for 60s via Next.js unstable_cache to avoid repeated slow counts.
  */
+/**
+ * Optimized count: Rely on Appwrite's built-in total.
+ * We no longer iterate the whole DB, making this instant.
+ */
 export const getExactJobCount = unstable_cache(
   async () => {
     try {
-      let count = 0;
-      let lastId = null;
-      const batchSize = 100;
-
-      while (true) {
-        const queries = [Query.limit(batchSize), Query.select(["$id"])];
-        if (lastId) {
-          queries.push(Query.cursorAfter(lastId));
-        }
-
-        const response = await databases.listDocuments(
-          DATABASE_ID,
-          JOBS_COLLECTION_ID,
-          queries,
-        );
-
-        count += response.documents.length;
-
-        if (response.documents.length < batchSize) {
-          break;
-        }
-
-        lastId = response.documents[response.documents.length - 1].$id;
-      }
-
-      return count;
+      // Just fetch one document to get the 'total' property
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        JOBS_COLLECTION_ID,
+        [Query.limit(1)]
+      );
+      return response.total;
     } catch (error) {
-      console.error("Error counting jobs:", error);
       return 0;
     }
   },
   ["exact-job-count"],
-  { revalidate: 86400 }, // 24 hours - counting is expensive, so we cache long-term
+  { revalidate: 300 } 
 );
 
 /**
