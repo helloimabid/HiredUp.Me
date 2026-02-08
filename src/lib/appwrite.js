@@ -30,13 +30,20 @@ export const PREMIUM_SEARCH_LIMIT = 100; // Premium users get 100 searches per d
 /**
  * Fetch all jobs from Appwrite (cached for 120s)
  */
+/**
+ * Updated Fetch jobs with offset support for sitemaps
+ */
 export const getJobs = unstable_cache(
-  async (limit = 20) => {
+  async (limit = 20, offset = 0) => { // Added offset parameter
     try {
       const response = await databases.listDocuments(
         DATABASE_ID,
         JOBS_COLLECTION_ID,
-        [Query.orderDesc("$createdAt"), Query.limit(limit)],
+        [
+          Query.orderDesc("$createdAt"), 
+          Query.limit(limit),
+          Query.offset(offset) // Added offset query
+        ],
       );
       return response.documents;
     } catch (error) {
@@ -44,8 +51,8 @@ export const getJobs = unstable_cache(
       return [];
     }
   },
-  ["jobs-list"],
-  { revalidate: 120 },
+  ["jobs-list-sitemap"], // Changed cache key to distinguish from standard list
+  { revalidate: 3600 }, // Sitemaps don't need to update every 2 mins
 );
 
 /**
