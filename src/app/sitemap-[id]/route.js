@@ -5,7 +5,10 @@ const JOBS_PER_SITEMAP = 10000;
 
 export async function GET(request, { params }) {
   const { id } = await params;
-  const sitemapId = parseInt(id);
+
+  // Remove .xml extension if present (Next.js includes it in the id param)
+  const cleanId = id.replace(".xml", "");
+  const sitemapId = parseInt(cleanId);
   const offset = sitemapId * JOBS_PER_SITEMAP;
 
   let jobs = [];
