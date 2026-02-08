@@ -5,8 +5,35 @@ import { fetchJobBatch } from "@/app/actions";
 import JobFeed from "@/components/JobFeed";
 
 export const metadata = {
-  title: "Browse Jobs | HiredUp.me",
-  description: "Find your perfect job from thousands of opportunities.",
+  title: "Browse 10,000+ Jobs in Bangladesh & Remote | HiredUp.me",
+  description:
+    "Find your perfect job from 10,000+ opportunities in Dhaka, Chittagong, Sylhet & remote worldwide. Filter by industry, experience level, salary. Apply now on HiredUp.me!",
+  keywords: [
+    "job listings Bangladesh",
+    "jobs in Dhaka",
+    "remote jobs",
+    "IT jobs Bangladesh",
+    "fresher jobs",
+    "experienced jobs",
+    "part time jobs",
+    "full time jobs",
+    "contract jobs",
+    "freelance work",
+    "work from home",
+  ],
+  openGraph: {
+    title: "Browse Jobs - Find Your Dream Career | HiredUp.me",
+    description:
+      "10,000+ job opportunities waiting for you. Software developers, designers, marketers, accountants & more.",
+    url: "https://hiredup.me/jobs",
+  },
+  linkedin: {
+    title: "Browse Jobs on HiredUp.me",
+    description: "Find your dream job from thousands of opportunities",
+  },
+  alternates: {
+    canonical: "https://hiredup.me/jobs",
+  },
 };
 
 export default async function JobsPage({ searchParams }) {
