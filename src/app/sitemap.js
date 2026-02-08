@@ -6,7 +6,7 @@ export default async function sitemap() {
   // Fetch all jobs for dynamic sitemap
   let jobs = [];
   try {
-    jobs = await getJobs(30000);
+    jobs = await getJobs(3000);
   } catch (error) {
     console.error("Failed to fetch jobs for sitemap:", error);
   }
