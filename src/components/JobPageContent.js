@@ -32,8 +32,19 @@ export default function JobPageContent({
     window.location.reload();
   };
 
+  const handleError = (errorMessage) => {
+    console.error("AI generation failed:", errorMessage);
+    // The AIJobLoader component will handle showing the error UI
+  };
+
   if (showLoader) {
-    return <AIJobLoader job={job} onComplete={handleComplete} />;
+    return (
+      <AIJobLoader
+        job={job}
+        onComplete={handleComplete}
+        onError={handleError}
+      />
+    );
   }
 
   // If needs AI, show a prompt to generate
@@ -47,6 +58,9 @@ export default function JobPageContent({
               <span className="animate-pulse">✨</span>
               <span className="font-medium">
                 AI can organize this job info into a cleaner format
+              </span>
+              <span className="hidden sm:inline text-purple-600 dark:text-purple-400 text-xs">
+                • Powered by Groq AI
               </span>
             </div>
             <button

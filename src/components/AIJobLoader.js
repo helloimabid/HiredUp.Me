@@ -12,38 +12,38 @@ const STEPS = [
   },
   {
     num: 2,
-    label: "Fetching",
-    icon: "solar:download-minimalistic-linear",
-    doneIcon: "solar:check-circle-linear",
-  },
-  {
-    num: 3,
-    label: "Loading",
-    icon: "solar:cloud-download-linear",
-    doneIcon: "solar:check-circle-linear",
-  },
-  {
-    num: 4,
     label: "Analyzing",
     icon: "solar:refresh-circle-linear",
     doneIcon: "solar:check-circle-linear",
   },
   {
-    num: 5,
+    num: 3,
     label: "Writing",
     icon: "solar:pen-new-square-linear",
     doneIcon: "solar:check-circle-linear",
   },
   {
-    num: 6,
+    num: 4,
+    label: "Optimizing",
+    icon: "solar:stars-minimalistic-linear",
+    doneIcon: "solar:check-circle-linear",
+  },
+  {
+    num: 5,
     label: "Generated",
     icon: "solar:file-check-linear",
     doneIcon: "solar:check-circle-linear",
   },
   {
-    num: 7,
+    num: 6,
     label: "Saving",
     icon: "solar:diskette-linear",
+    doneIcon: "solar:check-circle-linear",
+  },
+  {
+    num: 7,
+    label: "Complete",
+    icon: "solar:check-circle-linear",
     doneIcon: "solar:check-circle-linear",
   },
   {
@@ -74,123 +74,20 @@ export default function AIJobLoader({ job, onComplete, onError }) {
     setStatus("generating");
   };
 
-  // Wait for Puter.js to load (it's loaded async)
-  const waitForPuter = (timeout = 15000) => {
-    return new Promise((resolve, reject) => {
-      const start = Date.now();
-      const check = () => {
-        if (typeof window !== "undefined" && window.puter?.ai?.chat) {
-          resolve(window.puter);
-        } else if (Date.now() - start > timeout) {
-          reject(new Error("Puter.js failed to load"));
-        } else {
-          setTimeout(check, 100);
-        }
-      };
-      check();
-    });
-  };
-
-  // Call Puter AI directly from browser (free, unlimited)
-  const callPuterAI = async (prompt) => {
-    const puter = await waitForPuter();
-    console.log("[Puter] Calling AI with model: gpt-4.1-nano...");
-
-    const response = await puter.ai.chat(prompt, {
-      model: "gpt-4.1-nano",
-      temperature: 0.7,
-    });
-
-    if (typeof response === "string") return response;
-    if (response?.message?.content) return response.message.content;
-    if (response?.content) return response.content;
-    return JSON.stringify(response);
-  };
-
   const startGeneration = async () => {
     if (generationStartedRef.current) return;
     generationStartedRef.current = true;
 
     try {
-      updateProgress(1, "Preparing job data...", 10);
+      updateProgress(1, "Preparing job data...", 12);
 
-      updateProgress(2, "Analyzing job details...", 20);
+      // Small delay for UX
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const rawDescription = job.description || "";
-      const extraFields = [];
-      if (job.salary) extraFields.push(`Salary: ${job.salary}`);
-      if (job.experience) extraFields.push(`Experience: ${job.experience}`);
-      if (job.education) extraFields.push(`Education: ${job.education}`);
-      if (job.deadline) extraFields.push(`Deadline: ${job.deadline}`);
-      const extraFieldsText =
-        extraFields.length > 0
-          ? `\n\nADDITIONAL METADATA:\n${extraFields.join("\n")}`
-          : "";
+      updateProgress(2, "AI is analyzing the job with Groq...", 25);
 
-      updateProgress(3, "Loading AI service...", 30);
-
-      const hasSalaryInfo = !!(
-        job.salary ||
-        /(?:salary|compensation|pay|BDT|৳|tk\.?\s*\d|\d+\s*[-–]\s*\d+\s*(?:BDT|tk|taka|per\s*month))/i.test(
-          rawDescription,
-        )
-      );
-
-      const prompt = `You are creating professional content for a job posting page. Analyze this job thoroughly.
-
-JOB DETAILS:
-- Title: ${job.title}
-- Company: ${job.company}
-- Location: ${job.location}
-${extraFieldsText}
-
-RAW JOB POSTING CONTENT:
-${rawDescription.substring(0, 4000)}
-
-IMPORTANT RULES:
-- For "salaryRange": ONLY include a salary if the job posting EXPLICITLY mentions a salary, pay, or compensation amount. If no salary is mentioned anywhere in the job details above, you MUST return "Not specified" — do NOT guess or fabricate a salary range.
-- For "benefits": ONLY include benefits that are explicitly mentioned or strongly implied by the job posting. Do NOT invent benefits.
-
-Create a comprehensive JSON response with these EXACT fields:
-{
-  "summary": "Write a compelling 2-3 sentence summary of this opportunity",
-  "about": "Write 2-3 detailed paragraphs about this role, the company culture, and what makes it exciting. Be specific and engaging.",
-  "responsibilities": ["Write 5-6 specific, detailed responsibilities"],
-  "requirements": ["Write 5-6 specific qualifications and requirements"],
-  "skills": ["List 6-8 relevant technical and soft skills"],
-  "experienceLevel": "entry or mid or senior",
-  "salaryRange": "${hasSalaryInfo ? "Extract the exact salary from the posting (use BDT for Bangladesh jobs)" : "Not specified"}",
-  "industry": "Specific industry category",
-  "workType": "remote or hybrid or onsite",
-  "benefits": ["ONLY list benefits explicitly mentioned in the posting, or return empty array"],
-  "whyApply": "Write 2-3 compelling reasons why someone should apply",
-  "applicationTips": "Write 2-3 specific tips for applying to this role",
-  "highlights": ["3-4 key highlights or selling points of this job"]
-}
-
-Return ONLY valid JSON. No markdown, no explanation.`;
-
-      updateProgress(4, "AI is analyzing the job...", 50);
-
-      console.log("[AIJobLoader] Calling Puter.js AI directly...");
-      const aiResponse = await callPuterAI(prompt);
-      console.log(
-        "[AIJobLoader] AI response received, length:",
-        aiResponse?.length,
-      );
-
-      updateProgress(5, "AI is writing content...", 65);
-
-      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error("AI response was not valid JSON");
-      }
-
-      const analysis = JSON.parse(jsonMatch[0]);
-
-      updateProgress(6, "Content generated!", 75);
-      updateProgress(7, "Saving to database...", 85);
-
+      // Call server-side Groq AI API
+      console.log("[AIJobLoader] Calling server-side Groq AI...");
       const saveResponse = await fetch("/api/jobs/generate-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -206,20 +103,51 @@ Return ONLY valid JSON. No markdown, no explanation.`;
             education: job.education || "",
             deadline: job.deadline || "",
           },
-          analysis,
-          clientGenerated: true,
         }),
       });
 
       const result = await saveResponse.json();
 
-      if (!saveResponse.ok) {
-        throw new Error(result.error || "Failed to save generated content");
+      // Handle timeout
+      if (result.timeout) {
+        updateProgress(3, "Generation is taking longer than expected...", 40);
+        setMessage(result.message);
+        // Auto-retry after delay
+        setTimeout(() => {
+          setMessage("Retrying...");
+          window.location.reload();
+        }, 5000);
+        return;
       }
+
+      if (!saveResponse.ok) {
+        throw new Error(result.error || "Failed to generate AI content");
+      }
+
+      updateProgress(3, "AI is writing content...", 50);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      updateProgress(4, "Optimizing content structure...", 65);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      updateProgress(5, "Content generated!", 75);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      updateProgress(6, "Saving to database...", 85);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      updateProgress(7, "Finalizing...", 95);
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       updateProgress(8, "Done! Redirecting...", 100);
       setStatus("complete");
 
+      // Notify parent component
+      if (onComplete) {
+        onComplete(result.enhanced);
+      }
+
+      // Redirect to refresh the page with new content
       setTimeout(() => {
         const url = new URL(window.location.href);
         url.searchParams.set("_t", Date.now());
@@ -229,7 +157,9 @@ Return ONLY valid JSON. No markdown, no explanation.`;
       console.error("AI generation error:", error);
       setStatus("error");
       setMessage(error.message || "An error occurred");
-      onError?.(error.message);
+      if (onError) {
+        onError(error.message);
+      }
     }
   };
 
@@ -254,7 +184,7 @@ Return ONLY valid JSON. No markdown, no explanation.`;
                   ? "Generation failed"
                   : status === "complete"
                     ? "Generation complete"
-                    : "AI generating job page"}
+                    : "AI generating job page with Groq"}
               </span>
             </div>
           </div>
@@ -304,7 +234,7 @@ Return ONLY valid JSON. No markdown, no explanation.`;
                   <span>Your job page is ready. Redirecting now...</span>
                 ) : (
                   <>
-                    Analysing job details for{" "}
+                    Analyzing job details for{" "}
                     <span className="text-slate-200 font-medium">
                       {job.title}
                     </span>{" "}
@@ -450,7 +380,7 @@ Return ONLY valid JSON. No markdown, no explanation.`;
               ? "If the problem persists, the AI service may be temporarily unavailable."
               : status === "complete"
                 ? "Redirecting to your generated job page..."
-                : "This process usually takes about 10–15 seconds."}
+                : "This process usually takes about 3–5 seconds with Groq AI."}
           </p>
         </div>
       </main>

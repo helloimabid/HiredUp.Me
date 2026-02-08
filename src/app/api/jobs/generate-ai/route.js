@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { Client, Databases } from "node-appwrite";
 import { stringifyEnhancedForStorage } from "@/lib/enhanced-storage";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Shorter timeout since AI is now done client-side
+// Shorter timeout since AI is now done with Groq
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
@@ -14,6 +13,10 @@ const LOGO_DEV_KEY =
 
 // Tavily API for logo search
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY;
+
+// Groq API configuration
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
 // Initialize Appwrite
 const client = new Client()
@@ -59,93 +62,42 @@ function generateJobSlug(title, company, id) {
   return shortId ? `${slug}-${shortId}` : slug;
 }
 
-async function callGemini(prompt) {
-  const apiKey =
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
-    process.env.GEMINI_API_KEY ||
-    process.env.GOOGLE_AI_API_KEY;
-  if (!apiKey) {
-    throw new Error("No Google Generative AI API key configured");
+// Groq AI API call
+async function callGroq(prompt) {
+  if (!GROQ_API_KEY) {
+    throw new Error("No Groq API key configured");
   }
 
-  const modelName =
-    process.env.GOOGLE_GEMINI_MODEL ||
-    process.env.GEMINI_MODEL ||
-    "gemini-1.5-flash";
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: modelName });
-
-  // Prefer JSON mode when supported; fall back to plain prompt.
-  const attempt = async () => {
-    try {
-      const result = await model.generateContent({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2048,
-          responseMimeType: "application/json",
-        },
-      });
-      const response = await result.response;
-      return response.text();
-    } catch {
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      return response.text();
-    }
-  };
-
-  return withTimeout(attempt(), 25000);
-}
-
-// Server-side AI fallback (only used if client-side Puter fails)
-async function callAI(prompt) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
 
   try {
-    const hasGoogleKey = Boolean(
-      process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
-      process.env.GEMINI_API_KEY ||
-      process.env.GOOGLE_AI_API_KEY,
-    );
-
-    if (hasGoogleKey) {
-      try {
-        console.log("[AI] Using Google Gemini for generation...");
-        const text = await callGemini(prompt);
-        clearTimeout(timeoutId);
-        return text;
-      } catch (googleErr) {
-        console.warn(
-          "[AI] Gemini generation failed, falling back to OpenRouter:",
-          googleErr?.message || googleErr,
-        );
-      }
-    }
-
-    console.log("[AI] Using OpenRouter for generation...");
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-      throw new Error("No OpenRouter API key configured");
-    }
+    console.log("[AI] Using Groq AI for generation...");
 
     const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
+      "https://api.groq.com/openai/v1/chat/completions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-          "HTTP-Referer": "https://hiredup.me",
-          "X-Title": "HiredUp.me Job Board",
+          Authorization: `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "google/gemma-3-12b-it:free",
-          messages: [{ role: "user", content: prompt }],
+          model: GROQ_MODEL,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a professional job content analyzer. Always respond with valid JSON only, no markdown formatting or explanations.",
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
           temperature: 0.7,
-          max_tokens: 2000,
+          max_tokens: 2048,
+          response_format: { type: "json_object" }, // Ensures JSON response
         }),
         signal: controller.signal,
       },
@@ -155,20 +107,18 @@ async function callAI(prompt) {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error("OpenRouter error:", error);
-      throw new Error(`AI API error: ${response.status}`);
+      console.error("Groq API error:", error);
+      throw new Error(`Groq API error: ${response.status}`);
     }
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || "";
+    const content = data.choices?.[0]?.message?.content || "";
+
+    console.log("[AI] Groq response received, length:", content.length);
+    return content;
   } catch (err) {
     clearTimeout(timeoutId);
     if (err.name === "AbortError") {
-      const timeoutError = new Error("AI_TIMEOUT");
-      timeoutError.isTimeout = true;
-      throw timeoutError;
-    }
-    if (err?.message === "AI_TIMEOUT") {
       const timeoutError = new Error("AI_TIMEOUT");
       timeoutError.isTimeout = true;
       throw timeoutError;
@@ -285,14 +235,8 @@ export async function POST(request) {
   console.log("[generate-ai] Request received");
 
   try {
-    const {
-      jobId,
-      job,
-      analysis: clientAnalysis,
-      clientGenerated,
-    } = await request.json();
+    const { jobId, job } = await request.json();
     console.log(`[generate-ai] Processing job: ${jobId} - ${job?.title}`);
-    console.log(`[generate-ai] Client generated: ${clientGenerated}`);
 
     if (!jobId || !job) {
       console.log("[generate-ai] Error: Missing jobId or job data");
@@ -302,36 +246,29 @@ export async function POST(request) {
       );
     }
 
-    let analysis;
+    // Step 1: Generate AI content using Groq
+    console.log("[generate-ai] Step 1: Calling Groq AI...");
 
-    // Check if client already generated the AI content (using Puter.js)
-    if (clientGenerated && clientAnalysis) {
-      console.log("[generate-ai] Using client-generated AI content (Puter.js)");
-      analysis = clientAnalysis;
-    } else {
-      // Fallback: Generate AI content server-side (OpenRouter)
-      console.log("[generate-ai] Step 1: Calling server-side AI (fallback)...");
+    // Build extra metadata fields
+    const extraFields = [];
+    if (job.salary) extraFields.push(`Salary: ${job.salary}`);
+    if (job.experience) extraFields.push(`Experience: ${job.experience}`);
+    if (job.education) extraFields.push(`Education: ${job.education}`);
+    if (job.deadline) extraFields.push(`Deadline: ${job.deadline}`);
+    const extraFieldsText =
+      extraFields.length > 0
+        ? `\n\nADDITIONAL METADATA:\n${extraFields.join("\n")}`
+        : "";
 
-      // Build extra metadata fields
-      const extraFields = [];
-      if (job.salary) extraFields.push(`Salary: ${job.salary}`);
-      if (job.experience) extraFields.push(`Experience: ${job.experience}`);
-      if (job.education) extraFields.push(`Education: ${job.education}`);
-      if (job.deadline) extraFields.push(`Deadline: ${job.deadline}`);
-      const extraFieldsText =
-        extraFields.length > 0
-          ? `\n\nADDITIONAL METADATA:\n${extraFields.join("\n")}`
-          : "";
+    const hasSalaryInfo = !!(
+      job.salary ||
+      (job.description &&
+        /(?:salary|compensation|pay|BDT|৳|tk\.?\s*\d|\d+\s*[-–]\s*\d+\s*(?:BDT|tk|taka|per\s*month))/i.test(
+          job.description,
+        ))
+    );
 
-      const hasSalaryInfo = !!(
-        job.salary ||
-        (job.description &&
-          /(?:salary|compensation|pay|BDT|৳|tk\.?\s*\d|\d+\s*[-–]\s*\d+\s*(?:BDT|tk|taka|per\s*month))/i.test(
-            job.description,
-          ))
-      );
-
-      const prompt = `You are creating professional content for a job posting page. Analyze this job thoroughly.
+    const prompt = `You are creating professional content for a job posting page. Analyze this job thoroughly.
 
 JOB DETAILS:
 - Title: ${job.title}
@@ -365,14 +302,19 @@ Create a comprehensive JSON response with these EXACT fields:
 
 Return ONLY valid JSON. No markdown, no explanation.`;
 
-      console.log("[generate-ai] Calling OpenRouter API...");
-      const aiResponse = await callAI(prompt);
-      console.log(
-        "[generate-ai] AI response received, length:",
-        aiResponse?.length,
-      );
+    const aiResponse = await callGroq(prompt);
+    console.log(
+      "[generate-ai] AI response received, length:",
+      aiResponse?.length,
+    );
 
-      // Extract JSON from response
+    // Parse JSON from response
+    let analysis;
+    try {
+      // Try to parse directly first (since we're using response_format: json_object)
+      analysis = JSON.parse(aiResponse);
+    } catch (parseError) {
+      // Fallback: Extract JSON from response if it contains markdown
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         console.error(
@@ -381,8 +323,6 @@ Return ONLY valid JSON. No markdown, no explanation.`;
         );
         throw new Error("AI response was not valid JSON");
       }
-
-      console.log("[generate-ai] Parsing AI response...");
       analysis = JSON.parse(jsonMatch[0]);
     }
 
@@ -569,7 +509,7 @@ Return ONLY valid JSON. No markdown, no explanation.`;
     return NextResponse.json({
       success: true,
       enhanced,
-      message: "Job enhanced with AI successfully",
+      message: "Job enhanced with Groq AI successfully",
     });
   } catch (error) {
     console.error("[generate-ai] Error:", error.message);

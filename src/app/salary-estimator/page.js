@@ -163,12 +163,11 @@ export default function SalaryEstimatorPage() {
                 placeholder="Job title (e.g. Software Engineer)"
                 className="flex-1 px-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
-              <select className="px-4 py-3 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option>Bangladesh</option>
-                <option>Remote (US)</option>
-                <option>Remote (EU)</option>
-                <option>India</option>
-              </select>
+              <input
+                className="px-4 py-3 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                type="text"
+                placeholder="Location (e.g. Bangladesh or Remote)"
+              ></input>
               <button
                 type="submit"
                 className="px-8 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
