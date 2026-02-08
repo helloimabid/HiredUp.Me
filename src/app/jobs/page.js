@@ -7,7 +7,7 @@ import JobFeed from "@/components/JobFeed";
 export const metadata = {
   title: "Browse 10,000+ Jobs in Bangladesh & Remote | HiredUp.me",
   description:
-    "Find your perfect job from 10,000+ opportunities in Dhaka, Chittagong, Sylhet & remote worldwide. Filter by industry, experience level, salary. Apply now on HiredUp.me!",
+    "Find your perfect job from 10,000+ opportunities in Dhaka, Chittagong, Sylhet & remote worldwide. Apply now on HiredUp.me!",
   keywords: [
     "job listings Bangladesh",
     "jobs in Dhaka",
