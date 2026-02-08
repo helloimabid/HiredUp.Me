@@ -3,7 +3,7 @@ name: Auto-Generate Job Pages
 on:
   # Run every 4 hours
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '0 */2 * * *'
 
   # Also run after the daily scrape cron (give it 30 min to finish)
   # The Vercel cron/fetch runs at 00:00 UTC, so this catches new jobs at 00:30
