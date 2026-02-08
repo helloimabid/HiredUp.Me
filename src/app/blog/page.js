@@ -114,16 +114,26 @@ export default function BlogPage() {
               Career tips, industry insights, and job market trends to help you
               navigate your professional journey.
             </p>
+            <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-sm font-medium rounded-lg border border-amber-200 dark:border-amber-800">
+              <iconify-icon icon="solar:clock-circle-bold" width="16"></iconify-icon>
+              <span>Articles coming soon</span>
+            </div>
           </div>
 
           {/* Articles Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-20">
             {blogPosts.map((post) => (
-              <Link
+              <div
                 key={post.id}
-                href={`/blog/${post.slug}`}
-                className="group flex flex-col h-full bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-sm transition-all duration-300"
+                className="group flex flex-col h-full bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 relative opacity-75"
               >
+                {/* Coming Soon Badge */}
+                <div className="absolute top-4 right-4">
+                  <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
+                    Coming Soon
+                  </span>
+                </div>
+
                 {/* Category & Date Row */}
                 <div className="flex items-center justify-between mb-4">
                   <span
@@ -137,7 +147,7 @@ export default function BlogPage() {
                 </div>
 
                 {/* Title */}
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight mb-2">
                   {post.title}
                 </h2>
 
@@ -154,7 +164,7 @@ export default function BlogPage() {
                   ></iconify-icon>
                   <span>{post.readTime}</span>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
 
