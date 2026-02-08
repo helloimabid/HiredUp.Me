@@ -300,21 +300,40 @@ async function _getJobsPageInternal({
 export const getExactJobCount = unstable_cache(
   async () => {
     try {
-      // Just fetch one document to get the 'total' property
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        JOBS_COLLECTION_ID,
-        [Query.limit(1)]
-      );
-      return response.total;
+      let count = 0;
+      let lastId = null;
+      const batchSize = 100;
+
+      while (true) {
+        const queries = [Query.limit(batchSize), Query.select(["$id"])];
+        if (lastId) {
+          queries.push(Query.cursorAfter(lastId));
+        }
+
+        const response = await databases.listDocuments(
+          DATABASE_ID,
+          JOBS_COLLECTION_ID,
+          queries,
+        );
+
+        count += response.documents.length;
+
+        if (response.documents.length < batchSize) {
+          break;
+        }
+
+        lastId = response.documents[response.documents.length - 1].$id;
+      }
+
+      return count;
     } catch (error) {
+      console.error("Error counting jobs:", error);
       return 0;
     }
   },
   ["exact-job-count"],
-  { revalidate: 300 } 
+  { revalidate: 86400 }, // 24 hours - counting is expensive, so we cache long-term
 );
-
 /**
  * Check if a job already exists by source_id
  */
