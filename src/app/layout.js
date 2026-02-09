@@ -138,6 +138,7 @@ export const metadata = {
 
   // Additional Meta
   other: {
+    "google-adsense-account": "ca-pub-9710571190649081", // AdSense verification
     "mobile-web-app-capable": "yes",
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "default",
@@ -166,6 +167,15 @@ export default function RootLayout({ children }) {
             `,
           }}
         />
+
+        {/* Google AdSense Script */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9710571190649081"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+
         <Script
           src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"
           strategy="beforeInteractive"
