@@ -54,7 +54,16 @@ export default async function JobsPage({ searchParams }) {
             </h1>
             <SearchBar wrapperClassName="w-full max-w-4xl" />
           </div>
-
+          {/* Disclaimer Message */}
+          <div className="w-full max-w-3xl mb-8 p-4 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg text-center">
+            <p className="text-yellow-800 dark:text-yellow-200 text-sm md:text-base">
+              Many job posts may currently be unavailable. Please ignore these
+              posts as our system is working to remove them.
+            </p>
+            <p className="text-yellow-800 dark:text-yellow-200 font-medium mt-1 text-sm md:text-base">
+              Please search for your desired job in the search box.
+            </p>
+          </div>
           {/* Pass initial jobs to Client Component for "Load More" functionality */}
           <JobFeed initialJobs={jobs} searchParams={params} />
         </div>
