@@ -1,16 +1,40 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
-export default function SearchBar({ className, wrapperClassName }) {
+function SearchBar({ wrapperClassName, className }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Reset loading when the URL changes (i.e., after navigation)
+  useEffect(() => {
+    setLoading(false);
+  }, [pathname, searchParams]);
   const [keyword, setKeyword] = useState("");
   const [location, setLocation] = useState("");
   const [jobType, setJobType] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Fetch user's city using ip-api.com on mount
+  useEffect(() => {
+    if (!location) {
+      fetch("https://ip-api.com/json/?fields=city,status")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status === "success" && data.city) {
+            setLocation(data.city);
+          }
+        })
+        .catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
+    setLoading(true);
     // Navigate to jobs page with the query
     if (keyword.trim()) {
       const params = new URLSearchParams();
@@ -123,8 +147,35 @@ export default function SearchBar({ className, wrapperClassName }) {
             <button
               type="submit"
               className="w-full lg:w-auto h-full px-8 py-3 bg-slate-900 dark:bg-indigo-600 text-white rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+              disabled={loading}
             >
-              Search
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
+                  </svg>
+                  Searching...
+                </span>
+              ) : (
+                "Search"
+              )}
             </button>
           </div>
         </form>
@@ -135,3 +186,5 @@ export default function SearchBar({ className, wrapperClassName }) {
     </section>
   );
 }
+
+export default SearchBar;

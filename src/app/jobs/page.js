@@ -55,7 +55,7 @@ export default async function JobsPage({ searchParams }) {
             <SearchBar wrapperClassName="w-full max-w-4xl" />
           </div>
           {/* Disclaimer Message */}
-          <div className="w-full max-w-3xl mb-8 p-4 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg text-center">
+          <div className="w-full max-w-5xl mb-8 p-4 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg text-center">
             <p className="text-yellow-800 dark:text-yellow-200 text-sm md:text-base">
               Many job posts may currently be unavailable. Please ignore these
               posts as our system is working to remove them.
