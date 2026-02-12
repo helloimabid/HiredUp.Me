@@ -59,8 +59,13 @@ export const metadata = {
 };
 
 async function fetchJobs() {
+  // Add a timeout to prevent long waits
+  const timeout = 15000; // 15 seconds
   try {
-    const jobs = await getJobs(20);
+    const jobs = await Promise.race([
+      getJobs(20),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout fetching jobs")), timeout))
+    ]);
     return jobs;
   } catch (error) {
     console.error("Failed to fetch jobs:", error);
@@ -69,7 +74,23 @@ async function fetchJobs() {
 }
 
 export default async function Home() {
-  const [jobs, jobCount] = await Promise.all([fetchJobs(), getExactJobCount()]);
+
+  // Add timeout to getExactJobCount as well
+  const timeout = 15000; // 15 seconds
+  let jobs = [];
+  let jobCount = 0;
+  try {
+    [jobs, jobCount] = await Promise.all([
+      fetchJobs(),
+      Promise.race([
+        getExactJobCount(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout fetching job count")), timeout))
+      ])
+    ]);
+  } catch (error) {
+    console.error("Failed to fetch homepage data:", error);
+    // Fallback: jobs and jobCount already set to safe defaults
+  }
 
   // JSON-LD Structured Data for Organization
   const organizationSchema = {
@@ -116,7 +137,7 @@ export default async function Home() {
     },
   };
 
-  // JSON-LD for Job Posting aggregate
+  // JSON-LD for Job Posting aggregate (guard against empty jobs)
   const jobBoardSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -124,28 +145,30 @@ export default async function Home() {
     description:
       "Browse the latest job opportunities in Bangladesh and remote worldwide",
     numberOfItems: jobs.length,
-    itemListElement: jobs.slice(0, 10).map((job, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      item: {
-        "@type": "JobPosting",
-        title: job.title,
-        description:
-          job.description || `${job.title} position at ${job.company}`,
-        datePosted: job.$createdAt,
-        hiringOrganization: {
-          "@type": "Organization",
-          name: job.company,
-        },
-        jobLocation: {
-          "@type": "Place",
-          address: job.location || "Remote",
-        },
-        url: job.slug
-          ? `https://hiredup.me/jobs/${job.slug}`
-          : `https://hiredup.me/jobs/${job.$id}`,
-      },
-    })),
+    itemListElement: Array.isArray(jobs)
+      ? jobs.slice(0, 10).map((job, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          item: {
+            "@type": "JobPosting",
+            title: job.title,
+            description:
+              job.description || `${job.title} position at ${job.company}`,
+            datePosted: job.$createdAt,
+            hiringOrganization: {
+              "@type": "Organization",
+              name: job.company,
+            },
+            jobLocation: {
+              "@type": "Place",
+              address: job.location || "Remote",
+            },
+            url: job.slug
+              ? `https://hiredup.me/jobs/${job.slug}`
+              : `https://hiredup.me/jobs/${job.$id}`,
+          },
+        }))
+      : [],
   };
 
   // Breadcrumb Schema
