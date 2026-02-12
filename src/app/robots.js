@@ -20,7 +20,7 @@ export default function robots() {
         disallow: ["/api/", "/dashboard/", "/auth/"],
       },
     ],
-    sitemap: "https://hiredup.me/sitemap.xml",
+    sitemap: "https://hiredup.me/sitemap.xml", // This will now be a sitemap index
     host: "https://hiredup.me",
   };
 }

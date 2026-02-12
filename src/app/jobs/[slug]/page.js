@@ -8,15 +8,46 @@ import ApplyButton from "@/components/ApplyButton";
 import CompanyLogo from "@/components/CompanyLogo";
 import JobPageContent from "@/components/JobPageContent";
 
+function shouldIndexJob(job, isCareerJet) {
+  // Don't index external CareerJet jobs (duplicate content)
+  if (isCareerJet) return false;
+
+  // Don't index very old jobs (90+ days)
+  const age = Date.now() - new Date(job.$createdAt).getTime();
+  if (age > 90 * 24 * 60 * 60 * 1000) return false;
+
+  // Don't index archived jobs
+  if (job.archived || job.status === "dead") return false;
+
+  return true;
+}
+
 // Revalidate every 5 minutes (data layer has its own 300s cache)
 export const revalidate = 300;
 
 // Generate static params for popular jobs
 export async function generateStaticParams() {
   try {
-    const jobs = await getJobs(50);
-    return jobs.filter((job) => job.slug).map((job) => ({ slug: job.slug }));
-  } catch {
+    // Increase to 500 most recent jobs for better coverage
+    const jobs = await getJobs(500);
+
+    // Filter for valid, recent jobs only
+    return jobs
+      .filter((job) => {
+        if (!job.slug) return false;
+
+        // Only include jobs from last 90 days
+        const age = Date.now() - new Date(job.$createdAt).getTime();
+        const isRecent = age < 90 * 24 * 60 * 60 * 1000;
+
+        // Exclude CareerJet external jobs from static generation
+        const isNotCareerJet = job.source !== "careerjet";
+
+        return isRecent && isNotCareerJet;
+      })
+      .map((job) => ({ slug: job.slug }));
+  } catch (error) {
+    console.error("Failed to generate static params:", error);
     return [];
   }
 }
@@ -152,75 +183,31 @@ export async function generateMetadata({ params, searchParams }) {
   const job = await getJobBySlugOrId(slug);
 
   if (!job) {
-    // Fallback: CareerJet job from query params
     const sp = await searchParams;
     const cjJob = buildCareerJetJob(sp);
     if (cjJob) {
       return {
         title: `${cjJob.title} at ${cjJob.company} | HiredUp.me`,
         description: `${cjJob.title} position at ${cjJob.company}${cjJob.location ? ` in ${cjJob.location}` : ""}. Apply now on HiredUp.me!`,
-        openGraph: {
-          title: `${cjJob.title} at ${cjJob.company} - Now Hiring!`,
-          description: `${cjJob.title} position at ${cjJob.company}${cjJob.location ? ` in ${cjJob.location}` : ""}. Apply now!`,
+        // IMPORTANT: Don't index external jobs
+        robots: {
+          index: false,
+          follow: false,
+          noarchive: true,
+          nosnippet: true,
         },
-        robots: { index: false, follow: false },
+        alternates: {
+          canonical: cjJob.apply_url, // Point to original source
+        },
       };
     }
     return {
       title: "Job Not Found | HiredUp.me",
       description: "This job posting is no longer available.",
+      robots: { index: false, follow: false },
     };
   }
-
-  const enhanced = parseEnhancedContent(job);
-  const title = cleanText(enhanced?.header?.title || job.title);
-  const company = cleanText(enhanced?.header?.company || job.company);
-  const location = enhanced?.header?.location || job.location || "Remote";
-
-  // Get job image - check enhanced_json for scraped image or company logo
-  const jobImage =
-    enhanced?.company_logo_url ||
-    enhanced?.job_image_url ||
-    enhanced?.circular_image_url ||
-    `https://hiredup.me/api/og/job?title=${encodeURIComponent(title)}&company=${encodeURIComponent(company)}&location=${encodeURIComponent(location)}`;
-
-  const metaDescription =
-    enhanced?.seo?.meta_description ||
-    `${title} job at ${company}. ${enhanced?.header?.employment_type || "Full-time"} position in ${location}. Apply now on HiredUp.me!`;
-
-  return {
-    title:
-      enhanced?.seo?.meta_title ||
-      `${title} at ${company} | ${location} | HiredUp.me`,
-    description: metaDescription,
-    keywords:
-      enhanced?.seo?.keywords?.join(", ") || `${title}, ${company}, jobs`,
-    openGraph: {
-      title: `${title} at ${company} - Now Hiring!`,
-      description: metaDescription,
-      type: "website",
-      url: `https://hiredup.me/jobs/${job.slug || slug}`,
-      siteName: "HiredUp.me",
-      images: [
-        {
-          url: jobImage,
-          width: 1200,
-          height: 630,
-          alt: `${title} at ${company}`,
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: `${title} at ${company}`,
-      description: metaDescription,
-      images: [jobImage],
-    },
-    alternates: { canonical: `https://hiredup.me/jobs/${job.slug || slug}` },
-    robots: { index: true, follow: true },
-  };
 }
-
 // ============ DYNAMIC SECTION RENDERERS ============
 // Following reference-job-post-page.html design: clean, minimal, slate colors
 
