@@ -20,7 +20,10 @@ export default function robots() {
         disallow: ["/api/", "/dashboard/", "/auth/"],
       },
     ],
-    sitemap: "https://hiredup.me/sitemap.xml", // This will now be a sitemap index
+    sitemap: [
+      "https://hiredup.me/sitemap.xml",
+      "https://heyimabid.github.io/jobs-sitemap/sitemap.xml",
+    ],
     host: "https://hiredup.me",
   };
 }
