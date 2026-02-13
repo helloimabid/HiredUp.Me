@@ -64,7 +64,9 @@ async function fetchJobs() {
   try {
     const jobs = await Promise.race([
       getJobs(20),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout fetching jobs")), timeout))
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout fetching jobs")), timeout),
+      ),
     ]);
     return jobs;
   } catch (error) {
@@ -74,7 +76,6 @@ async function fetchJobs() {
 }
 
 export default async function Home() {
-
   // Add timeout to getExactJobCount as well
   const timeout = 15000; // 15 seconds
   let jobs = [];
@@ -84,8 +85,13 @@ export default async function Home() {
       fetchJobs(),
       Promise.race([
         getExactJobCount(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout fetching job count")), timeout))
-      ])
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error("Timeout fetching job count")),
+            timeout,
+          ),
+        ),
+      ]),
     ]);
   } catch (error) {
     console.error("Failed to fetch homepage data:", error);
