@@ -151,7 +151,7 @@ export default async function JobsPage({ searchParams }) {
 
             {/* Link to full categories hub */}
             <Link
-              href="/jobs/categories"
+              href="/jobs/category"
               className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border border-dashed border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all whitespace-nowrap ml-1"
             >
               Browse all →
