@@ -4,6 +4,7 @@
  *
  * Processes unenhanced jobs using Google Gemini API within free tier rate limits.
  * Rotates across multiple Gemini models to maximize daily throughput (~60 jobs/day free).
+ * Uses keyword research data to maximize SEO positioning per job.
  *
  * Usage:
  *   node scripts/auto-generate-jobs.js                  # Process all unenhanced jobs
@@ -22,7 +23,7 @@ const { Client, Databases, Query } = require("node-appwrite");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config({ path: ".env.local" });
 
-// ============ CONFIGURATION ============
+// ─── Configuration ────────────────────────────────────────────────────────────
 
 const APPWRITE_ENDPOINT =
   process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT ||
@@ -30,14 +31,13 @@ const APPWRITE_ENDPOINT =
 const APPWRITE_PROJECT_ID =
   process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "hiredupme";
 const APPWRITE_API_KEY = process.env.APPWRITE_API_KEY;
-
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "hiredup";
 const JOBS_COLLECTION_ID = process.env.APPWRITE_JOBS_COLLECTION_ID || "jobs";
-
 const GOOGLE_API_KEY =
-  process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  process.env.GEMINI_API_KEY ||
+  process.env.GOOGLE_AI_API_KEY ||
+  process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
-// Gemma 3 models — much higher free-tier limits (30 RPM, 14.4K RPD each)
 const GEMINI_MODELS = [
   { name: "gemma-3-27b-it", rpm: 30, rpd: 14400 },
   { name: "gemma-3-12b-it", rpm: 30, rpd: 14400 },
@@ -52,8 +52,6 @@ const jobLimit =
   limitArgIdx !== -1 ? parseInt(args[limitArgIdx + 1], 10) : Infinity;
 const modelArgIdx = args.indexOf("--model");
 const forcedModel = modelArgIdx !== -1 ? args[modelArgIdx + 1] : null;
-
-// If a specific model is forced, only use that one
 const modelsToUse = forcedModel
   ? GEMINI_MODELS.filter((m) => m.name === forcedModel)
   : GEMINI_MODELS;
@@ -64,29 +62,187 @@ if (forcedModel && modelsToUse.length === 0) {
   process.exit(1);
 }
 
-// Track usage per model with sliding window for RPM limiting
 const modelUsage = {};
 modelsToUse.forEach((m) => {
-  modelUsage[m.name] = {
-    used: 0,
-    rpd: m.rpd,
-    rpm: m.rpm,
-    requestTimes: [], // Track timestamps for sliding window RPM check
-  };
+  modelUsage[m.name] = { used: 0, rpd: m.rpd, rpm: m.rpm, requestTimes: [] };
 });
 
-// ============ INIT ============
+// ─── SEO Keyword Strategy ─────────────────────────────────────────────────────
+// Sourced from keyword research CSVs (LOW competition, highest search volume)
+//
+// BANGLADESH audience — use for BD-location jobs
+const BD_KEYWORDS = {
+  primary: [
+    "jobs in bangladesh",
+    "job vacancy bd",
+    "job opportunities in bangladesh",
+    "find jobs",
+    "job vacancies",
+    "bangladesh job portal",
+    "job portal bd",
+    "bd careers",
+    "bd recruitment",
+    "employment opportunities",
+  ],
+  remote: [
+    "remote jobs bangladesh",
+    "remote jobs in bangladesh",
+    "remote jobs from bangladesh",
+    "remote work",
+    "work from home bangladesh",
+  ],
+  tech: ["bangladesh it jobs", "it jobs jobs", "remote it jobs bangladesh"],
+};
+
+// GLOBAL audience — for remote/international jobs
+const GLOBAL_KEYWORDS = {
+  primary: [
+    "jobs hiring",
+    "job vacancies",
+    "career jobs",
+    "employment opportunities",
+    "job opportunities",
+    "find jobs",
+    "work remotely jobs",
+    "apply jobs",
+  ],
+  remote: [
+    "remote jobs",
+    "remote work",
+    "work remotely jobs",
+    "remote job opportunities",
+    "remote careers",
+    "jobs hiring remote",
+  ],
+  tech: ["remote it jobs", "it jobs jobs", "career discover"],
+};
+
+// ─── Keyword Helper Functions ─────────────────────────────────────────────────
+
+function isBangladeshJob(location = "") {
+  const loc = location.toLowerCase();
+  return (
+    loc.includes("bangladesh") ||
+    loc.includes("dhaka") ||
+    loc.includes("chittagong") ||
+    loc.includes("chattogram") ||
+    loc.includes("sylhet") ||
+    loc.includes("rajshahi") ||
+    loc.includes("bd")
+  );
+}
+
+function isRemoteJob(location = "", workType = "") {
+  const text = (location + " " + workType).toLowerCase();
+  return (
+    text.includes("remote") ||
+    text.includes("work from home") ||
+    text.includes("wfh")
+  );
+}
+
+/**
+ * Pick best-fit SEO keywords for a job based on location, type, and title.
+ * Prioritises LOW competition, high volume keywords from research.
+ */
+function pickSeoKeywords(
+  title = "",
+  location = "",
+  industry = "",
+  workType = "",
+) {
+  const isBD = isBangladeshJob(location);
+  const isRemote = isRemoteJob(location, workType);
+  const isTech =
+    /software|developer|engineer|IT|data|cloud|devops|programmer/i.test(
+      title + industry,
+    );
+
+  const pool = isBD ? BD_KEYWORDS : GLOBAL_KEYWORDS;
+  const keywords = [
+    ...pool.primary.slice(0, 4),
+    ...(isRemote ? pool.remote.slice(0, 3) : []),
+    ...(isTech ? pool.tech.slice(0, 2) : []),
+  ];
+
+  const locationClean = location.split(",")[0].trim();
+  return [
+    `${title} jobs`,
+    `${title} job vacancy`,
+    locationClean ? `${title} jobs in ${locationClean}` : null,
+    ...keywords,
+  ]
+    .filter(Boolean)
+    .slice(0, 10);
+}
+
+/**
+ * SEO-optimised meta title.
+ * BD pattern:     "Software Developer Jobs in Dhaka Bangladesh - Job Vacancy | HiredUp.me"
+ * Global pattern: "Marketing Manager at Acme - Now Hiring | HiredUp.me"
+ */
+function buildMetaTitle(title, company, location, isBD) {
+  const locationClean = location?.split(",")[0]?.trim() || "Bangladesh";
+  if (isBD) {
+    return `${title} Jobs in ${locationClean} Bangladesh - Job Vacancy | HiredUp.me`;
+  }
+  return `${title} at ${company} - Now Hiring | HiredUp.me`;
+}
+
+/**
+ * SEO-optimised meta description (~155 chars).
+ * Naturally includes primary keyword phrases from research data.
+ */
+function buildMetaDescription(
+  title,
+  company,
+  location,
+  summary,
+  isBD,
+  isRemote,
+) {
+  const locationClean = location?.split(",")[0]?.trim() || "Bangladesh";
+
+  if (isBD && isRemote) {
+    return `${title} job opportunity at ${company}. Remote jobs from Bangladesh - apply now on HiredUp.me, Bangladesh's leading job portal. Find jobs & advance your career.`.substring(
+      0,
+      160,
+    );
+  }
+  if (isBD) {
+    return `${title} job vacancy at ${company} in ${locationClean}. Find jobs in Bangladesh on HiredUp.me - your trusted job portal BD. Browse employment opportunities & apply today.`.substring(
+      0,
+      160,
+    );
+  }
+  if (isRemote) {
+    return `${title} remote job at ${company}. Work remotely - apply now on HiredUp.me. Browse remote job opportunities, remote careers & jobs hiring worldwide.`.substring(
+      0,
+      160,
+    );
+  }
+  if (summary) {
+    return `${summary.substring(0, 110)} Apply now on HiredUp.me.`.substring(
+      0,
+      160,
+    );
+  }
+  return `${title} job at ${company}. Find this opportunity and thousands more on HiredUp.me. Apply now.`.substring(
+    0,
+    160,
+  );
+}
+
+// ─── Init clients ─────────────────────────────────────────────────────────────
 
 const client = new Client()
   .setEndpoint(APPWRITE_ENDPOINT)
   .setProject(APPWRITE_PROJECT_ID)
   .setKey(APPWRITE_API_KEY);
-
 const databases = new Databases(client);
-
 const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
 
-// ============ HELPERS ============
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -104,38 +260,25 @@ function generateJobSlug(title, company, id) {
   return shortId ? `${slug}-${shortId}` : slug;
 }
 
-/**
- * Pick the best model that still has RPD budget left.
- * Prefers models with higher RPM (faster processing).
- */
 function pickModel() {
   const available = modelsToUse
     .filter((m) => modelUsage[m.name].used < m.rpd)
-    .sort((a, b) => b.rpm - a.rpm); // prefer higher RPM models
-
-  if (available.length === 0) return null;
-  return available[0];
+    .sort((a, b) => b.rpm - a.rpm);
+  return available[0] || null;
 }
 
-/**
- * Intelligent rate limiting using sliding window.
- * Only delays if we've hit the RPM limit in the last minute.
- */
 async function waitForRateLimit(modelConfig) {
   const usage = modelUsage[modelConfig.name];
   const now = Date.now();
   const oneMinuteAgo = now - 60000;
 
-  // Remove requests older than 1 minute
   usage.requestTimes = usage.requestTimes.filter((t) => t > oneMinuteAgo);
 
-  // If we haven't hit the RPM limit, we can proceed immediately
   if (usage.requestTimes.length < modelConfig.rpm) {
     usage.requestTimes.push(now);
     return 0;
   }
 
-  // We've hit the limit - calculate how long to wait
   const oldestRequestInWindow = usage.requestTimes[0];
   const timeToWait = oldestRequestInWindow + 60000 - now;
 
@@ -143,19 +286,14 @@ async function waitForRateLimit(modelConfig) {
     console.log(
       `         ⏳ Rate limit: waiting ${(timeToWait / 1000).toFixed(1)}s...`,
     );
-    await sleep(timeToWait + 100); // Add small buffer
+    await sleep(timeToWait + 100);
   }
 
-  // Clean up old timestamps and add new one
   usage.requestTimes = usage.requestTimes.filter((t) => t > Date.now() - 60000);
   usage.requestTimes.push(Date.now());
-
   return timeToWait > 0 ? timeToWait : 0;
 }
 
-/**
- * Get total remaining budget across all models
- */
 function getRemainingBudget() {
   return modelsToUse.reduce(
     (sum, m) => sum + Math.max(0, m.rpd - modelUsage[m.name].used),
@@ -163,7 +301,7 @@ function getRemainingBudget() {
   );
 }
 
-// ============ GEMINI CALL ============
+// ─── Gemini Call ──────────────────────────────────────────────────────────────
 
 async function callGemini(prompt, modelName) {
   const model = genAI.getGenerativeModel({ model: modelName });
@@ -178,25 +316,20 @@ async function callGemini(prompt, modelName) {
           responseMimeType: "application/json",
         },
       });
-      const response = await result.response;
-      return response.text();
+      return (await result.response).text();
     } catch {
-      // Fallback: without JSON mode
       const result = await model.generateContent(prompt);
-      const response = await result.response;
-      return response.text();
+      return (await result.response).text();
     }
   };
 
-  // 30s timeout
   const timeout = new Promise((_, reject) =>
     setTimeout(() => reject(new Error("GEMINI_TIMEOUT")), 30000),
   );
-
   return Promise.race([attempt(), timeout]);
 }
 
-// ============ ENHANCED STORAGE HELPERS ============
+// ─── Enhanced Storage Helpers ─────────────────────────────────────────────────
 
 function truncateAtWord(text, maxChars) {
   if (typeof text !== "string") return "";
@@ -257,30 +390,26 @@ function shrinkEnhanced(enhanced, pass) {
       }
       return next;
     });
-    if (pass >= 3) {
+    if (pass >= 3)
       copy.sections = copy.sections.map((s) => ({
         id: s?.id,
         title: s?.title,
         type: s?.type,
       }));
-    }
   }
-  if (copy.seo && typeof copy.seo.meta_description === "string") {
+  if (copy.seo && typeof copy.seo.meta_description === "string")
     copy.seo.meta_description = truncateAtWord(
       copy.seo.meta_description,
       pass === 0 ? 300 : 220,
     );
-  }
-  if (copy.seo && typeof copy.seo.meta_title === "string") {
+  if (copy.seo && typeof copy.seo.meta_title === "string")
     copy.seo.meta_title = truncateAtWord(copy.seo.meta_title, 120);
-  }
   return copy;
 }
 
 function stringifyEnhancedForStorage(enhanced, maxLen = 50000) {
-  if (!enhanced || typeof enhanced !== "object") {
+  if (!enhanced || typeof enhanced !== "object")
     return JSON.stringify({ needsAI: true, aiEnhanced: false });
-  }
   let candidate = enhanced;
   for (let pass = 0; pass < 5; pass++) {
     const json = JSON.stringify(candidate);
@@ -302,7 +431,7 @@ function stringifyEnhancedForStorage(enhanced, maxLen = 50000) {
   });
 }
 
-// ============ FETCH UNENHANCED JOBS ============
+// ─── Fetch Unenhanced Jobs ────────────────────────────────────────────────────
 
 async function fetchUnenhancedJobs() {
   console.log("📥 Fetching unenhanced jobs from Appwrite...");
@@ -325,7 +454,6 @@ async function fetchUnenhancedJobs() {
     lastId = response.documents[response.documents.length - 1].$id;
   }
 
-  // Filter: no enhanced_json OR enhanced_json still has needsAI: true
   const unenhanced = allJobs.filter((job) => {
     if (!job.enhanced_json) return true;
     try {
@@ -339,9 +467,19 @@ async function fetchUnenhancedJobs() {
   return { total: allJobs.length, unenhanced };
 }
 
-// ============ GENERATE ONE JOB ============
+// ─── Generate One Job ─────────────────────────────────────────────────────────
 
 async function generateOneJob(job, modelConfig) {
+  // Detect context upfront for keyword selection
+  const isBD = isBangladeshJob(job.location || "");
+  const jobContext = isBD ? "Bangladesh" : "global";
+
+  const pool = isBD ? BD_KEYWORDS : GLOBAL_KEYWORDS;
+  const keywordHints = [
+    ...pool.primary.slice(0, 4),
+    ...(isRemoteJob(job.location || "") ? pool.remote.slice(0, 3) : []),
+  ].join(", ");
+
   const extraFields = [];
   if (job.salary) extraFields.push(`Salary: ${job.salary}`);
   if (job.experience) extraFields.push(`Experience: ${job.experience}`);
@@ -360,7 +498,7 @@ async function generateOneJob(job, modelConfig) {
       ))
   );
 
-  const prompt = `You are creating professional content for a job posting page. Analyze this job thoroughly.
+  const prompt = `You are creating professional content for a job posting page on HiredUp.me, a ${jobContext} job portal.
 
 JOB DETAILS:
 - Title: ${job.title}
@@ -371,42 +509,67 @@ ${extraFieldsText}
 RAW JOB POSTING CONTENT:
 ${(job.description || "No description available").substring(0, 4000)}
 
-IMPORTANT RULES:
-- For "salaryRange": ONLY include a salary if the job posting EXPLICITLY mentions a salary, pay, or compensation amount. If no salary is mentioned anywhere in the job details above, you MUST return "Not specified" — do NOT guess or fabricate a salary range.
-- For "benefits": ONLY include benefits that are explicitly mentioned or strongly implied by the job posting. Do NOT invent benefits.
+SEO CONTEXT:
+This page targets job seekers searching for: ${keywordHints}
+Naturally weave 1-2 of these search phrases into the "about" and "summary" fields where they fit organically.
+Do NOT keyword-stuff. Write for humans first, search engines second.
 
-Create a comprehensive JSON response with these EXACT fields:
+IMPORTANT RULES:
+- For "salaryRange": ONLY include a salary if the job posting EXPLICITLY mentions it. Otherwise return "Not specified".
+- For "benefits": ONLY list benefits explicitly mentioned. Return empty array if none.
+- For "industry": Return a specific, consistent name — MUST be one of: Software Development, IT & Technology, Accounting, Finance, Marketing, Human Resources, Sales, Design, Customer Service, Engineering, Data Analytics, Healthcare, Education, Logistics, Manufacturing, Legal, Media, Hospitality. Do NOT return "General".
+- For "experienceLevel": Return exactly one of: "entry", "mid", or "senior".
+- For "workType": Return exactly one of: "remote", "hybrid", or "onsite".
+- For "skills": Use standardised names (e.g. "Microsoft Excel" not "MS Excel", "Node.js" not "NodeJS").
+
+Return this EXACT JSON structure:
 {
-  "summary": "Write a compelling 2-3 sentence summary of this opportunity",
-  "about": "Write 2-3 detailed paragraphs about this role, the company culture, and what makes it exciting. Be specific and engaging.",
-  "responsibilities": ["Write 5-6 specific, detailed responsibilities"],
-  "requirements": ["Write 5-6 specific qualifications and requirements"],
-  "skills": ["List 6-8 relevant technical and soft skills"],
+  "summary": "2-3 sentence compelling summary. Naturally include 1 relevant search phrase.",
+  "about": "2-3 detailed paragraphs about the role and company. Write engaging, human content.",
+  "responsibilities": ["5-6 specific, detailed responsibilities"],
+  "requirements": ["5-6 specific qualifications and requirements"],
+  "skills": ["6-8 relevant technical and soft skills with standardised names"],
   "experienceLevel": "entry or mid or senior",
-  "salaryRange": "${hasSalaryInfo ? "Extract the exact salary from the posting (use BDT for Bangladesh jobs)" : "Not specified"}",
-  "industry": "Specific industry category",
+  "salaryRange": "${hasSalaryInfo ? "Extract exact salary from posting (use BDT for Bangladesh jobs)" : "Not specified"}",
+  "industry": "One industry from the allowed list above",
   "workType": "remote or hybrid or onsite",
-  "benefits": ["ONLY list benefits explicitly mentioned in the posting, or return empty array"],
-  "whyApply": "Write 2-3 compelling reasons why someone should apply",
-  "applicationTips": "Write 2-3 specific tips for applying to this role",
-  "highlights": ["3-4 key highlights or selling points of this job"]
+  "benefits": ["Only explicitly mentioned benefits"],
+  "whyApply": "2-3 compelling reasons to apply",
+  "applicationTips": "2-3 specific tips for applying",
+  "highlights": ["3-4 key selling points of this job"]
 }
 
 Return ONLY valid JSON. No markdown, no explanation.`;
 
-  // Wait for rate limit before making request
   await waitForRateLimit(modelConfig);
 
-  // Call Gemini
   const aiResponse = await callGemini(prompt, modelConfig.name);
 
-  // Parse JSON from response
+  // Parse JSON — Gemini sometimes wraps in markdown fences
   const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("AI response was not valid JSON");
 
   const analysis = JSON.parse(jsonMatch[0]);
 
-  // Build enhanced content (same structure as generate-ai route)
+  // Build SEO fields using keyword strategy
+  const isRemote = isRemoteJob(job.location || "", analysis.workType || "");
+  const seoKeywords = pickSeoKeywords(
+    job.title,
+    job.location,
+    analysis.industry,
+    analysis.workType,
+  );
+  const metaTitle = buildMetaTitle(job.title, job.company, job.location, isBD);
+  const metaDescription = buildMetaDescription(
+    job.title,
+    job.company,
+    job.location,
+    analysis.summary,
+    isBD,
+    isRemote,
+  );
+
+  // Build enhanced content object (matches generate-ai/route.js structure exactly)
   const enhanced = {
     header: {
       title: job.title,
@@ -492,16 +655,17 @@ Return ONLY valid JSON. No markdown, no explanation.`;
       },
     ],
     seo: {
-      meta_title: job.title + " at " + job.company + " | HiredUp.me",
-      meta_description: analysis.summary,
-      keywords: analysis.skills || [],
+      meta_title: metaTitle,
+      meta_description: metaDescription,
+      // Combine researched keyword phrases + AI-generated skill names
+      keywords: [...seoKeywords, ...(analysis.skills || []).slice(0, 5)],
     },
     aiEnhanced: true,
     aiEnhancedAt: new Date().toISOString(),
     needsAI: false,
   };
 
-  // Prepare slug
+  // Slug handling
   let jobSlug = job.slug;
   let shouldUpdateSlug = false;
   if (!jobSlug) {
@@ -509,14 +673,11 @@ Return ONLY valid JSON. No markdown, no explanation.`;
     shouldUpdateSlug = true;
   }
 
-  // Save to Appwrite
   const updatePayload = {
     description: (analysis.about || analysis.summary || "").substring(0, 5000),
     enhanced_json: stringifyEnhancedForStorage(enhanced, 50000),
   };
-  if (shouldUpdateSlug && jobSlug) {
-    updatePayload.slug = jobSlug;
-  }
+  if (shouldUpdateSlug && jobSlug) updatePayload.slug = jobSlug;
 
   await databases.updateDocument(
     DATABASE_ID,
@@ -525,37 +686,45 @@ Return ONLY valid JSON. No markdown, no explanation.`;
     updatePayload,
   );
 
-  return { success: true, model: modelConfig.name };
+  return {
+    success: true,
+    model: modelConfig.name,
+    isBD,
+    isRemote,
+    industry: analysis.industry,
+  };
 }
 
-// ============ MAIN ============
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log("🤖 Auto-Generate Job Pages (Gemini Free Tier)");
-  console.log("================================================");
+  console.log("🤖 Auto-Generate Job Pages (Gemini Free Tier + SEO Keywords)");
+  console.log(
+    "================================================================",
+  );
   console.log(`📡 Appwrite: ${APPWRITE_ENDPOINT}`);
   console.log(`🧠 Models: ${modelsToUse.map((m) => m.name).join(", ")}`);
   console.log(
-    `📊 Total daily budget: ${modelsToUse.reduce((s, m) => s + m.rpd, 0)} jobs`,
+    `📊 Total daily budget: ${modelsToUse.reduce((s, m) => s + m.rpd, 0).toLocaleString()} jobs`,
   );
   console.log(`🔢 Limit: ${jobLimit === Infinity ? "none" : jobLimit}`);
   console.log(`🧪 Dry run: ${dryRun}`);
   console.log("");
 
   if (!APPWRITE_API_KEY) {
-    console.error("❌ APPWRITE_API_KEY is required (set in .env.local)");
+    console.error("❌ APPWRITE_API_KEY is required");
     process.exit(1);
   }
   if (!GOOGLE_API_KEY) {
-    console.error(
-      "❌ GOOGLE_GENERATIVE_AI_API_KEY is required (set in .env.local)",
-    );
+    console.error("❌ GOOGLE_GENERATIVE_AI_API_KEY is required");
     process.exit(1);
   }
 
   const { total, unenhanced } = await fetchUnenhancedJobs();
-  console.log(`📊 Total jobs in database: ${total}`);
-  console.log(`📊 Jobs needing AI generation: ${unenhanced.length}`);
+  console.log(`📊 Total jobs in database: ${total.toLocaleString()}`);
+  console.log(
+    `📊 Jobs needing AI generation: ${unenhanced.length.toLocaleString()}`,
+  );
 
   if (unenhanced.length === 0) {
     console.log("\n✅ All jobs already have AI-generated pages!");
@@ -564,50 +733,67 @@ async function main() {
 
   const toProcess = unenhanced.slice(0, Math.min(jobLimit, unenhanced.length));
   console.log(`\n🔄 Will process: ${toProcess.length} jobs`);
-  console.log("================================================\n");
+  console.log(
+    "================================================================\n",
+  );
 
   if (dryRun) {
-    console.log("🧪 DRY RUN — listing jobs that would be processed:\n");
+    console.log("🧪 DRY RUN — jobs that would be processed:\n");
     toProcess.forEach((job, i) => {
-      console.log(`  ${i + 1}. ${job.title} at ${job.company} [${job.$id}]`);
+      const isBD = isBangladeshJob(job.location || "");
+      console.log(
+        `  ${i + 1}. [${isBD ? "🇧🇩 BD" : "🌐 Global"}] ${job.title} at ${job.company} — ${job.location || "No location"}`,
+      );
     });
-    console.log(`\nTotal daily budget: ${getRemainingBudget()} requests`);
+    console.log(
+      `\nRemaining daily budget: ${getRemainingBudget().toLocaleString()} requests`,
+    );
     return;
   }
 
-  const results = { succeeded: 0, failed: 0, errors: [] };
+  const results = {
+    succeeded: 0,
+    failed: 0,
+    bdJobs: 0,
+    globalJobs: 0,
+    errors: [],
+  };
   let lastModelName = null;
 
   for (let i = 0; i < toProcess.length; i++) {
     const job = toProcess[i];
     const progress = `[${i + 1}/${toProcess.length}]`;
 
-    // Pick the best available model
     const modelConfig = pickModel();
     if (!modelConfig) {
-      console.log(`\n⚠️  All model daily limits reached! Processed ${i} jobs.`);
+      console.log(`\n⚠️  All model daily limits reached after ${i} jobs.`);
       console.log("   Run again tomorrow or add more API keys.");
       break;
     }
 
-    // If we switched models, announce it
     if (modelConfig.name !== lastModelName) {
-      if (lastModelName) {
+      if (lastModelName)
         console.log(`\n   🔄 Switching to model: ${modelConfig.name}`);
-      }
       lastModelName = modelConfig.name;
     }
 
-    console.log(`${progress} 🔄 ${job.title} (${job.company})`);
+    const isBD = isBangladeshJob(job.location || "");
     console.log(
-      `         Model: ${modelConfig.name} | Budget: ${modelConfig.rpd - modelUsage[modelConfig.name].used}/${modelConfig.rpd} RPD`,
+      `${progress} ${isBD ? "🇧🇩" : "🌐"} ${job.title} (${job.company})`,
+    );
+    console.log(
+      `         Model: ${modelConfig.name} | Budget left: ${modelConfig.rpd - modelUsage[modelConfig.name].used}`,
     );
 
     try {
       const result = await generateOneJob(job, modelConfig);
       modelUsage[modelConfig.name].used++;
       results.succeeded++;
-      console.log(`         ✅ Generated successfully`);
+      if (result.isBD) results.bdJobs++;
+      else results.globalJobs++;
+      console.log(
+        `         ✅ Done — Industry: ${result.industry} | ${result.isBD ? "BD keywords" : "Global keywords"}`,
+      );
     } catch (error) {
       results.failed++;
       results.errors.push({
@@ -616,7 +802,6 @@ async function main() {
         error: error.message,
       });
 
-      // If rate limited (429), mark this model as exhausted for this run
       if (
         error.message?.includes("429") ||
         error.message?.includes("RESOURCE_EXHAUSTED")
@@ -624,7 +809,7 @@ async function main() {
         console.log(
           `         ⚠️  Rate limited on ${modelConfig.name} — switching model`,
         );
-        modelUsage[modelConfig.name].used = modelConfig.rpd; // exhaust this model
+        modelUsage[modelConfig.name].used = modelConfig.rpd;
       } else {
         console.log(`         ❌ Failed: ${error.message}`);
         modelUsage[modelConfig.name].used++;
@@ -635,16 +820,22 @@ async function main() {
   }
 
   // Summary
-  console.log("================================================");
+  console.log(
+    "================================================================",
+  );
   console.log("📊 SUMMARY");
-  console.log("================================================");
-  console.log(`   Total processed:  ${results.succeeded + results.failed}`);
-  console.log(`   ✅ Succeeded:     ${results.succeeded}`);
-  console.log(`   ❌ Failed:        ${results.failed}`);
-  console.log(`   📊 Remaining budget: ${getRemainingBudget()} jobs`);
+  console.log(
+    "================================================================",
+  );
+  console.log(`   Total processed:   ${results.succeeded + results.failed}`);
+  console.log(`   ✅ Succeeded:      ${results.succeeded}`);
+  console.log(`   🇧🇩 BD keyword:    ${results.bdJobs} jobs`);
+  console.log(`   🌐 Global keyword: ${results.globalJobs} jobs`);
+  console.log(`   ❌ Failed:         ${results.failed}`);
+  console.log(
+    `   📊 Budget left:    ${getRemainingBudget().toLocaleString()} requests`,
+  );
   console.log("");
-
-  // Model usage breakdown
   console.log("   Model usage:");
   modelsToUse.forEach((m) => {
     const u = modelUsage[m.name];
@@ -653,9 +844,9 @@ async function main() {
 
   if (results.errors.length > 0) {
     console.log("\n❌ Failed jobs:");
-    results.errors.forEach((e) => {
-      console.log(`   - ${e.title} (${e.jobId}): ${e.error}`);
-    });
+    results.errors.forEach((e) =>
+      console.log(`   - ${e.title} (${e.jobId}): ${e.error}`),
+    );
   }
 
   console.log("\n🎉 Done!");

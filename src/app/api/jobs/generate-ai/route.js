@@ -3,22 +3,15 @@ import { revalidatePath } from "next/cache";
 import { Client, Databases } from "node-appwrite";
 import { stringifyEnhancedForStorage } from "@/lib/enhanced-storage";
 
-// Shorter timeout since AI is now done with Groq
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
-// Logo.dev configuration (fallback)
 const LOGO_DEV_KEY =
   process.env.LOGO_DEV_PUBLISHABLE_KEY || "pk_XCMtoIJ7RMy7XgG2Ruf6UA";
-
-// Tavily API for logo search
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY;
-
-// Groq API configuration
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
-// Initialize Appwrite
 const client = new Client()
   .setEndpoint(
     process.env.APPWRITE_ENDPOINT ||
@@ -40,14 +33,194 @@ const JOBS_COLLECTION_ID =
   process.env.APPWRITE_JOBS_COLLECTION_ID ||
   "jobs";
 
+// ─── SEO Keyword Strategy ────────────────────────────────────────────────────
+// Sourced from keyword research CSVs — sorted by: LOW competition, highest volume
+//
+// BANGLADESH keywords (local audience — use for BD-location jobs)
+const BD_KEYWORDS = {
+  // Primary high-volume, LOW competition targets
+  primary: [
+    "jobs in bangladesh",
+    "job vacancy bd",
+    "job opportunities in bangladesh",
+    "find jobs",
+    "job vacancies",
+    "bangladesh job portal",
+    "job portal bd",
+    "bd careers",
+    "bd recruitment",
+    "employment opportunities",
+  ],
+  // Remote-specific BD keywords
+  remote: [
+    "remote jobs bangladesh",
+    "remote jobs in bangladesh",
+    "remote jobs from bangladesh",
+    "remote work",
+    "work from home bangladesh",
+  ],
+  // IT/tech specific BD keywords (high demand)
+  tech: ["bangladesh it jobs", "it jobs jobs", "remote it jobs bangladesh"],
+  // Suffix phrases to append to meta titles/descriptions
+  suffix: "| HiredUp.me - Job Portal BD",
+};
+
+// GLOBAL keywords (for remote/international jobs or non-BD audience)
+const GLOBAL_KEYWORDS = {
+  primary: [
+    "jobs hiring",
+    "job vacancies",
+    "career jobs",
+    "employment opportunities",
+    "job opportunities",
+    "find jobs",
+    "work remotely jobs",
+    "apply jobs",
+  ],
+  remote: [
+    "remote jobs",
+    "remote work",
+    "work remotely jobs",
+    "remote job opportunities",
+    "remote careers",
+    "jobs hiring remote",
+  ],
+  tech: ["remote it jobs", "it jobs jobs", "career discover"],
+  suffix: "| HiredUp.me",
+};
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function isBangladeshJob(location = "") {
+  const loc = location.toLowerCase();
+  return (
+    loc.includes("bangladesh") ||
+    loc.includes("dhaka") ||
+    loc.includes("chittagong") ||
+    loc.includes("chattogram") ||
+    loc.includes("sylhet") ||
+    loc.includes("rajshahi") ||
+    loc.includes("bd")
+  );
+}
+
+function isRemoteJob(location = "", workType = "") {
+  const loc = (location + " " + workType).toLowerCase();
+  return (
+    loc.includes("remote") ||
+    loc.includes("work from home") ||
+    loc.includes("wfh")
+  );
+}
+
+/**
+ * Pick the best 5-8 SEO keywords for a job based on its location, type, and title.
+ * Returns keywords most likely to rank (low competition, high volume).
+ */
+function pickSeoKeywords(
+  title = "",
+  location = "",
+  industry = "",
+  workType = "",
+) {
+  const isBD = isBangladeshJob(location);
+  const isRemote = isRemoteJob(location, workType);
+  const isTech =
+    /software|developer|engineer|IT|data|cloud|devops|programmer/i.test(
+      title + industry,
+    );
+
+  const pool = isBD ? BD_KEYWORDS : GLOBAL_KEYWORDS;
+  const keywords = [
+    ...pool.primary.slice(0, 4),
+    ...(isRemote ? pool.remote.slice(0, 3) : []),
+    ...(isTech ? pool.tech.slice(0, 2) : []),
+  ];
+
+  // Add job-specific terms
+  const titleWords = title
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 3);
+  const locationClean = location.split(",")[0].trim(); // e.g. "Dhaka"
+
+  return [
+    `${title} jobs`,
+    `${title} job vacancy`,
+    locationClean ? `${title} jobs in ${locationClean}` : null,
+    ...keywords,
+  ]
+    .filter(Boolean)
+    .slice(0, 10);
+}
+
+/**
+ * Build an SEO-optimized meta title using high-value keyword patterns.
+ * Pattern: "[Job Title] Jobs in [Location] - Apply Now | HiredUp.me"
+ * This matches search intent for "jobs hiring", "job vacancies", "find jobs" queries.
+ */
+function buildMetaTitle(title, company, location, isBD) {
+  const locationClean = location?.split(",")[0]?.trim() || "Bangladesh";
+  if (isBD) {
+    // "Software Developer Jobs in Dhaka Bangladesh - Job Vacancy | HiredUp.me"
+    return `${title} Jobs in ${locationClean} Bangladesh - Job Vacancy | HiredUp.me`;
+  }
+  // "Remote Marketing Manager Jobs - Now Hiring | HiredUp.me"
+  return `${title} at ${company} - Now Hiring | HiredUp.me`;
+}
+
+/**
+ * Build an SEO-optimized meta description that naturally includes
+ * high-volume keyword phrases from the research.
+ * Target: ~155 chars, includes primary keyword 1-2x, clear CTA.
+ */
+function buildMetaDescription(
+  title,
+  company,
+  location,
+  summary,
+  isBD,
+  isRemote,
+) {
+  const locationClean = location?.split(",")[0]?.trim() || "Bangladesh";
+
+  if (isBD && isRemote) {
+    return `${title} job opportunity at ${company}. Remote jobs from Bangladesh - apply now on HiredUp.me, Bangladesh's leading job portal. Find jobs & advance your career.`.substring(
+      0,
+      160,
+    );
+  }
+  if (isBD) {
+    return `${title} job vacancy at ${company} in ${locationClean}. Find jobs in Bangladesh on HiredUp.me - your trusted job portal BD. Browse employment opportunities & apply today.`.substring(
+      0,
+      160,
+    );
+  }
+  if (isRemote) {
+    return `${title} remote job at ${company}. Work remotely - apply now on HiredUp.me. Browse remote job opportunities, remote careers & jobs hiring worldwide.`.substring(
+      0,
+      160,
+    );
+  }
+  // Fallback: use AI-generated summary if available, inject keyword naturally
+  if (summary) {
+    const base = summary.substring(0, 110);
+    return `${base} Apply now on HiredUp.me.`.substring(0, 160);
+  }
+  return `${title} job at ${company}. Find this job opportunity and thousands more on HiredUp.me. Apply now.`.substring(
+    0,
+    160,
+  );
+}
+
 function withTimeout(promise, timeoutMs) {
   let timeoutId;
   const timeoutPromise = new Promise((_, reject) => {
     timeoutId = setTimeout(() => reject(new Error("AI_TIMEOUT")), timeoutMs);
   });
-  return Promise.race([promise, timeoutPromise]).finally(() => {
-    clearTimeout(timeoutId);
-  });
+  return Promise.race([promise, timeoutPromise]).finally(() =>
+    clearTimeout(timeoutId),
+  );
 }
 
 function generateJobSlug(title, company, id) {
@@ -62,14 +235,13 @@ function generateJobSlug(title, company, id) {
   return shortId ? `${slug}-${shortId}` : slug;
 }
 
-// Groq AI API call
+// ─── Groq AI ─────────────────────────────────────────────────────────────────
+
 async function callGroq(prompt) {
-  if (!GROQ_API_KEY) {
-    throw new Error("No Groq API key configured");
-  }
+  if (!GROQ_API_KEY) throw new Error("No Groq API key configured");
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+  const timeoutId = setTimeout(() => controller.abort(), 25000);
 
   try {
     console.log("[AI] Using Groq AI for generation...");
@@ -90,14 +262,11 @@ async function callGroq(prompt) {
               content:
                 "You are a professional job content analyzer. Always respond with valid JSON only, no markdown formatting or explanations.",
             },
-            {
-              role: "user",
-              content: prompt,
-            },
+            { role: "user", content: prompt },
           ],
           temperature: 0.7,
           max_tokens: 2048,
-          response_format: { type: "json_object" }, // Ensures JSON response
+          response_format: { type: "json_object" },
         }),
         signal: controller.signal,
       },
@@ -113,7 +282,6 @@ async function callGroq(prompt) {
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "";
-
     console.log("[AI] Groq response received, length:", content.length);
     return content;
   } catch (err) {
@@ -127,19 +295,16 @@ async function callGroq(prompt) {
   }
 }
 
-// Fetch company logo using Tavily search (with Logo.dev fallback)
+// ─── Logo Fetch ───────────────────────────────────────────────────────────────
+
 async function fetchCompanyLogo(companyName) {
-  // Try Tavily first for more accurate logo search
   if (TAVILY_API_KEY) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout for logo
-
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       const response = await fetch("https://api.tavily.com/search", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           api_key: TAVILY_API_KEY,
           query: `${companyName} company official logo`,
@@ -149,15 +314,10 @@ async function fetchCompanyLogo(companyName) {
         }),
         signal: controller.signal,
       });
-
       clearTimeout(timeoutId);
-
       if (response.ok) {
         const data = await response.json();
-
-        // Check for images in results
-        if (data.images && data.images.length > 0) {
-          // Filter for likely logo images (png, svg, or contains 'logo')
+        if (data.images?.length > 0) {
           const logoImage =
             data.images.find(
               (img) =>
@@ -165,31 +325,7 @@ async function fetchCompanyLogo(companyName) {
                 img.toLowerCase().endsWith(".svg") ||
                 img.toLowerCase().endsWith(".png"),
             ) || data.images[0];
-
-          if (logoImage) {
-            console.log(`Tavily found logo for ${companyName}: ${logoImage}`);
-            return logoImage;
-          }
-        }
-
-        // Check result URLs for logo hints
-        if (data.results && data.results.length > 0) {
-          for (const result of data.results) {
-            if (
-              result.url &&
-              (result.url.includes("logo") ||
-                result.url.includes("brand") ||
-                result.url.includes("cdn"))
-            ) {
-              // Try to extract image from the result
-              if (result.url.match(/\.(png|jpg|jpeg|svg|webp)(\?|$)/i)) {
-                console.log(
-                  `Tavily found logo URL for ${companyName}: ${result.url}`,
-                );
-                return result.url;
-              }
-            }
-          }
+          if (logoImage) return logoImage;
         }
       }
     } catch (err) {
@@ -197,7 +333,6 @@ async function fetchCompanyLogo(companyName) {
     }
   }
 
-  // Fallback to Logo.dev
   const cleanName = companyName
     .toLowerCase()
     .replace(
@@ -207,29 +342,25 @@ async function fetchCompanyLogo(companyName) {
     .trim()
     .replace(/\s+/g, "");
 
-  const domains = [
+  for (const domain of [
     `${cleanName}.com`,
     `${cleanName}.io`,
     `${cleanName}.co`,
     `${cleanName}.org`,
     `${cleanName}.com.bd`,
-  ];
-
-  for (const domain of domains) {
+  ]) {
     const url = `https://img.logo.dev/${domain}?token=${LOGO_DEV_KEY}`;
     try {
       const res = await fetch(url, { method: "HEAD" });
-      if (res.ok) {
-        console.log(`Logo.dev found logo for ${companyName}: ${url}`);
-        return url;
-      }
+      if (res.ok) return url;
     } catch {
       continue;
     }
   }
-
   return null;
 }
+
+// ─── Main Handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request) {
   console.log("[generate-ai] Request received");
@@ -239,15 +370,25 @@ export async function POST(request) {
     console.log(`[generate-ai] Processing job: ${jobId} - ${job?.title}`);
 
     if (!jobId || !job) {
-      console.log("[generate-ai] Error: Missing jobId or job data");
       return NextResponse.json(
         { error: "Missing jobId or job data" },
         { status: 400 },
       );
     }
 
-    // Step 1: Generate AI content using Groq
-    console.log("[generate-ai] Step 1: Calling Groq AI...");
+    // Detect job context upfront — used for keyword selection
+    const isBD = isBangladeshJob(job.location || "");
+    const jobContext = isBD ? "Bangladesh" : "global";
+    console.log(
+      `[generate-ai] Job context: ${jobContext}, location: ${job.location}`,
+    );
+
+    // Build keyword hints to guide AI content generation
+    const pool = isBD ? BD_KEYWORDS : GLOBAL_KEYWORDS;
+    const keywordHints = [
+      ...pool.primary.slice(0, 4),
+      ...(isRemoteJob(job.location || "") ? pool.remote.slice(0, 3) : []),
+    ].join(", ");
 
     // Build extra metadata fields
     const extraFields = [];
@@ -268,7 +409,10 @@ export async function POST(request) {
         ))
     );
 
-    const prompt = `You are creating professional content for a job posting page. Analyze this job thoroughly.
+    // ── Step 1: AI Content Generation ──────────────────────────────────────
+    console.log("[generate-ai] Step 1: Calling Groq AI...");
+
+    const prompt = `You are creating professional content for a job posting page on HiredUp.me, a ${jobContext} job portal.
 
 JOB DETAILS:
 - Title: ${job.title}
@@ -279,25 +423,33 @@ ${extraFieldsText}
 RAW JOB POSTING CONTENT:
 ${job.description ? job.description.substring(0, 4000) : "No description available"}
 
-IMPORTANT RULES:
-- For "salaryRange": ONLY include a salary if the job posting EXPLICITLY mentions a salary, pay, or compensation amount. If no salary is mentioned anywhere in the job details above, you MUST return "Not specified" — do NOT guess or fabricate a salary range.
-- For "benefits": ONLY include benefits that are explicitly mentioned or strongly implied by the job posting. Do NOT invent benefits.
+SEO CONTEXT:
+This page targets job seekers searching for: ${keywordHints}
+Naturally weave 1-2 of these search phrases into the "about" and "summary" fields where they fit organically.
+Do NOT keyword-stuff. Write for humans first, search engines second.
 
-Create a comprehensive JSON response with these EXACT fields:
+IMPORTANT RULES:
+- For "salaryRange": ONLY include a salary if explicitly mentioned. Otherwise return "Not specified".
+- For "benefits": ONLY list benefits explicitly stated in the posting. Return empty array if none.
+- For "industry": Return a specific, consistent industry name (e.g. "Accounting", "Software Development", "Marketing", "Human Resources", "Sales", "Engineering", "Customer Service", "Data Analytics"). Do NOT return "General".
+- For "experienceLevel": Return exactly one of: "entry", "mid", or "senior".
+- For "workType": Return exactly one of: "remote", "hybrid", or "onsite".
+
+Return this EXACT JSON structure:
 {
-  "summary": "Write a compelling 2-3 sentence summary of this opportunity",
-  "about": "Write 2-3 detailed paragraphs about this role, the company culture, and what makes it exciting. Be specific and engaging.",
-  "responsibilities": ["Write 5-6 specific, detailed responsibilities"],
-  "requirements": ["Write 5-6 specific qualifications and requirements"],
-  "skills": ["List 6-8 relevant technical and soft skills"],
+  "summary": "2-3 sentence compelling summary. Naturally include 1 relevant search phrase.",
+  "about": "2-3 detailed paragraphs about the role and company. Write engaging, human content.",
+  "responsibilities": ["5-6 specific, detailed responsibilities"],
+  "requirements": ["5-6 specific qualifications and requirements"],
+  "skills": ["6-8 relevant technical and soft skills — use standard names like 'Microsoft Excel' not 'MS Excel'"],
   "experienceLevel": "entry or mid or senior",
-  "salaryRange": "${hasSalaryInfo ? "Extract the exact salary from the posting (use BDT for Bangladesh jobs)" : "Not specified"}",
-  "industry": "Specific industry category",
+  "salaryRange": "${hasSalaryInfo ? "Extract exact salary from posting (use BDT for Bangladesh jobs)" : "Not specified"}",
+  "industry": "Specific industry name — must be one of: Software Development, IT & Technology, Accounting, Finance, Marketing, Human Resources, Sales, Design, Customer Service, Engineering, Data Analytics, Healthcare, Education, Logistics, Manufacturing, Legal, Media, Hospitality",
   "workType": "remote or hybrid or onsite",
-  "benefits": ["ONLY list benefits explicitly mentioned in the posting, or return empty array"],
-  "whyApply": "Write 2-3 compelling reasons why someone should apply",
-  "applicationTips": "Write 2-3 specific tips for applying to this role",
-  "highlights": ["3-4 key highlights or selling points of this job"]
+  "benefits": ["Only explicitly mentioned benefits"],
+  "whyApply": "2-3 compelling reasons to apply",
+  "applicationTips": "2-3 specific tips for applying",
+  "highlights": ["3-4 key selling points of this job"]
 }
 
 Return ONLY valid JSON. No markdown, no explanation.`;
@@ -308,13 +460,10 @@ Return ONLY valid JSON. No markdown, no explanation.`;
       aiResponse?.length,
     );
 
-    // Parse JSON from response
     let analysis;
     try {
-      // Try to parse directly first (since we're using response_format: json_object)
       analysis = JSON.parse(aiResponse);
-    } catch (parseError) {
-      // Fallback: Extract JSON from response if it contains markdown
+    } catch {
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         console.error(
@@ -327,11 +476,13 @@ Return ONLY valid JSON. No markdown, no explanation.`;
     }
 
     console.log(
-      "[generate-ai] Analysis ready, summary:",
-      analysis.summary?.substring(0, 100),
+      "[generate-ai] Analysis ready, industry:",
+      analysis.industry,
+      "experience:",
+      analysis.experienceLevel,
     );
 
-    // Step 2: Fetch company logo
+    // ── Step 2: Company Logo ────────────────────────────────────────────────
     console.log("[generate-ai] Fetching logo for", job.company);
     let companyLogo = null;
     try {
@@ -340,7 +491,35 @@ Return ONLY valid JSON. No markdown, no explanation.`;
       console.log("Logo fetch failed:", e.message);
     }
 
-    // Step 3: Build enhanced content
+    // ── Step 3: Build SEO fields using keyword strategy ────────────────────
+    const isRemote = isRemoteJob(job.location || "", analysis.workType || "");
+    const seoKeywords = pickSeoKeywords(
+      job.title,
+      job.location,
+      analysis.industry,
+      analysis.workType,
+    );
+    const metaTitle = buildMetaTitle(
+      job.title,
+      job.company,
+      job.location,
+      isBD,
+    );
+    const metaDescription = buildMetaDescription(
+      job.title,
+      job.company,
+      job.location,
+      analysis.summary,
+      isBD,
+      isRemote,
+    );
+
+    console.log(`[generate-ai] SEO meta title: ${metaTitle}`);
+    console.log(
+      `[generate-ai] SEO keywords (${seoKeywords.length}): ${seoKeywords.slice(0, 4).join(", ")}...`,
+    );
+
+    // ── Step 4: Build enhanced content object ──────────────────────────────
     const enhanced = {
       company_logo_url: companyLogo,
       header: {
@@ -427,22 +606,20 @@ Return ONLY valid JSON. No markdown, no explanation.`;
         },
       ],
       seo: {
-        meta_title: job.title + " at " + job.company + " | HiredUp.me",
-        meta_description: analysis.summary,
-        keywords: analysis.skills || [],
+        meta_title: metaTitle,
+        meta_description: metaDescription,
+        // Combine AI skills + researched keyword phrases for the <meta keywords> tag
+        // and for structured data
+        keywords: [...seoKeywords, ...(analysis.skills || []).slice(0, 5)],
       },
       aiEnhanced: true,
       aiEnhancedAt: new Date().toISOString(),
       needsAI: false,
     };
 
-    // Step 4: Save to database
-    console.log("[generate-ai] Step 4: Saving to database...");
-    console.log(
-      `[generate-ai] Database: ${DATABASE_ID}, Collection: ${JOBS_COLLECTION_ID}, Job: ${jobId}`,
-    );
+    // ── Step 5: Save to database ───────────────────────────────────────────
+    console.log("[generate-ai] Step 5: Saving to database...");
 
-    // First, get the job's slug for cache revalidation
     let jobSlug = null;
     let shouldUpdateSlug = false;
     try {
@@ -480,9 +657,7 @@ Return ONLY valid JSON. No markdown, no explanation.`;
         ),
         enhanced_json: stringifyEnhancedForStorage(enhanced, 50000),
       };
-      if (shouldUpdateSlug && jobSlug) {
-        updatePayload.slug = jobSlug;
-      }
+      if (shouldUpdateSlug && jobSlug) updatePayload.slug = jobSlug;
 
       await databases.updateDocument(
         DATABASE_ID,
@@ -492,20 +667,17 @@ Return ONLY valid JSON. No markdown, no explanation.`;
       );
       console.log("[generate-ai] Database update successful!");
 
-      // Revalidate the job page cache so the new content shows immediately
       if (jobSlug) {
         console.log(`[generate-ai] Revalidating cache for /jobs/${jobSlug}`);
         revalidatePath(`/jobs/${jobSlug}`);
       }
-      // Also revalidate the jobs list page
       revalidatePath("/jobs");
     } catch (dbError) {
       console.error("[generate-ai] Database error:", dbError.message);
-      console.error("[generate-ai] DB Error details:", JSON.stringify(dbError));
       throw new Error(`Database save failed: ${dbError.message}`);
     }
 
-    console.log("[generate-ai] Complete! Returning success response.");
+    console.log("[generate-ai] Complete!");
     return NextResponse.json({
       success: true,
       enhanced,
@@ -513,11 +685,8 @@ Return ONLY valid JSON. No markdown, no explanation.`;
     });
   } catch (error) {
     console.error("[generate-ai] Error:", error.message);
-    console.error("[generate-ai] Stack:", error.stack);
 
-    // Handle timeout specifically with a user-friendly message
     if (error.isTimeout || error.message === "AI_TIMEOUT") {
-      console.log("[generate-ai] AI timed out, returning friendly message");
       return NextResponse.json({
         timeout: true,
         message:

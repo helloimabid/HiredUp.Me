@@ -1,3 +1,5 @@
+// src/app/jobs/[slug]/page.js
+
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
@@ -7,11 +9,14 @@ import SaveJobButton from "@/components/SaveJobButton";
 import ApplyButton from "@/components/ApplyButton";
 import CompanyLogo from "@/components/CompanyLogo";
 import JobPageContent from "@/components/JobPageContent";
+import {
+  JOB_CATEGORIES,
+  JOB_LOCATIONS,
+  filterJobsByCategory,
+} from "@/lib/job-categories";
 
-// Revalidate every 5 minutes (data layer has its own 300s cache)
 export const revalidate = 300;
 
-// Generate static params for popular jobs
 export async function generateStaticParams() {
   try {
     const jobs = await getJobs(50);
@@ -21,7 +26,6 @@ export async function generateStaticParams() {
   }
 }
 
-// Helper: Clean HTML entities
 function cleanText(text) {
   if (!text) return "";
   return text
@@ -35,14 +39,12 @@ function cleanText(text) {
     .trim();
 }
 
-// Helper: Get time ago text
 function getTimeAgo(date) {
   const now = new Date();
   const posted = new Date(date);
   const diffMs = now - posted;
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
   if (diffHours < 1) return "Just now";
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays === 1) return "Yesterday";
@@ -51,22 +53,19 @@ function getTimeAgo(date) {
   return posted.toLocaleDateString();
 }
 
-// Helper: Get company logo color based on first letter
 function getCompanyLogoColor(company) {
   const colors = [
-    "bg-green-600 shadow-green-600/20",
-    "bg-blue-600 shadow-blue-600/20",
-    "bg-purple-600 shadow-purple-600/20",
-    "bg-orange-600 shadow-orange-600/20",
-    "bg-pink-600 shadow-pink-600/20",
-    "bg-teal-600 shadow-teal-600/20",
-    "bg-indigo-600 shadow-indigo-600/20",
+    "bg-green-600",
+    "bg-blue-600",
+    "bg-purple-600",
+    "bg-orange-600",
+    "bg-pink-600",
+    "bg-teal-600",
+    "bg-indigo-600",
   ];
-  const index = (company || "A").charCodeAt(0) % colors.length;
-  return colors[index];
+  return colors[(company || "A").charCodeAt(0) % colors.length];
 }
 
-// Parse enhanced JSON content
 function parseEnhancedContent(job) {
   if (!job?.enhanced_json) {
     return {
@@ -75,27 +74,16 @@ function parseEnhancedContent(job) {
         company: job?.company,
         location: job?.location,
       },
-      apply_info: {
-        url: job?.apply_url,
-      },
+      apply_info: { url: job?.apply_url },
       needsAI: true,
       aiEnhanced: false,
     };
   }
   try {
     const parsed = JSON.parse(job.enhanced_json);
-    // If it parses but doesn't include flags, default to "needsAI".
-    if (parsed && typeof parsed === "object") {
-      return {
-        needsAI: true,
-        aiEnhanced: false,
-        ...parsed,
-      };
-    }
-    return {
-      needsAI: true,
-      aiEnhanced: false,
-    };
+    if (parsed && typeof parsed === "object")
+      return { needsAI: true, aiEnhanced: false, ...parsed };
+    return { needsAI: true, aiEnhanced: false };
   } catch {
     return {
       header: {
@@ -103,16 +91,13 @@ function parseEnhancedContent(job) {
         company: job?.company,
         location: job?.location,
       },
-      apply_info: {
-        url: job?.apply_url,
-      },
+      apply_info: { url: job?.apply_url },
       needsAI: true,
       aiEnhanced: false,
     };
   }
 }
 
-// Helper: Clean HTML tags from CareerJet descriptions
 function cleanHtml(text) {
   if (!text) return "";
   return text
@@ -129,7 +114,6 @@ function cleanHtml(text) {
     .trim();
 }
 
-// Build a fake job object from CareerJet query params
 function buildCareerJetJob(params) {
   if (!params?.title || !params?.company || !params?.apply_url) return null;
   return {
@@ -146,13 +130,31 @@ function buildCareerJetJob(params) {
   };
 }
 
-// Generate SEO metadata
+/**
+ * Detect which categories a job belongs to using enhanced_json fields.
+ * Returns up to 3 matching category configs.
+ */
+function detectJobCategories(job) {
+  return JOB_CATEGORIES.filter(
+    (cat) => filterJobsByCategory([job], cat).length > 0,
+  ).slice(0, 3);
+}
+
+/**
+ * Detect which location page this job belongs to.
+ */
+function detectJobLocation(enhanced) {
+  const loc = (enhanced?.header?.location || "").toLowerCase();
+  return (
+    JOB_LOCATIONS.find((l) => l.keywords.some((kw) => loc.includes(kw))) || null
+  );
+}
+
 export async function generateMetadata({ params, searchParams }) {
   const { slug } = await params;
   const job = await getJobBySlugOrId(slug);
 
   if (!job) {
-    // Fallback: CareerJet job from query params
     const sp = await searchParams;
     const cjJob = buildCareerJetJob(sp);
     if (cjJob) {
@@ -161,7 +163,7 @@ export async function generateMetadata({ params, searchParams }) {
         description: `${cjJob.title} position at ${cjJob.company}${cjJob.location ? ` in ${cjJob.location}` : ""}. Apply now on HiredUp.me!`,
         openGraph: {
           title: `${cjJob.title} at ${cjJob.company} - Now Hiring!`,
-          description: `${cjJob.title} position at ${cjJob.company}${cjJob.location ? ` in ${cjJob.location}` : ""}. Apply now!`,
+          description: `${cjJob.title} position at ${cjJob.company}. Apply now!`,
         },
         robots: { index: false, follow: false },
       };
@@ -176,14 +178,10 @@ export async function generateMetadata({ params, searchParams }) {
   const title = cleanText(enhanced?.header?.title || job.title);
   const company = cleanText(enhanced?.header?.company || job.company);
   const location = enhanced?.header?.location || job.location || "Remote";
-
-  // Get job image - check enhanced_json for scraped image or company logo
   const jobImage =
     enhanced?.company_logo_url ||
     enhanced?.job_image_url ||
-    enhanced?.circular_image_url ||
     `https://hiredup.me/api/og/job?title=${encodeURIComponent(title)}&company=${encodeURIComponent(company)}&location=${encodeURIComponent(location)}`;
-
   const metaDescription =
     enhanced?.seo?.meta_description ||
     `${title} job at ${company}. ${enhanced?.header?.employment_type || "Full-time"} position in ${location}. Apply now on HiredUp.me!`;
@@ -221,10 +219,8 @@ export async function generateMetadata({ params, searchParams }) {
   };
 }
 
-// ============ DYNAMIC SECTION RENDERERS ============
-// Following reference-job-post-page.html design: clean, minimal, slate colors
+// ── Section Renderers ──────────────────────────────────────────────────────
 
-// Render a paragraph/description section
 function ParagraphSection({ section }) {
   return (
     <section>
@@ -238,7 +234,6 @@ function ParagraphSection({ section }) {
   );
 }
 
-// Render a numbered list section (like Job Responsibilities)
 function NumberedListSection({ section }) {
   if (!section.items?.length) return null;
   return (
@@ -262,7 +257,6 @@ function NumberedListSection({ section }) {
   );
 }
 
-// Render a bullet list section (like Additional Requirements)
 function BulletListSection({ section }) {
   if (!section.items?.length) return null;
   return (
@@ -282,7 +276,6 @@ function BulletListSection({ section }) {
   );
 }
 
-// Render a tags/skills section (rounded-full pills)
 function TagsSection({ section }) {
   if (!section.items?.length) return null;
   return (
@@ -304,7 +297,6 @@ function TagsSection({ section }) {
   );
 }
 
-// Render a grouped list section (like Requirements with Education, Experience subsections)
 function GroupedListSection({ section }) {
   if (!section.groups?.length) return null;
   return (
@@ -333,7 +325,6 @@ function GroupedListSection({ section }) {
   );
 }
 
-// Render a table section
 function TableSection({ section }) {
   if (!section.content?.headers?.length) return null;
   return (
@@ -375,7 +366,6 @@ function TableSection({ section }) {
   );
 }
 
-// Render key-value section
 function KeyValueSection({ section }) {
   if (!section.items?.length) return null;
   return (
@@ -397,7 +387,6 @@ function KeyValueSection({ section }) {
   );
 }
 
-// Dynamic section renderer
 function RenderSection({ section }) {
   switch (section.type) {
     case "paragraph":
@@ -421,13 +410,12 @@ function RenderSection({ section }) {
   }
 }
 
-// ============ MAIN PAGE COMPONENT ============
+// ── Main Page ──────────────────────────────────────────────────────────────
 
 export default async function JobDetailPage({ params, searchParams }) {
   const { slug } = await params;
   let job = await getJobBySlugOrId(slug);
 
-  // If no Appwrite job found, try CareerJet query params
   const sp = await searchParams;
   const isFromQueryParams = !job && buildCareerJetJob(sp);
   if (!job) {
@@ -435,18 +423,14 @@ export default async function JobDetailPage({ params, searchParams }) {
     if (!job) notFound();
   }
 
-  // Detect CareerJet jobs: either from query params OR stored with source="careerjet"
   const isCareerJet = Boolean(isFromQueryParams) || job.source === "careerjet";
 
-  if (!isFromQueryParams && job.slug && job.slug !== slug) {
+  if (!isFromQueryParams && job.slug && job.slug !== slug)
     redirect(`/jobs/${job.slug}`);
-  }
 
-  // Parse AI-generated content (CareerJet jobs also go through the same flow)
   const enhanced = parseEnhancedContent(job);
   const isEnhanced = Boolean(enhanced);
 
-  // Extract header info (from enhanced or fallback to job record)
   const header = enhanced?.header || {
     title: job.title,
     company: job.company,
@@ -459,19 +443,13 @@ export default async function JobDetailPage({ params, searchParams }) {
 
   const title = cleanText(header.title);
   const company = cleanText(header.company);
-  const logoColor = getCompanyLogoColor(company);
-
-  // Only use scraped logo from AI content (no external API fallback)
   const logoUrl = enhanced?.company_logo_url || null;
   const timeAgo = getTimeAgo(job.$createdAt);
 
-  // Quick info items (for overview cards) - include new fields from output.json
   const quickInfo =
     enhanced?.quick_info?.filter(
       (item) => item.value && item.value !== "null",
     ) || [];
-
-  // Add salary, experience, deadline from job fields if not in enhanced
   if (quickInfo.length === 0) {
     if (job.salary) quickInfo.push({ label: "Salary", value: job.salary });
     if (job.experience)
@@ -482,20 +460,18 @@ export default async function JobDetailPage({ params, searchParams }) {
       quickInfo.push({ label: "Education", value: job.education });
   }
 
-  // Highlights
   const highlights = enhanced?.highlights || [];
-
-  // Dynamic sections from AI
   const sections = enhanced?.sections || [];
-
-  // Apply info
   const applyInfo = enhanced?.apply_info;
 
-  // JSON-LD structured data
+  // Detect categories & location from enhanced_json for sidebar links
+  const matchedCategories = detectJobCategories(job);
+  const matchedLocation = detectJobLocation(enhanced);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
-    title: title,
+    title,
     description:
       sections.find((s) => s.id === "about")?.content || job.description || "",
     datePosted: job.$createdAt,
@@ -503,10 +479,7 @@ export default async function JobDetailPage({ params, searchParams }) {
     employmentType: (header.employment_type || "Full-time")
       .toUpperCase()
       .replace("-", "_"),
-    hiringOrganization: {
-      "@type": "Organization",
-      name: company,
-    },
+    hiringOrganization: { "@type": "Organization", name: company },
     jobLocation: {
       "@type": "Place",
       address: { "@type": "PostalAddress", addressLocality: header.location },
@@ -514,7 +487,6 @@ export default async function JobDetailPage({ params, searchParams }) {
     directApply: true,
   };
 
-  // Check if this job needs AI enhancement (CareerJet jobs always need it)
   const needsAI =
     isCareerJet || (enhanced?.needsAI === true && !enhanced?.aiEnhanced);
 
@@ -530,7 +502,7 @@ export default async function JobDetailPage({ params, searchParams }) {
         {/* Breadcrumbs */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <nav className="flex text-xs font-medium text-slate-500 dark:text-slate-400">
-            <ol className="flex items-center space-x-2">
+            <ol className="flex items-center gap-2 flex-wrap">
               <li>
                 <Link
                   href="/"
@@ -553,13 +525,32 @@ export default async function JobDetailPage({ params, searchParams }) {
                   Jobs
                 </Link>
               </li>
+              {/* Show first matched category in breadcrumb */}
+              {matchedCategories[0] && (
+                <>
+                  <li>
+                    <iconify-icon
+                      icon="solar:alt-arrow-right-linear"
+                      class="text-slate-400"
+                    ></iconify-icon>
+                  </li>
+                  <li>
+                    <Link
+                      href={`/jobs/category/${matchedCategories[0].slug}`}
+                      className="hover:text-slate-900 dark:hover:text-white transition-colors"
+                    >
+                      {matchedCategories[0].label}
+                    </Link>
+                  </li>
+                </>
+              )}
               <li>
                 <iconify-icon
                   icon="solar:alt-arrow-right-linear"
                   class="text-slate-400"
                 ></iconify-icon>
               </li>
-              <li className="text-slate-900 dark:text-white truncate">
+              <li className="text-slate-900 dark:text-white truncate max-w-[200px]">
                 {title}
               </li>
             </ol>
@@ -570,7 +561,6 @@ export default async function JobDetailPage({ params, searchParams }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
           <div className="flex flex-col md:flex-row gap-6 md:items-start justify-between">
             <div className="flex gap-5">
-              {/* Company Logo */}
               <CompanyLogo company={company} logoUrl={logoUrl} size="md" />
               <div>
                 <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-2">
@@ -594,15 +584,6 @@ export default async function JobDetailPage({ params, searchParams }) {
                     ></iconify-icon>
                     {timeAgo}
                   </span>
-                  {header.applicants && (
-                    <span className="flex items-center gap-1">
-                      <iconify-icon
-                        icon="solar:users-group-rounded-linear"
-                        class="text-slate-400"
-                      ></iconify-icon>
-                      {header.applicants} Applicants
-                    </span>
-                  )}
                 </div>
 
                 {/* Tags */}
@@ -613,6 +594,17 @@ export default async function JobDetailPage({ params, searchParams }) {
                   <span className="inline-flex items-center px-2.5 py-1 rounded border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-semibold uppercase tracking-wide">
                     {header.location_type || "On-site"}
                   </span>
+                  {/* Category badges — link to category pages */}
+                  {matchedCategories.map((cat) => (
+                    <Link
+                      key={cat.slug}
+                      href={`/jobs/category/${cat.slug}`}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-[10px] font-semibold uppercase tracking-wide hover:bg-indigo-100 transition-colors"
+                    >
+                      <iconify-icon icon={cat.icon}></iconify-icon>
+                      {cat.label}
+                    </Link>
+                  ))}
                   {isEnhanced && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-semibold uppercase tracking-wide">
                       <iconify-icon icon="solar:stars-minimalistic-linear"></iconify-icon>{" "}
@@ -621,7 +613,7 @@ export default async function JobDetailPage({ params, searchParams }) {
                   )}
                   {isCareerJet && job.source_site && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[10px] font-semibold uppercase tracking-wide">
-                      <iconify-icon icon="solar:global-linear"></iconify-icon>
+                      <iconify-icon icon="solar:global-linear"></iconify-icon>{" "}
                       via {job.source_site}
                     </span>
                   )}
@@ -639,12 +631,11 @@ export default async function JobDetailPage({ params, searchParams }) {
           </div>
         </div>
 
-        {/* Main Content Grid - 12 columns like reference */}
+        {/* Main Content Grid */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-            {/* Left Column (Job Details) - 8 columns */}
+            {/* Left Column */}
             <div className="lg:col-span-8 space-y-10">
-              {/* Key Highlights */}
               {highlights.length > 0 && (
                 <section className="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700 p-6">
                   <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
@@ -671,7 +662,6 @@ export default async function JobDetailPage({ params, searchParams }) {
                 </section>
               )}
 
-              {/* Job Overview Cards */}
               {quickInfo.length > 0 && (
                 <section>
                   <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">
@@ -697,7 +687,6 @@ export default async function JobDetailPage({ params, searchParams }) {
 
               <hr className="border-slate-100 dark:border-slate-800" />
 
-              {/* Dynamic Sections from AI */}
               {sections.map((section, i) => (
                 <div key={section.id || i}>
                   <RenderSection section={section} />
@@ -707,7 +696,6 @@ export default async function JobDetailPage({ params, searchParams }) {
                 </div>
               ))}
 
-              {/* Fallback: If no enhanced content, show basic job description */}
               {!isEnhanced && job.description && (
                 <section>
                   <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">
@@ -726,8 +714,7 @@ export default async function JobDetailPage({ params, searchParams }) {
                     Ready to Apply?
                   </h3>
                   <p className="text-sm text-slate-400 max-w-md">
-                    Don't miss this opportunity at {company}. Click below to
-                    submit your application.
+                    Don't miss this opportunity at {company}.
                   </p>
                   {applyInfo?.deadline && (
                     <p className="text-amber-400 text-xs mt-2">
@@ -751,7 +738,7 @@ export default async function JobDetailPage({ params, searchParams }) {
               </div>
             </div>
 
-            {/* Right Column (Sidebar) - 4 columns */}
+            {/* Right Sidebar */}
             <div className="lg:col-span-4">
               <div className="sticky top-24 space-y-6">
                 {/* Job Summary Card */}
@@ -762,79 +749,49 @@ export default async function JobDetailPage({ params, searchParams }) {
                     </h4>
                   </div>
                   <div className="p-5 space-y-5">
-                    <div className="flex items-start gap-3">
-                      <iconify-icon
-                        icon="solar:buildings-linear"
-                        class="text-slate-400 text-lg mt-0.5"
-                      ></iconify-icon>
-                      <div>
-                        <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                          Company
-                        </div>
-                        <div className="text-sm font-medium text-slate-900 dark:text-white">
-                          {company}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <iconify-icon
-                        icon="solar:map-point-linear"
-                        class="text-slate-400 text-lg mt-0.5"
-                      ></iconify-icon>
-                      <div>
-                        <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                          Location
-                        </div>
-                        <div className="text-sm font-medium text-slate-900 dark:text-white">
-                          {header.location || "Remote"}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <iconify-icon
-                        icon="solar:case-minimalistic-linear"
-                        class="text-slate-400 text-lg mt-0.5"
-                      ></iconify-icon>
-                      <div>
-                        <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                          Job Type
-                        </div>
-                        <div className="text-sm font-medium text-slate-900 dark:text-white">
-                          {header.employment_type || "Full-time"}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <iconify-icon
-                        icon="solar:laptop-minimalistic-linear"
-                        class="text-slate-400 text-lg mt-0.5"
-                      ></iconify-icon>
-                      <div>
-                        <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                          Work Mode
-                        </div>
-                        <div className="text-sm font-medium text-slate-900 dark:text-white">
-                          {header.location_type || "On-site"}
+                    {[
+                      {
+                        icon: "solar:buildings-linear",
+                        label: "Company",
+                        value: company,
+                      },
+                      {
+                        icon: "solar:map-point-linear",
+                        label: "Location",
+                        value: header.location || "Remote",
+                      },
+                      {
+                        icon: "solar:case-minimalistic-linear",
+                        label: "Job Type",
+                        value: header.employment_type || "Full-time",
+                      },
+                      {
+                        icon: "solar:laptop-minimalistic-linear",
+                        label: "Work Mode",
+                        value: header.location_type || "On-site",
+                      },
+                      {
+                        icon: "solar:calendar-linear",
+                        label: "Posted",
+                        value: timeAgo,
+                      },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-start gap-3">
+                        <iconify-icon
+                          icon={item.icon}
+                          class="text-slate-400 text-lg mt-0.5"
+                        ></iconify-icon>
+                        <div>
+                          <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                            {item.label}
+                          </div>
+                          <div className="text-sm font-medium text-slate-900 dark:text-white">
+                            {item.value}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <iconify-icon
-                        icon="solar:calendar-linear"
-                        class="text-slate-400 text-lg mt-0.5"
-                      ></iconify-icon>
-                      <div>
-                        <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                          Posted
-                        </div>
-                        <div className="text-sm font-medium text-slate-900 dark:text-white">
-                          {timeAgo}
-                        </div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-
-                  {/* Apply Button in Card */}
                   <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-800/30">
                     <div className="flex items-center gap-2 mb-2 justify-center">
                       <iconify-icon
@@ -856,6 +813,66 @@ export default async function JobDetailPage({ params, searchParams }) {
                     </a>
                   </div>
                 </div>
+
+                {/* ── Browse Similar Jobs ───────────────────────────────── */}
+                {(matchedCategories.length > 0 || matchedLocation) && (
+                  <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+                        Browse Similar Jobs
+                      </h4>
+                    </div>
+                    <div className="p-4 space-y-2">
+                      {matchedCategories.map((cat) => (
+                        <Link
+                          key={cat.slug}
+                          href={`/jobs/category/${cat.slug}`}
+                          className="flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <iconify-icon
+                              icon={cat.icon}
+                              class="text-indigo-500 flex-shrink-0"
+                            ></iconify-icon>
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">
+                              More {cat.label} Jobs
+                            </span>
+                          </div>
+                          <iconify-icon
+                            icon="solar:arrow-right-linear"
+                            class="text-slate-400 group-hover:text-indigo-500 flex-shrink-0 text-xs"
+                          ></iconify-icon>
+                        </Link>
+                      ))}
+                      {matchedLocation && (
+                        <Link
+                          href={`/jobs/location/${matchedLocation.slug}`}
+                          className="flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-green-300 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all group"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <iconify-icon
+                              icon="solar:map-point-linear"
+                              class="text-green-500 flex-shrink-0"
+                            ></iconify-icon>
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">
+                              More Jobs in {matchedLocation.label}
+                            </span>
+                          </div>
+                          <iconify-icon
+                            icon="solar:arrow-right-linear"
+                            class="text-slate-400 group-hover:text-green-500 flex-shrink-0 text-xs"
+                          ></iconify-icon>
+                        </Link>
+                      )}
+                      <Link
+                        href="/jobs/categories"
+                        className="flex items-center justify-center gap-2 p-2 text-xs text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                      >
+                        Browse all categories →
+                      </Link>
+                    </div>
+                  </div>
+                )}
 
                 {/* Share This Job */}
                 <div>
@@ -887,8 +904,7 @@ export default async function JobDetailPage({ params, searchParams }) {
                   </div>
                 </div>
 
-                {/* Report */}
-                <div className="text-center pt-4">
+                <div className="text-center pt-2">
                   <button className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 flex items-center justify-center gap-1 mx-auto transition-colors">
                     <iconify-icon icon="solar:flag-linear"></iconify-icon>{" "}
                     Report this job
@@ -899,7 +915,6 @@ export default async function JobDetailPage({ params, searchParams }) {
           </div>
         </div>
       </main>
-
       <Footer />
     </JobPageContent>
   );
