@@ -120,7 +120,7 @@ export default function JobsSection({ jobs = [], showSampleData = true }) {
                 Trending jobs in Bangladesh
               </h2>
               <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                Top opportunities in Dhaka, Chittagong, and Sylhet.
+                 Recent job listings in Bangladesh and across the world, updated daily.
               </p>
             </div>
             <Link
@@ -150,7 +150,7 @@ export default function JobsSection({ jobs = [], showSampleData = true }) {
       </section>
 
       {/* Remote Jobs (Worldwide) */}
-      <section className="py-20 bg-slate-50/50 dark:bg-slate-800/50">
+      {/* <section className="py-20 bg-slate-50/50 dark:bg-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-end mb-10">
             <div>
@@ -185,7 +185,7 @@ export default function JobsSection({ jobs = [], showSampleData = true }) {
             </div>
           )}
         </div>
-      </section>
+      </section> */}
     </>
   );
 }
