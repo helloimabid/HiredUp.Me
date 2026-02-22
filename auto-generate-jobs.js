@@ -1,23 +1,4 @@
-#!/usr/bin/env node
-/**
- * Auto-Generate Job Pages using Gemini (Free Tier)
- *
- * Processes unenhanced jobs using Google Gemini API within free tier rate limits.
- * Rotates across multiple Gemini models to maximize daily throughput (~60 jobs/day free).
- * Uses keyword research data to maximize SEO positioning per job.
- *
- * Usage:
- *   node scripts/auto-generate-jobs.js                  # Process all unenhanced jobs
- *   node scripts/auto-generate-jobs.js --limit 10       # Process only 10 jobs
- *   node scripts/auto-generate-jobs.js --model gemini-2.5-flash-lite  # Use specific model
- *   node scripts/auto-generate-jobs.js --dry-run        # Preview without generating
- *
- * Rate limits (free tier per model):
- *   Gemma 3 27B  — 30 RPM, 14.4K RPD (best quality)
- *   Gemma 3 12B  — 30 RPM, 14.4K RPD
- *   Gemma 3 4B   — 30 RPM, 14.4K RPD (fastest)
- *   Total across models: ~43,200 jobs/day (effectively unlimited)
- */
+
 
 const { Client, Databases, Query } = require("node-appwrite");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
